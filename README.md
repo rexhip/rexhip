@@ -1,5 +1,4 @@
-# sn7mb
-Modbus library for Siemens PLC
+
+Modbus lightweight abstraction layer library.
 
 
-see: mb.sn7.no

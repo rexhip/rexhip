@@ -1,0 +1,238 @@
+﻿FUNCTION_BLOCK "mb_rtu"
+{ S7_Optimized_Access := 'TRUE' }
+VERSION : 0.1
+   VAR_INPUT 
+      port : PORT;
+      baud : UDInt;
+      parity : Bool;   // enable even parity
+      timeout : UInt;
+   END_VAR
+
+   VAR_IN_OUT 
+      buffer : Variant;
+      mb : "udt_mb";
+   END_VAR
+
+   VAR 
+      comm_load {OriginalPartName := 'MB_COMM_LOAD'; LibVersion := '2.1'} : MB_COMM_LOAD;
+      master {OriginalPartName := 'MB_MASTER'; LibVersion := '2.2'} : MB_MASTER;
+   END_VAR
+
+   VAR_TEMP 
+      err : Int;
+   END_VAR
+
+
+BEGIN
+	#comm_load.RETRIES := 0;
+	#comm_load(REQ := NOT #comm_load.DONE,
+	           "PORT" := #port,
+	           BAUD := #baud,
+	           PARITY := SEL(G := #parity, IN0 := 0, IN1 := 2),
+	           RESP_TO := #timeout,
+	           MB_DB := #master);
+	
+	#master(REQ := #comm_load.DONE,
+	        MB_ADDR := #mb.q.param.device,
+	        MODE := #mb.q.param.mode,
+	        DATA_ADDR := #mb.q.param.data_addr,
+	        DATA_LEN := #mb.q.param.length,
+	        DONE => #mb.runtime.done,
+	        ERROR => #mb.runtime.err,
+	        STATUS => #mb.runtime.status,
+	        DATA_PTR := #buffer);
+	
+	#mb.runtime.timeout := #master.ERROR AND #master.STATUS = 16#80C8;
+	// ------------------------
+	#mb.runtime.last_exec_query := SEL(G := #master.DONE OR #master.ERROR,
+	                                   IN0 := 0, IN1 := #mb.q.qid);
+	#mb.const.buffer_db := VARIANT_TO_DB_ANY(in := #buffer, err => #err);
+	IF #mb.q.qid > #mb.runtime.qid_cnt THEN #mb.q.qid := 1; END_IF;
+	#mb.runtime.qid_cnt := 0;
+END_FUNCTION_BLOCK
+
+FUNCTION_BLOCK "mb_tcp"
+{ S7_Optimized_Access := 'TRUE' }
+VERSION : 0.1
+   VAR_INPUT 
+      interface_id : HW_ANY;
+      connection_id : CONN_OUC := 42;
+      ip_addr : Array[1..4] of Byte := 192, 168, 1, 0;
+      tcp_port : UInt := 502;   // enable even parity
+      timeout : Real := 1.0;   // sec
+   END_VAR
+
+   VAR_IN_OUT 
+      buffer : Variant;
+      mb : "udt_mb";
+   END_VAR
+
+   VAR 
+      client {OriginalPartName := 'MB_CLIENT'; LibVersion := '4.0'} : MB_CLIENT;
+      tcon_ip_v4 {OriginalPartName := 'TCON_IP_v4'; LibVersion := '1.0'} : TCON_IP_v4;
+   END_VAR
+
+   VAR_TEMP 
+      err : Int;
+   END_VAR
+
+
+BEGIN
+	#tcon_ip_v4.InterfaceId := #interface_id;
+	#tcon_ip_v4.ID := #connection_id;
+	#tcon_ip_v4.RemoteAddress.ADDR := #ip_addr;
+	#tcon_ip_v4.RemotePort := #tcp_port;
+	
+	#client.MB_Unit_ID := #mb.q.param.device;
+	#client.Rcv_Timeout := #timeout;
+	#client(REQ := NOT #mb.runtime.insert,
+	        DISCONNECT := #client.DISCONNECT,
+	        MB_MODE := #mb.q.param.mode,
+	        MB_DATA_ADDR := #mb.q.param.data_addr,
+	        MB_DATA_LEN := #mb.q.param.length,
+	        MB_DATA_PTR := #buffer,
+	        CONNECT := #tcon_ip_v4);
+	
+	#mb.runtime.timeout := #client.ERROR AND #client.STATUS = 16#80C8;
+	// ------------------------
+	#mb.runtime.last_exec_query := SEL(G := #client.DONE OR #client.ERROR,
+	                                   IN0 := 0, IN1 := #mb.q.qid);
+	#mb.const.buffer_db := VARIANT_TO_DB_ANY(in := #buffer, err => #err);
+	IF #mb.q.qid > #mb.runtime.qid_cnt THEN #mb.q.qid := 1; END_IF;
+	#mb.runtime.qid_cnt := 0;
+END_FUNCTION_BLOCK
+
+FUNCTION "mb_read" : Void
+{ S7_Optimized_Access := 'TRUE' }
+VERSION : 0.1
+   VAR_INPUT 
+      device : USInt;
+      register : UInt;   // (don't add 40001)
+      length : USInt;   // put 127 to auto detect
+   END_VAR
+
+   VAR_IN_OUT 
+      data : Variant;   // Resualt data. Input a word or a array of words
+      mb : "udt_mb";
+   END_VAR
+
+   VAR_TEMP 
+      c : Int;
+      "word" : Word;
+      error : Int;
+   END_VAR
+
+
+BEGIN
+	(* LJAL - Lightweight Jbus Abstraction Layer
+	 * Atuor:      Ola Bjørnli          
+	 * Version:    alptha 0.1           (NOT TESTED AT ALL, just a proof of concept)
+	 * License:    GPLv2, MIT or BSD,   (choice the one of your need). 
+	 * web:        http://mb.sn7.no , 
+	 *             http://github.com/olab84/sn7mb 
+	 *)
+	#mb.query_above.done := false;
+	#mb.query_above.err := false;
+	#mb.runtime.qid_cnt := #mb.runtime.qid_cnt + 1;
+	IF #mb.runtime.qid_cnt <> #mb.q.qid THEN RETURN; END_IF;
+	
+	IF #mb.runtime.insert THEN
+	    #mb.q.param.device := #device;
+	    #mb.q.param.mode := 0;
+	    #mb.q.param.data_addr := 400001 + UINT_TO_UDINT( #register ) ;
+	    #mb.q.param.length := MIN(IN1 := #length,
+	        IN2 := MAX(IN1 := 1, IN2 := UDINT_TO_USINT(CountOfElements(#data))));
+	    #mb.runtime.insert := false;
+	    #mb.q.next := #mb.q.qid + 1;
+	
+	ELSIF #mb.runtime.done
+	    AND #mb.q.param.device = #device
+	    AND #mb.q.param.data_addr = 400001 + UINT_TO_UDINT( #register ) 
+	    AND #mb.q.param.length = MIN( IN1 := #length,
+	        IN2 := MAX(IN1 := 1, IN2 := UDINT_TO_USINT(CountOfElements(#data))))
+	    AND #mb.q.param.mode = 0
+	THEN
+	    FOR #c := 0 TO USINT_TO_INT(#mb.q.param.length) - 1 DO
+	        #word := PEEK_WORD(area := 16#84,
+	            dbNumber := #mb.const.buffer_db, byteOffset := #c );
+	        #error := MOVE_BLK_VARIANT(SRC := #word, SRC_INDEX := 0,
+	            COUNT := 1, DEST => #data, DEST_INDEX := #c);
+	    END_FOR;
+	    #mb.query_above.done := true;
+	    
+	ELSIF #mb.runtime.err THEN
+	    #mb.query_above.err := true;
+	END_IF;
+	
+	IF #mb.query_above.done OR #mb.query_above.err THEN
+	    #mb.runtime.recv_cnt := #mb.runtime.recv_cnt + 1;
+	    #mb.runtime.insert := true;
+	    #mb.q.qid := #mb.q.next;
+	END_IF;
+END_FUNCTION
+
+FUNCTION "mb_write" : Void
+{ S7_Optimized_Access := 'TRUE' }
+VERSION : 0.1
+   VAR_INPUT 
+      device : USInt;
+      register : UInt;   // (don't add 40001)
+      length : USInt;   // put 127 to auto detect
+   END_VAR
+
+   VAR_IN_OUT 
+      data : Variant;   // Resualt data. Input a word or a array of words
+      mb : "udt_mb";
+   END_VAR
+
+   VAR_TEMP 
+      c : Int;
+      "word" : Word;
+      error : Int;
+   END_VAR
+
+
+BEGIN
+	#mb.query_above.done := false;
+	#mb.query_above.err := false;
+	#mb.runtime.qid_cnt := #mb.runtime.qid_cnt + 1;
+	IF #mb.runtime.qid_cnt <> #mb.q.qid THEN RETURN; END_IF;
+	
+	IF #mb.runtime.insert THEN
+	    #mb.q.param.device := #device;
+	    #mb.q.param.mode := 2;
+	    #mb.q.param.data_addr := 400001 + UINT_TO_UDINT( #register) ;
+	    #mb.q.param.length := MIN(IN1 := #length,
+	        IN2 := MAX(IN1 := 1, IN2 := UDINT_TO_USINT(CountOfElements(#data))));
+	
+	    FOR #c := 0 TO USINT_TO_INT(#mb.q.param.length) - 1 DO
+	        #error := MOVE_BLK_VARIANT(SRC := #data, SRC_INDEX := #c,
+	                                   COUNT := 1, DEST => #word, DEST_INDEX := 0);
+	        POKE(area := 16#84, dbNumber := #mb.const.buffer_db, byteOffset := #c*2,
+	             value := WORD_TO_BYTE(#word));
+	        POKE(area := 16#84, dbNumber := #mb.const.buffer_db, byteOffset := #c*2+1,
+	             value := WORD_TO_BYTE(SHR(IN := #word, N := 8)));
+	    END_FOR;
+	    #mb.runtime.insert := false;
+	    #mb.q.next := #mb.q.qid + 1;
+	    
+	ELSIF #mb.runtime.done
+	    AND #mb.q.param.device = #device
+	    AND #mb.q.param.data_addr = 400001 + UINT_TO_UDINT( #register ) 
+	    AND #mb.q.param.length = MIN( IN1 := #length,
+	        IN2 := MAX(IN1 := 1, IN2 := UDINT_TO_USINT(CountOfElements(#data))))
+	    AND #mb.q.param.mode = 2
+	THEN
+	    #mb.query_above.done := true;
+	    
+	ELSIF #mb.runtime.err THEN
+	    #mb.query_above.err := true;
+	END_IF;
+	
+	IF #mb.query_above.done OR #mb.query_above.err THEN
+	    #mb.runtime.recv_cnt := #mb.runtime.recv_cnt + 1;
+	    #mb.runtime.insert := true;
+	    #mb.q.qid := #mb.q.next;
+	END_IF;
+END_FUNCTION
+

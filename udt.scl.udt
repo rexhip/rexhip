@@ -1,0 +1,58 @@
+﻿TYPE "udt_mb"
+VERSION : 0.1
+   STRUCT
+      q : Struct
+         param : Struct
+            device : USInt;
+            mode : USInt;
+            data_addr : UDInt;
+            length : USInt;
+         END_STRUCT;
+         qid : Int;
+         next : Int;
+      END_STRUCT;
+      runtime : Struct
+         qid_cnt : Int;
+         insert : Bool;
+         done : Bool;
+         err : Bool;
+         timeout : Bool;
+         status : Word;
+         recv_cnt : UDInt;
+         last_exec_query : Int;
+      END_STRUCT;
+      "const" : Struct
+         buffer_db : DB_ANY;
+      END_STRUCT;
+      query_above : Struct
+         done : Bool;
+         err : Bool;
+      END_STRUCT;
+   END_STRUCT;
+
+END_TYPE
+
+TYPE "udt_mb_device"
+VERSION : 0.1
+   STRUCT
+      enable : Bool;
+      qErr : Bool;
+      log : Struct
+         done_cnt : UDInt;
+         done_dtl {OriginalPartName := 'DTL'; LibVersion := '1.0'} : DTL;
+         err_cnt : UDInt;
+         err_dtl {OriginalPartName := 'DTL'; LibVersion := '1.0'} : DTL;
+         err_status : Word;
+         err_data_addr : UDInt;
+      END_STRUCT;
+      internal : Struct
+         err_cnt : USInt;
+         range_start : Int;
+         range_end : Int;
+         tmp_err_cnt : UDInt;
+         tmp_recv_cnt : UDInt;
+      END_STRUCT;
+   END_STRUCT;
+
+END_TYPE
+

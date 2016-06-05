@@ -1,0 +1,290 @@
+﻿FUNCTION "mb_change_datatype" : Void
+{ S7_Optimized_Access := 'FALSE' }
+VERSION : 0.1
+   VAR_IN_OUT 
+      in : Variant;
+      out : Variant;
+   END_VAR
+
+   VAR_TEMP 
+      tmp : Array[0..8] of Byte;
+      pos : DInt;
+      err : DInt;
+   END_VAR
+
+
+BEGIN
+	#err := Serialize(SRC_VARIABLE := #in, DEST_ARRAY => #tmp, POS := #pos);
+	#pos := 0;
+	#err := Deserialize(SRC_ARRAY := #tmp, DEST_VARIABLE => #out, POS := #pos);
+	
+END_FUNCTION
+
+FUNCTION "mb_write_double" : Void
+{ S7_Optimized_Access := 'TRUE' }
+VERSION : 0.1
+   VAR_INPUT 
+      device : USInt;
+      register : UInt;   // (don't add 40001)
+      swap_words : Bool;
+      little_endian : Bool;
+   END_VAR
+
+   VAR_IN_OUT 
+      data : Variant;
+      mb : "udt_mb";
+   END_VAR
+
+   VAR_TEMP 
+      tmp_array : Array[1..2] of Word;
+      tmp_dword : DWord;
+   END_VAR
+
+
+BEGIN
+	IF #mb.q.qid + 1 = #mb.runtime.qid_cnt THEN
+	    "mb_change_datatype"(in := #data, out := #tmp_dword );
+	    #tmp_dword := SEL(G := #little_endian, IN0 := #tmp_dword, IN1 := SWAP(#tmp_dword));
+	    #tmp_dword := SEL(G := #swap_words, IN0 := #tmp_dword, IN1 := SWAP_DWORD(#tmp_dword));
+	    #tmp_array[1] := DWORD_TO_WORD(#tmp_dword);
+	    #tmp_array[2] := DWORD_TO_WORD(SHL(IN := #tmp_dword, N := 16 ));
+	END_IF;
+	
+	"mb_write"(device := #device,
+	          register := #register,
+	          length := 2,
+	          data := #tmp_array,
+	          mb := #mb ); 
+END_FUNCTION
+
+FUNCTION "mb_read_fc" : Void
+{ S7_Optimized_Access := 'TRUE' }
+VERSION : 0.1
+   VAR_INPUT 
+      device : USInt;
+      register : UInt;   // (don't add 40001)
+      length : USInt;
+      function_code : SInt;
+   END_VAR
+
+   VAR_IN_OUT 
+      data : Variant;
+      mb : "udt_mb";
+   END_VAR
+
+   VAR_TEMP 
+      insert : Bool;
+   END_VAR
+
+
+BEGIN
+	#insert := #mb.q.qid + 1 = #mb.runtime.qid_cnt AND #mb.runtime.insert ;
+	
+	"mb_read"(device := #device,
+	          register := #register,
+	          length := #length,
+	          data := #data,
+	          mb := #mb );
+	
+	IF #insert THEN
+	    CASE #function_code OF
+	        1:  // Read output bits:
+	            #mb.q.param.data_addr := #mb.q.param.data_addr - 400000;
+	            
+	        2:  // Read input bits            
+	            #mb.q.param.data_addr := #mb.q.param.data_addr - 390000;
+	            
+	        4:  // Read input word            
+	            #mb.q.param.data_addr := #mb.q.param.data_addr - 100000;
+	    END_CASE;
+	END_IF;
+END_FUNCTION
+
+FUNCTION "mb_write_word" : Void
+{ S7_Optimized_Access := 'TRUE' }
+VERSION : 0.1
+   VAR_INPUT 
+      device : USInt;
+      register : UInt;   // (don't add 40001)
+      data : Word;
+   END_VAR
+
+   VAR_IN_OUT 
+      mb : "udt_mb";
+   END_VAR
+
+
+BEGIN
+	"mb_write"(device := #device,
+	          register := #register,
+	          length := 1,
+	          data := #data,
+	          mb := #mb);
+END_FUNCTION
+
+FUNCTION "mb_write_fc" : Void
+{ S7_Optimized_Access := 'TRUE' }
+VERSION : 0.1
+   VAR_INPUT 
+      device : USInt;
+      register : UInt;   // (don't add 40001)
+      length : USInt;
+      function_code : SInt;
+   END_VAR
+
+   VAR_IN_OUT 
+      data : Variant;
+      mb : "udt_mb";
+   END_VAR
+
+   VAR_TEMP 
+      insert : Bool;
+   END_VAR
+
+
+BEGIN
+	#insert := #mb.q.qid + 1 = #mb.runtime.qid_cnt AND #mb.runtime.insert;
+	
+	"mb_write"(device := #device,
+	           register := #register,
+	           length := #length,
+	           data := #data,
+	           mb := #mb);
+	
+	IF #insert THEN
+	    CASE #function_code OF
+	        5:  // Writing an output bit
+	            #mb.q.param.data_addr := #mb.q.param.data_addr - 0 ;
+	           
+	        6:  // Writing a holding register:
+	            #mb.q.param.mode := 1;
+	           
+	        15: // Writing multiple output bits:
+	            #mb.q.param.data_addr := #mb.q.param.data_addr - 0 ;
+	    END_CASE;
+	END_IF;
+END_FUNCTION
+
+FUNCTION "mb_read_double" : Void
+{ S7_Optimized_Access := 'TRUE' }
+VERSION : 0.1
+   VAR_INPUT 
+      device : USInt;
+      register : UInt;   // (don't add 40001)
+      swap_words : Bool;
+      little_endian : Bool;
+   END_VAR
+
+   VAR_IN_OUT 
+      data : Variant;
+      mb : "udt_mb";
+   END_VAR
+
+   VAR_TEMP 
+      tmp_array : Array[1..2] of Word;
+      tmp_dword : DWord;
+   END_VAR
+
+
+BEGIN
+	"mb_read"(device := #device,
+	          register := #register,
+	          length := 2,
+	          data := #tmp_array,
+	          mb := #mb );
+	
+	IF #mb.query_above.done THEN
+	    #tmp_dword := SHR(IN := #tmp_array[1], N := 16) + #tmp_array[2];
+	    #tmp_dword := SEL(G := #little_endian, IN0 := #tmp_dword, IN1 := SWAP(#tmp_dword));
+	    #tmp_dword := SEL(G := #swap_words, IN0 := #tmp_dword, IN1 := SWAP_DWORD(#tmp_dword));
+	    "mb_change_datatype"(in := #tmp_dword, out := #data);
+	END_IF;
+END_FUNCTION
+
+FUNCTION "mb_device_footer" : Void
+{ S7_Optimized_Access := 'TRUE' }
+VERSION : 0.1
+   VAR_IN_OUT 
+      device : "udt_mb_device";
+      mb : "udt_mb";
+   END_VAR
+
+   VAR_TEMP 
+      dtl {OriginalPartName := 'DTL'; LibVersion := '1.0'} : DTL;
+      err : Int;
+   END_VAR
+
+
+BEGIN
+	#device.internal.range_end := #mb.q.qid;
+	
+	IF #mb.runtime.recv_cnt - #device.internal.tmp_recv_cnt > 0 THEN
+	    #err := RD_LOC_T(#dtl);
+	    IF #mb.runtime.done THEN
+	        #device.log.done_cnt := #device.log.done_cnt + 1;
+	        #device.log.done_dtl := #dtl;
+	    ELSIF #mb.runtime.err THEN
+	        #device.log.err_cnt := #device.log.err_cnt + 1;
+	        #device.log.err_dtl := #dtl;
+	        #device.log.err_status := #mb.runtime.status;
+	        #device.log.err_data_addr := #mb.q.param.data_addr ;
+	    END_IF;
+	END_IF;
+	
+	
+	
+	
+	
+END_FUNCTION
+
+FUNCTION "mb_addr" : UInt
+{ S7_Optimized_Access := 'TRUE' }
+VERSION : 0.1
+   VAR_INPUT 
+      in : UInt;
+   END_VAR
+
+
+BEGIN
+	#mb_addr := #in - 40001;
+END_FUNCTION
+
+FUNCTION "mb_query_place_holder" : Void
+{ S7_Optimized_Access := 'TRUE' }
+VERSION : 0.1
+   VAR_IN_OUT 
+      mb : "udt_mb";
+   END_VAR
+
+
+BEGIN
+	#mb.runtime.qid_cnt := #mb.runtime.qid_cnt + 1;
+	
+	IF #mb.runtime.qid_cnt = #mb.q.qid THEN
+	    #mb.q.qid := #mb.q.qid + 1 ;
+	    #mb.runtime.insert := true;
+	END_IF;
+	
+END_FUNCTION
+
+FUNCTION "mb_device_header" : Void
+{ S7_Optimized_Access := 'TRUE' }
+VERSION : 0.1
+   VAR_IN_OUT 
+      device : "udt_mb_device";
+      mb : "udt_mb";
+   END_VAR
+
+
+BEGIN
+	#device.internal.range_start := #mb.q.qid + 1;
+	#device.internal.tmp_recv_cnt := #mb.runtime.recv_cnt;
+	
+	IF #mb.q.qid >= #device.internal.range_start
+	    AND #mb.q.qid <= #device.internal.range_end
+	    AND ( NOT #device.enable OR NOT #mb.runtime.insert AND #mb.runtime.timeout)
+	THEN
+	    #mb.q.qid := #device.internal.range_end + 1;
+	END_IF;
+END_FUNCTION
+

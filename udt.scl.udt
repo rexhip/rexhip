@@ -1,28 +1,33 @@
 ﻿TYPE "udt_mb"
 VERSION : 0.1
    STRUCT
-      q : Struct
+      q : Struct   // query
          param : Struct
             device : USInt;
-            mode : USInt;
-            data_addr : UDInt;
-            length : USInt;
+            "fc" : UInt;   // function code
+            reg : UDInt;
+            len : USInt;
          END_STRUCT;
-         qid : Int;
-         next : Int;
+         qid : Int;   // query id
+         next : Int;   // id of next query to be exec.
       END_STRUCT;
       runtime : Struct
-         qid_cnt : Int;
+         qid_cnt : Int;   // query id cnt, one cycle each plc-scan.
+         q : Struct   // siemens query param
+            mode : USInt;
+            data_addr : UDInt;
+         END_STRUCT;
          insert : Bool;
          done : Bool;
          err : Bool;
          timeout : Bool;
          status : Word;
-         recv_cnt : UDInt;
-         last_exec_query : Int;
+         exec_cnt : UDInt;
+         last_exec_qid : Int;
       END_STRUCT;
       "const" : Struct
-         buffer_db : DB_ANY;
+         buffer : DB_ANY;
+         app : Bool;   // false=>rtu, true=>tcp
       END_STRUCT;
       query_above : Struct
          done : Bool;

@@ -3,13 +3,13 @@ VERSION : 0.1
    STRUCT
       q : Struct   // query
          param : Struct
-            device : USInt;
-            "fc" : UInt;   // function code
-            reg : UDInt;
-            len : USInt;
+            unit : USInt := 1;
+            "fc" : UInt := 3;   // function code
+            addr : UDInt;
+            len : UInt := 1;
          END_STRUCT;
-         qid : Int;   // query id
-         next : Int;   // id of next query to be exec.
+         qid : Int := 1;   // query id
+         next : Int := 1;   // id of next query to be exec.
       END_STRUCT;
       runtime : Struct
          qid_cnt : Int;   // query id cnt, one cycle each plc-scan.
@@ -17,13 +17,12 @@ VERSION : 0.1
             mode : USInt;
             data_addr : UDInt;
          END_STRUCT;
-         insert : Bool;
+         insert : Bool;   // (false=exec. query)
          done : Bool;
          err : Bool;
          timeout : Bool;
          status : Word;
-         exec_cnt : UDInt;
-         last_exec_qid : Int;
+         exec_cnt : UDInt;   // Execute cnt.
       END_STRUCT;
       "const" : Struct
          buffer : DB_ANY;
@@ -32,6 +31,7 @@ VERSION : 0.1
       query_above : Struct
          done : Bool;
          err : Bool;
+         insert : Bool;
       END_STRUCT;
    END_STRUCT;
 
@@ -40,8 +40,13 @@ END_TYPE
 TYPE "udt_mb_device"
 VERSION : 0.1
    STRUCT
-      enable : Bool;
-      qErr : Bool;
+      enable : Bool := true;
+      q : Struct   // outputs
+         err : Bool;
+      END_STRUCT;
+      config : Struct
+         max_err : USInt := 3;   // max repeating errors before qErr is set
+      END_STRUCT;
       log : Struct
          done_cnt : UDInt;
          done_dtl {OriginalPartName := 'DTL'; LibVersion := '1.0'} : DTL;
@@ -51,10 +56,9 @@ VERSION : 0.1
          err_data_addr : UDInt;
       END_STRUCT;
       internal : Struct
-         err_cnt : USInt;
          range_start : Int;
          range_end : Int;
-         tmp_err_cnt : UDInt;
+         err_cnt : USInt;   // repeating errors
          tmp_recv_cnt : UDInt;
       END_STRUCT;
    END_STRUCT;

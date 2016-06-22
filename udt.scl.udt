@@ -1,43 +1,4 @@
-﻿TYPE "udt_mb"
-VERSION : 0.1
-   STRUCT
-      q : Struct   // query
-         param : Struct
-            unit : USInt := 1;
-            "fc" : UInt := 3;   // function code
-            addr : UDInt;
-            len : UInt := 1;
-         END_STRUCT;
-         qid : Int := 1;   // query id
-         next : Int := 1;   // id of next query to be exec.
-      END_STRUCT;
-      runtime : Struct
-         qid_cnt : Int;   // query id cnt, one cycle each plc-scan.
-         q : Struct   // siemens query param
-            mode : USInt;
-            data_addr : UDInt;
-         END_STRUCT;
-         insert : Bool;   // (false=exec. query)
-         done : Bool;
-         err : Bool;
-         timeout : Bool;
-         status : Word;
-         exec_cnt : UDInt;   // Execute cnt.
-      END_STRUCT;
-      "const" : Struct
-         buffer : DB_ANY;
-         app : Bool;   // false=>rtu, true=>tcp
-      END_STRUCT;
-      query_above : Struct
-         done : Bool;
-         err : Bool;
-         insert : Bool;
-      END_STRUCT;
-   END_STRUCT;
-
-END_TYPE
-
-TYPE "udt_mb_device"
+﻿TYPE "udt_mb_device"
 VERSION : 0.1
    STRUCT
       enable : Bool := true;
@@ -53,13 +14,50 @@ VERSION : 0.1
          err_cnt : UDInt;
          err_dtl {OriginalPartName := 'DTL'; LibVersion := '1.0'} : DTL;
          err_status : Word;
-         err_data_addr : UDInt;
+         err_d_addr : UDInt;
       END_STRUCT;
       internal : Struct
          range_start : Int;
          range_end : Int;
          err_cnt : USInt;   // repeating errors
          tmp_recv_cnt : UDInt;
+      END_STRUCT;
+   END_STRUCT;
+
+END_TYPE
+
+TYPE "udt_mb"
+VERSION : 0.1
+   STRUCT
+      q : Struct   // query
+         unit : USInt := 1;
+         "fc" : UInt := 3;   // function code
+         d_addr : UDInt;
+         d_len : UInt := 1;
+         qid : Int := 1;   // query id
+         next : Int := 1;   // id of next query to be exec.
+      END_STRUCT;
+      run : Struct
+         mode : USInt;
+         data_addr : UDInt;
+         qid_cnt : Int;   // query id cnt, one cycle each plc-scan.
+         insert : Bool;   // insert query param
+         exec_cnt : UDInt;   // Execute cnt.
+      END_STRUCT;
+      stat : Struct
+         err : Bool;
+         done : Bool;
+         timeout : Bool;
+         status : Word;
+      END_STRUCT;
+      "const" : Struct
+         buffer : DB_ANY;
+         app : Bool;   // false=>rtu, true=>tcp
+      END_STRUCT;
+      query_above : Struct
+         done : Bool;
+         err : Bool;
+         insert : Bool;
       END_STRUCT;
    END_STRUCT;
 

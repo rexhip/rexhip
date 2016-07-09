@@ -13,6 +13,7 @@ with this software:
 --------------------------------------------------------------
 
 ```
+
 // RTU example show bellow, the library also include 
 // function blocks for modbus tcp.
 
@@ -48,7 +49,8 @@ with this software:
 "mb_read"(unit := 9,
           d_addr := 25,
           data := #resualt_data_2,
-          mb := #mb);		
+          mb := #mb);	
+		  
 ```
 --------------------------------------------------------------
 		  

@@ -1,240 +1,303 @@
-﻿FUNCTION "mb_device_header" : Void
-{ S7_Optimized_Access := 'TRUE' }
-VERSION : 0.1
+﻿FUNCTION "mb_buffer_handler" : Void
+{ S7_Optimized_Access := 'FALSE' }
+VERSION : 1.0
+   VAR_INPUT 
+      action : SInt;
+      buffer_db : DB_ANY;
+   END_VAR
+
    VAR_IN_OUT 
-      device : "udt_mb_device";
-      mb : "udt_mb";
+      data : Variant;
+      bytes : DInt;
+   END_VAR
+
+   VAR_TEMP 
+      "array" : Array[0..300] of Byte;
+      e : Int;
+      c : Int;
    END_VAR
 
 
 BEGIN
-	#device.internal.range_start := #mb.run.qid_cnt + 1;
-	#device.internal.tmp_recv_cnt := #mb.run.exec_cnt;
-	
-	IF #mb.q.qid >= #device.internal.range_start
-	    AND #mb.q.qid <= #device.internal.range_end
-	THEN
-	    IF NOT #device.enable
-	        OR NOT #mb.run.insert AND #mb.stat.timeout
-	    THEN
-	        #mb.run.insert := true;
-	        #mb.q.qid := #device.internal.range_end + 1 ;
-	    END_IF;
-	END_IF;
+	CASE #action OF
+	    1:  // Count bytes             
+	        #bytes := 0;
+	        #e := Serialize(SRC_VARIABLE := #data,
+	                        DEST_ARRAY => #array,
+	                        POS := #bytes);
+	    2:  // Write buffer    
+	        #bytes := 0;
+	        #e := Serialize(SRC_VARIABLE := #data,
+	                        DEST_ARRAY => #array,
+	                        POS := #bytes);
+	        FOR #c := 0 TO #bytes - 1 DO
+	            POKE(area := 16#84,
+	                 dbNumber := #buffer_db,
+	                 byteOffset := #c,
+	                 value := #array[#c]);
+	        END_FOR;
+	    3:  // Read buffer        
+	        IF #bytes = 0 THEN
+	            #bytes := 0;
+	            #e := Serialize(SRC_VARIABLE := #data,
+	                            DEST_ARRAY => #array,
+	                            POS := #bytes);
+	        END_IF;
+	        FOR #c := 0 TO #bytes - 1 DO
+	            #array[#c] := PEEK(area := 16#84,
+	                               dbNumber := #buffer_db,
+	                               byteOffset := #c);
+	        END_FOR;
+	        #bytes := 0;
+	        #e := Deserialize(SRC_ARRAY := #array,
+	                          DEST_VARIABLE => #data,
+	                          POS := #bytes);
+	END_CASE;
 END_FUNCTION
 
 FUNCTION "mb_query" : Void
 { S7_Optimized_Access := 'TRUE' }
-VERSION : 0.1
+VERSION : 1.0
    VAR_INPUT 
       unit : USInt;   // Device addr. (0 to 247)
       "fc" : USInt;   // Function code: 1,2,3,4,5,6,15,16. (siemens mode shifted to 200 - 202)
-      d_addr : UDInt;   // Addr. of register. (raw telegram value)
-      d_len : UInt;   // 0=Auto detect, based on the array size of  data.
+      d_addr : UDInt;   // Data addr. (raw telegram value, 0-65535)
+      d_len : UInt;   // 0=>Auto detect
    END_VAR
 
    VAR_IN_OUT 
-      data : Variant;   // word, int, uint or array of same datatypes.
+      data : Variant;   // Bytes and bools has to add up to whole word(s)
       mb : "udt_mb";
    END_VAR
 
    VAR_TEMP 
       c : Int;
       e : Int;
-      tmp_len : UInt;
-      "word" : Word;
-      "int" : Int;
-      "uint" : UInt;
+      tmp_len : DInt;
+      bytes : DInt;
    END_VAR
 
 
 BEGIN
 	// Lightweight Modbus Abstraction Layer
-	// Atuor:   Ola Bjørnli
-	// Version: 0.1-alptha_7
-	// License: GPLv2, MIT (pick the one of your need)
-	// Web:     http://mb.sn7.no, http://github.com/olab84/sn7mb 
+	// Atuor:    Ola Bjørnli
+	// Version:  0.1-alptha_9
+	// License:  GPLv2, MIT (pick the one of your need)
+	// Web:      http://mb.sn7.no,
+	//           http://github.com/olab84/sn7mb
 	
 	#mb.query_above.done := false;
-	#mb.query_above.err := false;
+	#mb.query_above.error := false;
 	#mb.query_above.insert := false;
 	#mb.run.qid_cnt := #mb.run.qid_cnt + 1;
-	if #mb.run.qid_cnt <> #mb.q.qid then return; end_if;
+	IF #mb.run.qid_cnt <> #mb.q.qid THEN RETURN; END_IF;
 	
-	#tmp_len := SEL(G := #d_len = 0, IN0 := #d_len,
-	    IN1 := MAX(IN1 := 1, IN2 := UDINT_TO_UINT(CountOfElements(#data))));
-	if #mb.run.insert then
-	    case #fc of
-	            (*    
+	IF #d_len = 0 AND #mb.options.buffer_handler THEN // auto
+	    "mb_buffer_handler"(action := 1, // count
+	                        buffer_db := 0,
+	                        data := #data,
+	                        bytes := #bytes );
+	    CASE #fc OF
+	        1,2,5,15: #tmp_len := SHL(IN:=#bytes, N:=3); 
+	        3,4,6,16: #tmp_len := SHR(IN:=#bytes, N:=1); 
+	    END_CASE;
+	ELSE
+	    #tmp_len := #d_len;
+	END_IF;
+	 
+	IF #mb.run.insert THEN
+	    CASE #fc OF
 	        1:  // Read output bits 
-	            #mb.runtime.q.mode := 0;
-	            #mb.runtime.q.data_addr := 1 + #register;
+	            #mb.run.mode := 0;
+	            #mb.run.data_addr := 1 + #d_addr;
 	        2:  // Read input bits
-	            #mb.runtime.q.mode := 0;
-	            #mb.runtime.q.data_addr := 10001 + #register;
-	            *)
+	            #mb.run.mode := 0;
+	            #mb.run.data_addr := 10001 + #d_addr;
 	        3:  // Read holding reg.
 	            #mb.run.mode := 0;
 	            #mb.run.data_addr := 400001 + #d_addr;
 	        4:  // Read input word
 	            #mb.run.mode := 0;
 	            #mb.run.data_addr := 30001 + #d_addr;
-	            (*
 	        5:  // Writing a single output bit
-	            #mb.runtime.q.mode := 1;
-	            #mb.runtime.q.data_addr := 1 + #d_addr;
-	            *)
+	            #mb.run.mode := 1;
+	            #mb.run.data_addr := 1 + #d_addr;
 	        6:  // Writing a single holding register
 	            #mb.run.mode := 1;
 	            #mb.run.data_addr := 400001 + #d_addr;
-	            (*    
 	        15: // Writing multiple output bits
-	            #mb.runtime.q.mode := 2;
-	            #mb.runtime.q.data_addr := 1 + #register;
-	            *)
+	            #mb.run.mode := 2;
+	            #mb.run.data_addr := 1 + #d_addr;
 	        16: // Writing multiple holding registers
 	            #mb.run.mode := 2;
 	            #mb.run.data_addr := 400001 + #d_addr;
-	            "d".a2 := "d".a2 + 1;
-	        200..202 : // Siemens mode: 200-202 replace 0-2
+	        200..202: // Siemens mode: 200-202 replaces 0-2
 	            #mb.run.mode := #fc - 200;
 	            #mb.run.data_addr := #d_addr;
-	    end_case;
+	    END_CASE;
 	    #mb.q.unit := #unit;
 	    #mb.q.fc := #fc;
 	    #mb.q.d_addr := #d_addr;
-	    #mb.q.d_len := #tmp_len;
-	    if #mb.run.mode = 1 or #mb.run.mode = 2 then
-	        "d".a3 := "d".a3 + 1;
-	        for #c := 0 to UINT_TO_INT(#mb.q.d_len) - 1 do
-	            "d".a4 := "d".a4 + 1;
-	            if TypeOfElements(#data) = Word then
-	                "d".a5 := "d".a5 + 1;
-	            #e := MOVE_BLK_VARIANT(SRC := #data, SRC_INDEX := #c,
-	                    COUNT := 1, DEST => #word, DEST_INDEX := 0);
-	            elsif TypeOfElements(#data) = UInt then
-	                #e := MOVE_BLK_VARIANT(SRC := #data, SRC_INDEX := #c,
-	                    COUNT := 1, DEST => #uint, DEST_INDEX := 0);
-	                #word := UINT_TO_WORD(#uint);
-	            elsif TypeOfElements(#data) = Int then
-	                #e := MOVE_BLK_VARIANT(SRC := #data, SRC_INDEX := #c,
-	                    COUNT := 1, DEST => #int, DEST_INDEX := 0);
-	                #word := INT_TO_WORD(#int);
-	            end_if;
-	            "d".a8 := #e;
-	            "d".a6 := #c;
-	            "d".a7 := #word;
-	            POKE(area := 16#84, dbNumber := #mb.const.buffer,
-	                 byteOffset := #c * 2,
-	                 value := WORD_TO_BYTE(SHR(IN := #word, N := 8)));
-	            POKE(area := 16#84, dbNumber := #mb.const.buffer,
-	                 byteOffset := #c * 2 + 1,
-	                 value := WORD_TO_BYTE(#word));
-	        end_for;
-	    end_if;
+	    #mb.q.d_len := DINT_TO_UINT( #tmp_len);
+	    IF (#mb.run.mode = 1 OR #mb.run.mode = 2)
+	        AND #mb.options.buffer_handler
+	    THEN
+	        "mb_buffer_handler"(
+	            action := 2,
+	            buffer_db := #mb.const.buffer_db,
+	            data := #data,
+	            bytes := #bytes);
+	    END_IF;
 	    #mb.run.insert := false;
 	    #mb.q.next := #mb.q.qid + 1;
-	    #mb.query_above.insert := true;
+	    #mb.query_above.insert := false;
 	    
-	elsif #mb.stat.done
-	    and #mb.q.unit = #unit
-	    and #mb.q.fc = #fc
-	    and #mb.q.d_addr = #d_addr
-	    and #mb.q.d_len = #tmp_len
-	then
-	    if #mb.run.mode = 0 then
-	        for #c := 0 to UINT_TO_INT(#mb.q.d_len) - 1 do
-	            #word := PEEK_WORD(area := 16#84,
-	                dbNumber := #mb.const.buffer, byteOffset := #c * 2);
-	            if TypeOfElements(#data) = Word then
-	                #e := MOVE_BLK_VARIANT(SRC := #word,
-	                    SRC_INDEX := 0, COUNT := 1, DEST => #data, DEST_INDEX := #c);
-	            elsif TypeOfElements(#data) = UInt then
-	                #e := MOVE_BLK_VARIANT(SRC := WORD_TO_UINT(#word),
-	                    SRC_INDEX := 0, COUNT := 1, DEST => #data, DEST_INDEX := #c);
-	            elsif TypeOfElements(#data) = Int then
-	                #e := MOVE_BLK_VARIANT(SRC := WORD_TO_INT(#word),
-	                    SRC_INDEX := 0, COUNT := 1, DEST => #data, DEST_INDEX := #c);
-	            end_if;
-	        end_for;
-	    end_if;
+	ELSIF #mb.status.done
+	    AND #mb.q.unit = #unit
+	    AND #mb.q.fc = #fc
+	    AND #mb.q.d_addr = #d_addr
+	    AND #mb.q.d_len = #tmp_len
+	THEN
+	    IF #mb.run.mode = 0 AND #mb.options.buffer_handler THEN
+	        "mb_buffer_handler"(
+	            action := 3,
+	            buffer_db := #mb.const.buffer_db,
+	            data := #data,
+	            bytes := #bytes );
+	    END_IF;
 	    #mb.query_above.done := true;
 	    
-	elsif #mb.stat.err then
-	    #mb.query_above.err := true;
-	end_if;
+	ELSIF #mb.status.error THEN
+	    #mb.query_above.error := true;
+	END_IF;
 	
-	if #mb.query_above.done or #mb.query_above.err then
+	IF #mb.query_above.done OR #mb.query_above.error THEN
 	    #mb.run.insert := true;
 	    #mb.run.exec_cnt := #mb.run.exec_cnt + 1;
 	    #mb.q.qid := #mb.q.next;
-	end_if;
+	END_IF;
+	#mb.options.buffer_handler := true;
+	
 END_FUNCTION
 
-FUNCTION "mb_change_datatype" : Void
-{ S7_Optimized_Access := 'FALSE' }
-VERSION : 0.1
+FUNCTION "mb_read" : Void
+TITLE = Read holding registers
+{ S7_Optimized_Access := 'TRUE' }
+VERSION : 1.0
+   VAR_INPUT 
+      unit : USInt;   // Device addr. (0 to 247)
+      d_addr : UInt;   // Data addr. (raw telegram value, 0-65535)
+   END_VAR
+
    VAR_IN_OUT 
-      in : Variant;
-      out : Variant;
+      data : Variant;   // Bytes and bools has to add up to whole word(s)
+      mb : "udt_mb";
    END_VAR
 
    VAR_TEMP 
-      tmp : Array[0..7] of Byte;
-      pos : DInt;
-      err : Int;
+      bytes : DInt;
+      len : UInt;
    END_VAR
 
 
 BEGIN
-	#err := Serialize(SRC_VARIABLE := #in, DEST_ARRAY => #tmp, POS := #pos);
-	#pos := 0;
-	#err := Deserialize(SRC_ARRAY := #tmp, DEST_VARIABLE => #out, POS := #pos);
+	IF #mb.run.qid_cnt + 1 = #mb.q.qid THEN
+	    "mb_buffer_handler"(
+	        action := 1, // count
+	        buffer_db := 0,
+	        data := #data,
+	        bytes := #bytes);
+	    #len := DINT_TO_UINT(SHR(IN:= #bytes, N:=1));
+	    #mb.options.buffer_handler := false;
+	END_IF;
 	
+	"mb_query"(unit := #unit,
+	           fc := 3, // read holding reg.
+	           d_addr := UINT_TO_UDINT(#d_addr),
+	           d_len := #len, 
+	           data := #data,
+	           mb := #mb );
+	
+	IF #mb.query_above.done THEN
+	    "mb_buffer_handler"(
+	        action := 3, // read
+	        buffer_db := #mb.const.buffer_db,
+	        data := #data, 
+	        bytes := #bytes );
+	END_IF;
 END_FUNCTION
 
 FUNCTION "mb_device_footer" : Void
 { S7_Optimized_Access := 'TRUE' }
-VERSION : 0.1
+VERSION : 1.0
    VAR_IN_OUT 
       device : "udt_mb_device";
       mb : "udt_mb";
    END_VAR
 
    VAR_TEMP 
-      _dtl {OriginalPartName := 'DTL'; LibVersion := '1.0'} : DTL;
       e : Int;
+      direct_err : Bool;
    END_VAR
 
 
 BEGIN
-	#device.internal.range_end := #mb.run.qid_cnt;
+	#device.internal.range_end_qid := #mb.run.qid_cnt;
 	
-	IF #mb.run.exec_cnt - #device.internal.tmp_recv_cnt > 0 THEN
-	    #e := RD_LOC_T(#_dtl);
-	    IF #mb.stat.done THEN
+	IF #mb.run.exec_cnt - #device.internal.tmp_exec_cnt > 0 THEN
+	    IF #mb.status.done THEN
 	        #device.log.done_cnt := #device.log.done_cnt + 1;
-	        #device.log.done_dtl := #_dtl;
+	        #e := RD_LOC_T(#device.log.done_dtl);
 	        #device.internal.err_cnt := 0;
-	    ELSIF #mb.stat.err THEN
+	    ELSIF #mb.status.error THEN
 	        #device.log.err_cnt := #device.log.err_cnt + 1;
-	        #device.log.err_dtl := #_dtl;
-	        #device.log.err_status := #mb.stat.status;
+	        #e := RD_LOC_T(#device.log.err_dtl);
+	        #device.log.err_status := #mb.status.status;
 	        #device.log.err_d_addr := #mb.q.d_addr ;
 	        #device.internal.err_cnt := MIN(
-	            IN1 := #device.internal.err_cnt + 1, IN2 := 255 );
+	            IN1 := #device.internal.err_cnt + 1,
+	            IN2 := 250 );
+	        #direct_err := NOT #mb.status.timeout;
 	    END_IF;
 	END_IF;
 	
-	#device.q.err := #device.enable AND (
+	#device.qError := #device.enable AND (
 	    #device.internal.err_cnt > #device.config.max_err
-	    OR false
+	    OR #direct_err
 	);
+END_FUNCTION
+
+FUNCTION "mb_device_header" : Void
+{ S7_Optimized_Access := 'TRUE' }
+VERSION : 1.0
+   VAR_IN_OUT 
+      device : "udt_mb_device";
+      mb : "udt_mb";
+   END_VAR
+
+
+BEGIN
+	#device.internal.range_start_qid := #mb.run.qid_cnt + 1;
+	#device.internal.tmp_exec_cnt := #mb.run.exec_cnt;
+	
+	IF #mb.q.qid >= #device.internal.range_start_qid
+	    AND #mb.q.qid <= #device.internal.range_end_qid
+	THEN
+	    IF NOT #device.enable
+	        OR NOT #mb.run.insert AND #mb.status.timeout
+	    THEN
+	        #mb.run.insert := true;
+	        #mb.q.qid := #device.internal.range_end_qid + 1;
+	        #device.internal.err_cnt := MIN(
+	            IN1 := #device.internal.err_cnt + 1,
+	            IN2 := 255);
+	    END_IF;
+	END_IF;
 END_FUNCTION
 
 FUNCTION_BLOCK "mb_rtu"
 { S7_Optimized_Access := 'TRUE' }
-VERSION : 0.1
+VERSION : 1.0
    VAR_INPUT 
       hardware_id : PORT;
       baud : UDInt := 9600;
@@ -257,92 +320,47 @@ VERSION : 0.1
 BEGIN
 	#mb.const.app := false;
 	
-	#comm_load(REQ := NOT #comm_load.DONE AND NOT #master.BUSY,
+	#comm_load(REQ := NOT #comm_load.DONE
+	                AND NOT #master.BUSY,
 	           "PORT" := #hardware_id,
 	           BAUD := #baud,
-	           PARITY := SEL(G := #parity, IN0 := 0, IN1 := 2),
+	           PARITY := SEL(G := #parity,
+	                         IN0 := 0, IN1 := 2),
 	           RESP_TO := TIME_TO_UINT( #timeout ),
 	           MB_DB := #master );
 	
-	#master(REQ := #comm_load.DONE AND NOT #master.BUSY AND NOT #mb.run.insert,
+	#master(REQ := #comm_load.DONE
+	            AND NOT #master.BUSY
+	            AND NOT #mb.run.insert,
 	        MB_ADDR := #mb.q.unit,
 	        MODE := #mb.run.mode,
 	        DATA_ADDR := #mb.run.data_addr,
 	        DATA_LEN := #mb.q.d_len,
-	        DONE => #mb.stat.done,
-	        ERROR => #mb.stat.err,
-	        STATUS => #mb.stat.status,
+	        DONE => #mb.status.done,
+	        ERROR => #mb.status.error,
+	        STATUS => #mb.status.status,
 	        DATA_PTR := #buffer_variant );
 	
-	#mb.stat.timeout := #master.ERROR AND #master.STATUS = 16#80C8;
+	#mb.status.timeout :=
+	#master.ERROR AND #master.STATUS = 16#80C8;
 	// ------------------------
-	#mb.const.buffer := #buffer_db_any; // VARIANT_TO_DB_ANY(in := #buffer_variant, err => #err);
-	IF #mb.q.qid > #mb.run.qid_cnt THEN #mb.q.qid := 1; END_IF;
-	#mb.run.qid_cnt := 0;
-	
-END_FUNCTION_BLOCK
-
-FUNCTION "mb_read" : Void
-{ S7_Optimized_Access := 'TRUE' }
-VERSION : 0.1
-//Read a dword, a Real or another 4 bytes datatype.
-   VAR_INPUT 
-      unit : USInt;
-      d_addr : UInt;
-   END_VAR
-
-   VAR_IN_OUT 
-      data : Variant;
-      mb : "udt_mb";
-   END_VAR
-
-   VAR_TEMP 
-      tmp_array : Array[1..2] of Word;
-      tmp_dword : DWord;
-      e : Int;
-   END_VAR
-
-
-BEGIN
-	IF TypeOfElements(#data) = Word OR TypeOfElements(#data) = Int
-	    OR TypeOfElements(#data) = UInt
-	THEN
-	    "mb_query"(unit := #unit,
-	               fc := 3, // holding reg.
-	               d_addr := UINT_TO_UDINT(#d_addr),
-	               d_len := 0, // auto
-	               data := #data,
-	               mb := #mb);
-	ELSE
-	    "mb_query"(unit := #unit,
-	               fc := 3,
-	               d_addr := #d_addr,
-	               d_len := 2,
-	               data := #tmp_array,
-	               mb := #mb);
-	    
-	    IF #mb.query_above.done THEN 
-	        #tmp_dword := SHL_DWORD(IN := #tmp_array[1], N := 16)
-	                        OR WORD_TO_DWORD(#tmp_array[2]);
-	        IF TypeOfElements(#data) = DWord THEN
-	            #e := MOVE_BLK_VARIANT(SRC := #tmp_dword, SRC_INDEX := 0,
-	                        COUNT := 1, DEST_INDEX := 0, DEST => #data);
-	        ELSE
-	            "mb_change_datatype"(in := #tmp_dword, out := #data);
-	        END_IF;
-	    END_IF;
+	#mb.const.buffer_db := #buffer_db_any;
+	#mb.const.queries := #mb.run.qid_cnt;
+	IF #mb.q.qid > #mb.run.qid_cnt THEN
+	    #mb.q.qid := 1;
 	END_IF;
-END_FUNCTION
+	#mb.run.qid_cnt := 0;
+END_FUNCTION_BLOCK
 
 FUNCTION_BLOCK "mb_tcp"
 { S7_Optimized_Access := 'TRUE' }
-VERSION : 0.1
+VERSION : 1.0
    VAR_INPUT 
       interface_id : HW_ANY;
       connection_id : CONN_OUC := 42;
       ip_addr : Array[1..4] of Byte := 192, 168, 1, 0;
       tcp_port : UInt := 502;   // enable even parity
-      timeout : Real := 1.0;   // sec
+      timeout : Real := 0.5;   // sec
       buffer_db_any : DB_ANY;
    END_VAR
 
@@ -354,7 +372,6 @@ VERSION : 0.1
    VAR 
       client {OriginalPartName := 'MB_CLIENT'; LibVersion := '4.0'} : MB_CLIENT;
       tcon_ip_v4 {OriginalPartName := 'TCON_IP_v4'; LibVersion := '1.0'} : TCON_IP_v4;
-      status2 : Word;
    END_VAR
 
 
@@ -367,34 +384,29 @@ BEGIN
 	
 	#client.MB_Unit_ID := #mb.q.unit;
 	#client.Rcv_Timeout := #timeout;
-	#client(REQ := not #client.BUSY and #client.Connected and not #mb.run.insert,
+	#client(REQ := NOT #client.BUSY AND #client.Connected
+	            AND NOT #mb.run.insert,
 	        DISCONNECT := #client.DISCONNECT,
 	        MB_MODE := #mb.run.mode,
 	        MB_DATA_ADDR := #mb.run.data_addr,
 	        MB_DATA_LEN := #mb.q.d_len,
-	        DONE => #mb.stat.done,
-	        ERROR => #mb.stat.err,
-	        STATUS => #mb.stat.status,
+	        DONE => #mb.status.done,
+	        ERROR => #mb.status.error,
+	        STATUS => #mb.status.status,
 	        MB_DATA_PTR := #buffer_variant,
 	        CONNECT := #tcon_ip_v4);
-	
-	if #client.STATUS <> 16#7004 and #client.STATUS <> 16#7005
-	    and #client.STATUS <> 16#8200 
-	then
-	    #status2 := #client.STATUS ;
-	end_if;
 	    
-	#mb.stat.timeout := #client.ERROR and #client.rcv_timer.Q;
+	#mb.status.timeout := #client.ERROR AND #client.rcv_timer.Q;
 	// ------------------------
-	#mb.const.buffer := #buffer_db_any; 
-	if #mb.q.qid > #mb.run.qid_cnt then #mb.q.qid := 1; end_if;
+	#mb.const.buffer_db := #buffer_db_any;
+	#mb.const.queries := #mb.run.qid_cnt;
+	IF #mb.q.qid > #mb.run.qid_cnt THEN #mb.q.qid := 1; END_IF;
 	#mb.run.qid_cnt := 0;
-	
 END_FUNCTION_BLOCK
 
 FUNCTION "mb_query_place_holder" : Void
 { S7_Optimized_Access := 'TRUE' }
-VERSION : 0.1
+VERSION : 1.0
    VAR_IN_OUT 
       mb : "udt_mb";
    END_VAR
@@ -406,98 +418,48 @@ BEGIN
 	IF #mb.run.qid_cnt = #mb.q.qid THEN
 	    #mb.q.qid := #mb.q.qid + 1 ;
 	    #mb.run.insert := true;
+	    #mb.options.buffer_handler := true;
 	END_IF;
 	
-END_FUNCTION
-
-FUNCTION "mb_read_string" : Void
-{ S7_Optimized_Access := 'TRUE' }
-VERSION : 0.1
-//Read a dword, a Real or another 4 bytes datatype.
-   VAR_INPUT 
-      unit : USInt;   // Device addr. (0 to 247)
-      d_addr : UInt;   // Register addr. (without adding 40001)
-   END_VAR
-
-   VAR_IN_OUT 
-      data : String;
-      buffer : Variant;   // array of words
-      mb : "udt_mb";
-   END_VAR
-
-   VAR_TEMP 
-      c : Int;
-      e : Int;
-      "word" : Word;
-   END_VAR
-
-
-BEGIN
-	"mb_query"(unit := #unit,
-	           fc := 3,
-	           d_addr := #d_addr,
-	           d_len := 0,
-	           data := #buffer,
-	           mb := #mb);
-	
-	IF #mb.query_above.done THEN
-	    FOR #c := 0 TO UDINT_TO_INT(CountOfElements(#buffer)) - 1 DO
-	        #e := MOVE_BLK_VARIANT(SRC := #buffer, SRC_INDEX := #c,
-	                               COUNT := 1, DEST => #word, DEST_INDEX := 0);
-	        #data[#c * 2 + 1] := WORD_TO_BYTE(#word);
-	        #data[#c * 2 + 2] := WORD_TO_BYTE(SHR(IN := #word, N := 8 ));
-	    END_FOR;
-	END_IF;
 END_FUNCTION
 
 FUNCTION "mb_write" : Void
+TITLE = Write holding registers
 { S7_Optimized_Access := 'TRUE' }
-VERSION : 0.1
-//Write a dword, a Real or another 4 bytes datatype.
+VERSION : 1.0
    VAR_INPUT 
       unit : USInt;   // Device addr. (0 to 247)
-      d_addr : UInt;   // Register addr. (without adding 40001)
+      d_addr : UInt;   // Data addr. (raw telegram value, 0-65535)
    END_VAR
 
    VAR_IN_OUT 
-      data : Variant;
+      data : Variant;   // Bytes and bools has to add up to whole word(s)
       mb : "udt_mb";
    END_VAR
 
    VAR_TEMP 
-      tmp_array : Array[1..2] of Word;
-      tmp_dword : DWord;
-      e : Int;
+      bytes : DInt;
+      len : UInt;
    END_VAR
 
 
 BEGIN
-	IF TypeOfElements(#data) = Word OR TypeOfElements(#data) = Int
-	    OR TypeOfElements(#data) = UInt
-	THEN
-	    "mb_query"(unit := #unit,
-	               fc := 16, // holding reg.
-	               d_addr := UINT_TO_UDINT(#d_addr),
-	               d_len := 0, // auto
-	               data := #data,
-	               mb := #mb);
-	ELSE
-	    IF #mb.q.qid + 1 = #mb.run.qid_cnt THEN
-	        IF TypeOfElements(#data) = DWord THEN
-	            #e := MOVE_BLK_VARIANT(SRC := #data, COUNT := 1,
-	                    SRC_INDEX := 0, DEST_INDEX := 0, DEST => #tmp_dword);
-	        ELSE
-	            "mb_change_datatype"(in := #data, out := #tmp_dword);
-	        END_IF;
-	        #tmp_array[1] := DWORD_TO_WORD(SHR(IN := #tmp_dword, N := 16));
-	        #tmp_array[2] := DWORD_TO_WORD(#tmp_dword);
-	    END_IF;
-	    "mb_query"(unit := #unit,
-	               fc := 16,
-	               d_addr := #d_addr,
-	               d_len := 2,
-	               data := #tmp_array,
-	               mb := #mb);
+	IF #mb.run.qid_cnt + 1 = #mb.q.qid THEN
+	    "mb_buffer_handler"(
+	        action := 2, // write
+	        buffer_db := 0,
+	        data := #data,
+	        bytes := #bytes);
+	    #len := DINT_TO_UINT(SHR(IN:=#bytes, N:=1));
+	    #mb.options.buffer_handler := false;
 	END_IF;
+	
+	"mb_query"(unit := #unit,
+	           fc := 16, // write holding reg.
+	           d_addr := UINT_TO_UDINT(#d_addr),
+	           d_len := #len,
+	           data := #data,
+	           mb := #mb);
+	
 END_FUNCTION
 

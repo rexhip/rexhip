@@ -1,0 +1,254 @@
+﻿FUNCTION_BLOCK "novus_tht"
+{ S7_Optimized_Access := 'TRUE' }
+VERSION : 0.1
+   VAR_INPUT 
+      unit : USInt;
+   END_VAR
+
+   VAR_OUTPUT 
+      temperature : Int;
+      humidity : Int;
+   END_VAR
+
+   VAR_IN_OUT 
+      mb : "udt_mb";
+   END_VAR
+
+   VAR 
+      device : "udt_mb_device";
+      serial_number : DWord;
+      raw_values { S7_HMI_Accessible := 'False'; S7_HMI_Visible := 'False'} : Struct
+         temp { S7_HMI_Accessible := 'False'; S7_HMI_Visible := 'False'} : Int;
+         hum { S7_HMI_Accessible := 'False'; S7_HMI_Visible := 'False'} : Int;
+      END_STRUCT;
+   END_VAR
+
+
+BEGIN
+	// Novus - RHT (Temperature transmitter)
+	
+	// http://www.novusautomation.com/downloads/Arquivos/v10x_b_manual_rht_wm-dm-p10_485_lcd_%20english.pdf
+	
+	"mb_device_header"(device := #device, mb := #mb);
+	
+	"mb_read"(unit := #unit,
+	          d_addr := 7,
+	          data := #raw_values,
+	          mb := #mb);
+	
+	"mb_read"(unit := #unit,
+	          d_addr := 0,
+	          data := #serial_number,
+	          mb := #mb);
+	
+	IF #device.qError THEN
+	    #serial_number := 0;
+	    #raw_values.temp := 0;
+	    #raw_values.hum := 0;
+	END_IF;
+	
+	#temperature := #raw_values.temp / 10;
+	#humidity := #raw_values.hum / 10;
+	
+	"mb_device_footer"(device := #device, mb := #mb);
+END_FUNCTION_BLOCK
+
+DATA_BLOCK "buffer_rtu"
+{ S7_Optimized_Access := 'FALSE' }
+VERSION : 0.1
+NON_RETAIN
+   STRUCT 
+      "array" : Array[0..125] of Word;
+   END_STRUCT;
+
+
+BEGIN
+
+END_DATA_BLOCK
+
+DATA_BLOCK "buffer_tcp"
+{ S7_Optimized_Access := 'FALSE' }
+VERSION : 0.1
+NON_RETAIN
+   STRUCT 
+      "array" : Array[0..125] of Word;
+   END_STRUCT;
+
+
+BEGIN
+
+END_DATA_BLOCK
+
+FUNCTION_BLOCK "abb_aquaMaster_3"
+{ S7_Optimized_Access := 'TRUE' }
+VERSION : 0.1
+   VAR_INPUT 
+      unit : USInt;
+   END_VAR
+
+   VAR_IN_OUT 
+      mb : "udt_mb";
+   END_VAR
+
+   VAR 
+      device : "udt_mb_device";
+      flow : Real;
+      pressure : Real;
+      totaliser : Struct
+         fwd : DWord;
+         rev : DWord;
+         net : DWord;
+      END_STRUCT;
+   END_VAR
+
+
+BEGIN
+	// ABB - AquaMaster 3 - Electromagnetic flowmeter
+	
+	// COI/FET2XX/MOD/TBL–EN
+	// https://library.e.abb.com/public/91eead459bb0d349c12577fc0033d2b5/COI_FET2XX_MOD_TBL-EN.pdf
+	
+	// Code is't tested !
+	
+	"mb_device_header"(device := #device, mb := #mb);
+	
+	"mb_query"(unit := #unit,
+	           fc := 4, // input registers
+	           d_addr := 5017,
+	           d_len := 2,
+	           data := #flow,
+	           mb := #mb);
+	
+	"mb_query"(unit := #unit,
+	           fc := 4,  // input registers
+	           d_addr := 5025,
+	           d_len := 2,
+	           data := #pressure,
+	           mb := #mb);
+	
+	"mb_read"(unit := #unit,
+	          d_addr := 12003,  // holding register
+	          data := #totaliser,
+	          mb := #mb);
+	
+	"mb_device_footer"(device := #device, mb := #mb);
+END_FUNCTION_BLOCK
+
+FUNCTION_BLOCK "tcp_example_Siemens_PAC3200"
+{ S7_Optimized_Access := 'TRUE' }
+VERSION : 0.1
+   VAR 
+      mb_tcp : "mb_tcp";
+      mb { S7_HMI_Accessible := 'False'; S7_HMI_Visible := 'False'} : "udt_mb";
+      current : Struct
+         a : Real;   // unit: A
+         b : Real;   // unit: A
+         c : Real;   // unit: A
+      END_STRUCT;
+      common : Struct
+         frequency : Real;   // unit: hz
+         avg_voltage_Vph_n : Real;   // unit: V
+         avg_voltage_Vph_ph : Real;   // unit: V
+         avg_current : Real;   // unit: A
+         total_apparent_power : Real;   // unit: VA
+         total_active_power : Real;   // unit: W
+      END_STRUCT;
+   END_VAR
+
+
+BEGIN
+	// Siemens - PAC3200
+	// http://w3.siemens.com.br/buildingtechnologies/br/documents/manual-sentron-pac3200.pdf
+	// 3.9.3, page 40
+	
+	#mb_tcp.ip_addr[1] := 192;
+	#mb_tcp.ip_addr[2] := 168;
+	#mb_tcp.ip_addr[3] := 1;
+	#mb_tcp.ip_addr[4] := 2;
+	
+	#mb_tcp(interface_id := "Local~PROFINET_interface_1",
+	        connection_id := 1,
+	        tcp_port := 502,
+	        timeout := 1.0,
+	        buffer_db_any:="buffer_tcp",
+	        buffer_variant := "buffer_tcp",
+	        mb := #mb);
+	
+	// The length of the queries is automaticaly determined.
+	"mb_read"(unit := 1,
+	          d_addr := 13,
+	          data := #current,
+	          mb := #mb);
+	
+	"mb_read"(unit := 1,
+	          d_addr := 55,
+	          data := #common,
+	          mb := #mb );
+	
+END_FUNCTION_BLOCK
+
+FUNCTION_BLOCK "rtu_example"
+{ S7_Optimized_Access := 'TRUE' }
+VERSION : 0.1
+   VAR 
+      mb_rtu : "mb_rtu";
+      mb : "udt_mb";
+      abb_aquaMaster_1 : "abb_aquaMaster_3";
+      abb_aquaMaster_2 : "abb_aquaMaster_3";
+      novus_tht : "novus_tht";
+   END_VAR
+
+
+BEGIN
+	#mb_rtu(hardware_id := "Local~CB_1241_(RS485)",
+	        baud := 9600, // bps 
+	        parity := false, // no parity (ture=>even)
+	        buffer_db_any := "buffer_rtu", // A db where optimized block access is turn off.
+	        buffer_variant := "buffer_rtu", 
+	        mb := #mb);  // A udt that ties the queries to this master block.
+	
+	// open the blocks to see details.
+	
+	#abb_aquaMaster_1(unit := 3, mb := #mb);
+	#abb_aquaMaster_2(unit := 4, mb := #mb);
+	
+	#novus_tht(unit := 7, mb := #mb);
+	
+	
+	
+	
+END_FUNCTION_BLOCK
+
+DATA_BLOCK "rtu_example_DB"
+{ S7_Optimized_Access := 'TRUE' }
+VERSION : 0.1
+NON_RETAIN
+"rtu_example"
+
+BEGIN
+
+END_DATA_BLOCK
+
+DATA_BLOCK "tcp_example_Siemens_PAC3200_DB"
+{ S7_Optimized_Access := 'TRUE' }
+VERSION : 0.1
+NON_RETAIN
+"tcp_example_Siemens_PAC3200"
+
+BEGIN
+
+END_DATA_BLOCK
+
+ORGANIZATION_BLOCK "examples"
+TITLE = "Main Program Sweep (Cycle)"
+{ S7_Optimized_Access := 'TRUE' }
+VERSION : 0.1
+
+BEGIN
+	
+	"rtu_example_DB"();
+	
+	"tcp_example_Siemens_PAC3200_DB"();
+	
+END_ORGANIZATION_BLOCK
+

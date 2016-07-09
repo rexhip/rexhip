@@ -1,16 +1,19 @@
 Lightweight Modbus Abstraction Layer Library.
+
 For Siemens S7-1200 and S7-1500 PLC's.
 
 Author:   Ola Bjørnli
+
 Version:  0.2_beta1
+
 License:  GPLv2, MIT (pick the one of your need)
+
 Web:      http://mb.sn7.no
           http://github.com/olab84/sn7mb
 
 The example bellow illustrate have easy modbus can be done
 with this software:
 
---------------------------------------------------------------
 
 ```
 
@@ -52,7 +55,6 @@ with this software:
           mb := #mb);	
 		  
 ```
---------------------------------------------------------------
 		  
 Just by adding more "mb_read" function, more queries can 
 be included. The library will take care of executing the 

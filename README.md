@@ -17,7 +17,7 @@ The example bellow illustrate have easy modbus can be done with this software:
 #mb_rtu(hardware_id := "Local~CB_1241_(RS485)",
         baud := 9600,
         parity := false,
-        timeout := T#3000ms,
+        timeout := T#300ms,
         buffer_db_any := "buffer",
         buffer_variant := "buffer",
         mb := #mb);

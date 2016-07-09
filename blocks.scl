@@ -79,11 +79,11 @@ VERSION : 1.0
 
 
 BEGIN
-	// Lightweight Modbus Abstraction Layer
-	// Atuor:    Ola Bjørnli
-	// Version:  0.1-alptha_15
+	// Lightweight Modbus Abstraction Layer Library.
+	// Author:   Ola Bjørnli
+	// Version:  0.1-beta_1
 	// License:  GPLv2, MIT (pick the one of your need)
-	// Web:      http://mb.sn7.no,
+	// Web:      http://mb.sn7.no
 	//           http://github.com/olab84/sn7mb
 	
 	#mb.query_above.done := false;

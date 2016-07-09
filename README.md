@@ -10,8 +10,9 @@ Web:      http://mb.sn7.no
 The example bellow illustrate have easy modbus can be done
 with this software:
 
-// --------------------------------------------------------------
+--------------------------------------------------------------
 
+```
 // RTU example show bellow, the library also include 
 // function blocks for modbus tcp.
 
@@ -48,8 +49,8 @@ with this software:
           d_addr := 25,
           data := #resualt_data_2,
           mb := #mb);		
-
-// --------------------------------------------------------------
+```
+--------------------------------------------------------------
 		  
 Just by adding more "mb_read" function, more queries can 
 be included. The library will take care of executing the 

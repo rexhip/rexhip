@@ -1,5 +1,5 @@
 ﻿TYPE "udt_mb"
-VERSION : 0.1
+VERSION : 0.1 
    STRUCT
       q : Struct   // query
          unit : USInt := 1;

@@ -3,7 +3,7 @@ Lightweight Modbus Abstraction Layer Library.
 For Siemens S7-1200 and S7-1500 PLC's.
 
 ```
-
+ 
 Author:   Ola Bjørnli
 Version:  0.2_beta1
 License:  GPLv2, MIT (pick the one of your need)

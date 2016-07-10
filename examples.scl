@@ -3,7 +3,7 @@
 VERSION : 0.1
    VAR_INPUT 
       unit : USInt;
-   END_VAR
+   END_VAR 
 
    VAR_OUTPUT 
       temperature : Int;

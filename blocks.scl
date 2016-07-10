@@ -1,7 +1,7 @@
 ﻿FUNCTION "mb_buffer_handler" : Void
 { S7_Optimized_Access := 'FALSE' }
 VERSION : 1.0
-   VAR_INPUT 
+   VAR_INPUT  
       action : SInt;
       buffer_db : DB_ANY;
    END_VAR

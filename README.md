@@ -7,7 +7,10 @@ License:  GPLv2, MIT (pick the one of your need)
 Web:      http://mb.sn7.no
           http://github.com/olab84/sn7mb
 
-The example bellow illustrate have easy modbus can be done with this software:
+This line is also a separate paragraph, but...
+This line is only separated by a single newline, so it
+
+The example bellow illustrate have easy modbus can be done with this library:
 
 ```
 

@@ -66,6 +66,6 @@ quires with the same device address, until all other queries
 has been executed. Other functionality worth mention, is the
 error log, which is great for debugging.
 
-For S7-1200: firmware version > 4.1.3
+For S7-1200: firmware version >= 4.1.3
 	 
 Download the blocks and the example from github to get started.

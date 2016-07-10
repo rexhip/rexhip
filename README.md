@@ -12,7 +12,7 @@ Web:      http://mb.sn7.no
 
 ```
 
-All though the new plc series from Siemens has built in support for modbus. It's required to build some additional logic to make the queries being executed. This software address that issue, the example bellow illustrate how easy modbus can be done with this library:
+All though the new plc series from Siemens has built in support for modbus. It's required to build some additional logic to make the queries being executed in order. This software address that issue, the example bellow illustrate how easy modbus can be done with this library:
 
 ```
 

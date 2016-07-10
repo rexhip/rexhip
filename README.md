@@ -16,8 +16,8 @@ All though the new plc series from Siemens has built in support for modbus. It's
 
 ```
 
-// RTU example show bellow, the library also include 
-// function blocks for modbus tcp.
+// A modbus RTU example shown bellow, the library also 
+// support modbus tcp.
 
 #mb_rtu(hardware_id := "Local~CB_1241_(RS485)",
         baud := 9600,

@@ -69,3 +69,5 @@ error log, which is great for debugging.
 For S7-1200: firmware version >= 4.1.3
 	 
 Download the blocks and the example from github to get started.
+I you find scl-programming hard, you can of course also use
+lad or fbd.

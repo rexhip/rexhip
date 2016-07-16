@@ -80,7 +80,7 @@ VERSION : 1.0
 BEGIN
 	// Lightweight Modbus Abstraction Layer Library.
 	// Author:   Ola Bjørnli
-	// Version:  0.2-beta_5
+	// Version:  0.2-beta_6
 	// License:  GPLv2, MIT (pick the one of your need)
 	// Web:      http://mb.sn7.no
 	//           http://github.com/olab84/sn7mb
@@ -93,7 +93,7 @@ BEGIN
 	    RETURN;
 	ELSIF #fc = 0 THEN
 	    #mb.run.insert := true;
-	    #mb.q.qid := #mb.q.next;
+	    #mb.q.qid := #mb.q.qid + 1;
 	    #mb.options.buffer_handler := true;
 	    RETURN;
 	END_IF;
@@ -104,19 +104,19 @@ BEGIN
 	                        data := #data,
 	                        bytes := #bytes);
 	    CASE #fc OF
-	        1, 2, 5, 15: #tmp_len := SHL(IN := #bytes, N := 3);
-	        3, 4, 6, 16: #tmp_len := SHR(IN := #bytes, N := 1);
+	        1, 2, 5, 15: #tmp_len := #bytes * 8;
+	        3, 4, 6, 16: #tmp_len := #bytes / 2;
 	        200..202:
 	            CASE #d_addr OF
 	                1..9999, 10001..19999:
-	                    #tmp_len := SHL(IN := #bytes, N := 3);
+	                    #tmp_len := #bytes * 8;
 	                30001..39999, 30001..49999, 400001..465535:
-	                    #tmp_len := SHR(IN := #bytes, N := 1);
+	                    #tmp_len := #bytes / 2;
 	            END_CASE;
 	    END_CASE;
 	ELSE
 	    #tmp_len := #d_len;
-	    #bytes := SHL(IN := #d_len, N := 1); 
+	    #bytes := #d_len * 2;
 	END_IF;
 	
 	IF #mb.run.insert THEN
@@ -159,11 +159,11 @@ BEGIN
 	        "mb_buffer_handler"(
 	            action := 2, // write
 	            buffer_db := #mb.const.buffer_db,
-	            data := #data,
-	            bytes := #bytes);
+	            data := #data ,
+	            bytes := #bytes );
 	    END_IF;
 	    #mb.run.insert := false;
-	    // #mb.q.next := #mb.q.qid + 1 ;
+	    #mb.q.next := #mb.q.qid + 1 ;
 	    #mb.query_above.insert := true;
 	    
 	ELSIF #mb.status.done OR #mb.status.error THEN
@@ -217,28 +217,27 @@ VERSION : 1.0
 
 BEGIN
 	IF #mb.run.qid_cnt + 1 = #mb.q.qid THEN
-	    "mb_buffer_handler"(
-	        action := 1, // count
-	        buffer_db := 0,
-	        data := #data,
-	        bytes := #bytes);
-	    #len := DINT_TO_UINT(SHR(IN:= #bytes, N:=1));
+	    "mb_buffer_handler"(action := 1, // count
+	                        buffer_db := 0,
+	                        data := #data,
+	                        bytes := #bytes);
+	    #len := DINT_TO_UINT(SHR(IN := #bytes, N := 1));
 	    #mb.options.buffer_handler := false;
 	END_IF;
 	
 	"mb_query"(unit := #unit,
 	           fc := 3, // read holding reg.
 	           d_addr := UINT_TO_UDINT(#d_addr),
-	           d_len := #len, 
+	           d_len := #len,
 	           data := #data,
-	           mb := #mb );
+	           mb := #mb);
 	
 	IF #mb.query_above.done THEN
 	    "mb_buffer_handler"(
 	        action := 3, // read
 	        buffer_db := #mb.const.buffer_db,
-	        data := #data, 
-	        bytes := #bytes );
+	        data := #data,
+	        bytes := #bytes);
 	END_IF;
 END_FUNCTION
 
@@ -257,30 +256,29 @@ VERSION : 1.0
 
 
 BEGIN
-	IF #mb.run.exec_cnt <> #device.internal.tmp_exec_cnt THEN
+	IF #mb.run.exec_cnt <> #device.intern.tmp_exec_cnt THEN
 	    IF #mb.status.done THEN
 	        #device.log.done_cnt := #device.log.done_cnt + 1;
 	        #e := RD_LOC_T(#device.log.done_dtl);
-	        #device.internal.err_cnt := 0;
+	        #device.intern.err_cnt := 0;
 	    ELSIF #mb.status.error THEN
 	        #device.log.err_cnt := #device.log.err_cnt + 1;
 	        #e := RD_LOC_T(#device.log.err_dtl);
 	        #device.log.err_status := #mb.status.status;
 	        #device.log.err_d_addr := #mb.q.d_addr ;
-	        #device.internal.err_cnt := MIN(
-	            IN1 := #device.internal.err_cnt + 1,
+	        #device.intern.err_cnt := MIN(
+	            IN1 := #device.intern.err_cnt + 1,
 	            IN2 := 250 );
 	        #direct_err := NOT #mb.status.timeout;
 	    END_IF;
 	END_IF;
 	
 	#device.qError := #device.enable AND (
-	#device.internal.err_cnt > #device.config.max_err
+	#device.intern.err_cnt > #device.config.max_err
 	OR #direct_err );
 	    
-	IF #device.internal.skip THEN
+	IF #device.intern.skip THEN
 	    #mb.q.qid := #mb.run.qid_cnt + 1;
-	    #mb.q.next := #mb.run.qid_cnt + 1;
 	    #mb.run.insert := true;
 	    #mb.options.buffer_handler := true;
 	    #mb.query_above.done := false;
@@ -288,8 +286,8 @@ BEGIN
 	    #mb.query_above.insert := false;
 	END_IF;
 	
-	#device.internal.range_end_qid := #mb.run.qid_cnt;
-	#device.internal.skip := false;
+	#device.intern.range_end_qid := #mb.run.qid_cnt;
+	#device.intern.skip := false;
 END_FUNCTION
 
 FUNCTION "mb_device_header" : Void
@@ -302,27 +300,25 @@ VERSION : 1.0
 
 
 BEGIN
-	#device.internal.tmp_exec_cnt := #mb.run.exec_cnt;
-	#device.internal.skip := false;
+	#device.intern.tmp_exec_cnt := #mb.run.exec_cnt;
+	#device.intern.skip := false;
 	
-	IF #mb.q.qid >= #device.internal.range_start_qid
-	    AND #mb.q.qid <= #device.internal.range_end_qid
+	IF #mb.q.qid >= #device.intern.range_start_qid
+	    AND #mb.q.qid <= #device.intern.range_end_qid
 	    AND (  NOT #mb.run.insert AND #mb.status.timeout
 	        OR NOT #device.enable )
 	THEN
-	    #device.internal.err_cnt := MIN(
-	        IN1 := #device.internal.err_cnt
-	             + BOOL_TO_USINT(#mb.status.timeout),
-	        IN2 := 250 );
-	    #device.internal.skip := true;
 	    #mb.q.qid := 16#fff0;
+	    #device.intern.skip := true;
+	    #device.intern.tmp_exec_cnt := #device.intern.tmp_exec_cnt
+	        + BOOL_TO_UDINT(#mb.status.timeout);
 	END_IF;
 	
 	IF NOT #device.enable THEN
-	    #device.internal.err_cnt := 0;
+	    #device.intern.err_cnt := 0;
 	END_IF;
 	
-	#device.internal.range_start_qid := #mb.run.qid_cnt + 1;
+	#device.intern.range_start_qid := #mb.run.qid_cnt + 1;
 END_FUNCTION
 
 FUNCTION_BLOCK "mb_rtu"
@@ -376,8 +372,6 @@ BEGIN
 	// ------------------------
 	#mb.const.buffer_db := #buffer_db_any;
 	IF #mb.q.qid > #mb.run.qid_cnt THEN #mb.q.qid := 1; END_IF;
-	IF #mb.q.next > #mb.run.qid_cnt THEN #mb.q.next := 1; END_IF;
-	#mb.q.next := #mb.q.next + BOOL_TO_UINT(#mb.q.next = #mb.q.qid);
 	#mb.const.queries := #mb.run.qid_cnt;
 	#mb.run.qid_cnt := 0;
 END_FUNCTION_BLOCK
@@ -430,8 +424,6 @@ BEGIN
 	// ------------------------
 	#mb.const.buffer_db := #buffer_db_any;
 	IF #mb.q.qid > #mb.run.qid_cnt THEN #mb.q.qid := 1; END_IF;
-	IF #mb.q.next > #mb.run.qid_cnt THEN #mb.q.next := 1; END_IF;
-	#mb.q.next := #mb.q.next + BOOL_TO_UINT(#mb.q.next = #mb.q.qid);
 	#mb.const.queries := #mb.run.qid_cnt;
 	#mb.run.qid_cnt := 0;
 END_FUNCTION_BLOCK
@@ -455,7 +447,6 @@ BEGIN
 	    AND #mb.q.qid >= #mb.run.qid_cnt - #n
 	THEN
 	    #mb.q.qid := #mb.run.qid_cnt + 1;
-	    #mb.q.next := #mb.run.qid_cnt + 1;
 	    #mb.run.insert := true;
 	    #mb.options.buffer_handler := true;
 	    
@@ -488,12 +479,11 @@ VERSION : 1.0
 
 BEGIN
 	IF #mb.run.qid_cnt + 1 = #mb.q.qid THEN
-	    "mb_buffer_handler"(
-	        action := 2, // write
-	        buffer_db := 0,
-	        data := #data,
-	        bytes := #bytes);
-	    #len := DINT_TO_UINT(SHR(IN:=#bytes, N:=1));
+	    "mb_buffer_handler"(action := 2, // write
+	                        buffer_db := 0,
+	                        data := #data,
+	                        bytes := #bytes);
+	    #len := DINT_TO_UINT(SHR(IN := #bytes, N := 1));
 	    #mb.options.buffer_handler := false;
 	END_IF;
 	

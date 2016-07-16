@@ -55,7 +55,7 @@ VERSION : 0.1
          err_status : Word;
          err_d_addr : UDInt;
       END_STRUCT;
-      internal : Struct
+      intern : Struct
          range_start_qid : UInt;
          range_end_qid : UInt;
          err_cnt : USInt;   // repeating errors

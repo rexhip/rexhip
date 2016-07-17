@@ -80,7 +80,7 @@ VERSION : 1.0
 BEGIN
 	// Lightweight Modbus Abstraction Layer Library.
 	// Author:   Ola Bjørnli
-	// Version:  0.2-beta_7
+	// Version:  0.2-beta_8
 	// License:  GPLv2, MIT (pick the one of your need)
 	// Web:      http://mb.sn7.no
 	//           http://github.com/olab84/sn7mb
@@ -186,6 +186,7 @@ BEGIN
 	        ELSIF #mb.status.error THEN
 	            #mb.query_above.error := true;
 	        END_IF;
+	        #mb.run.exec_d_addr := #d_addr;
 	        #mb.run.exec_cnt := #mb.run.exec_cnt + 1;
 	    END_IF;
 	    #mb.run.insert := true;
@@ -265,7 +266,7 @@ BEGIN
 	        #device.log.err_cnt := #device.log.err_cnt + 1;
 	        #e := RD_LOC_T(#device.log.err_dtl);
 	        #device.log.err_status := #mb.status.status;
-	        #device.log.err_d_addr := #mb.q.d_addr ;
+	        #device.log.err_d_addr := #mb.run.exec_d_addr;
 	        #device.intern.err_cnt := MIN(
 	            IN1 := #device.intern.err_cnt + 1,
 	            IN2 := 250 );
@@ -273,9 +274,11 @@ BEGIN
 	    END_IF;
 	END_IF;
 	
-	#device.qError := #device.enable AND (
-	#device.intern.err_cnt > #device.config.max_err
-	OR #direct_err );
+	IF NOT #device.enable THEN
+	    #device.intern.err_cnt := 0;
+	END_IF;
+	#device.qError := #direct_err OR
+	#device.intern.err_cnt > #device.config.max_err;
 	    
 	IF #device.intern.skip THEN
 	    #mb.q.qid := #mb.run.qid_cnt + 1;
@@ -312,10 +315,6 @@ BEGIN
 	    #device.intern.skip := true;
 	    #device.intern.tmp_exec_cnt := #device.intern.tmp_exec_cnt
 	        + BOOL_TO_UDINT(#mb.status.timeout);
-	END_IF;
-	
-	IF NOT #device.enable THEN
-	    #device.intern.err_cnt := 0;
 	END_IF;
 	
 	#device.intern.range_start_qid := #mb.run.qid_cnt + 1;

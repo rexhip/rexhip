@@ -18,6 +18,7 @@ VERSION : 0.1
          qid_cnt : UInt;   // query id cnt, one cycle each plc-scan.
          insert : Bool := true;   // insert query param
          exec_cnt : UDInt;   // Execute cnt.
+         exec_d_addr : UDInt;
       END_STRUCT;
       status : Struct
          done : Bool;

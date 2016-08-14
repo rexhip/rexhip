@@ -1,0 +1,345 @@
+﻿DATA_BLOCK "modbus_rtu_buffer"
+{ S7_Optimized_Access := 'FALSE' }
+VERSION : 0.1
+NON_RETAIN
+   STRUCT 
+      buffer : Array[0..125] of Word;
+   END_STRUCT;
+
+
+BEGIN
+
+END_DATA_BLOCK
+
+DATA_BLOCK "modbus_tcp_buffer"
+{ S7_Optimized_Access := 'FALSE' }
+VERSION : 0.1
+NON_RETAIN
+   STRUCT 
+      buffer : Array[0..125] of Word;
+   END_STRUCT;
+
+
+BEGIN
+
+END_DATA_BLOCK
+
+FUNCTION_BLOCK "modbus_device_start_example"
+{ S7_Optimized_Access := 'TRUE' }
+VERSION : 0.1
+   VAR_INPUT 
+      unit : USInt := 1;
+   END_VAR
+
+   VAR_IN_OUT 
+      mb : "udt_mb";
+   END_VAR
+
+   VAR 
+      device : "udt_mb_device";
+      query_1 : Struct
+         word_1 : Word;
+         word_2 : Word;
+      END_STRUCT;
+      query_2 : Struct
+         word_1 : Bool;
+         word_2 : Bool;
+      END_STRUCT;
+      query_3 : Word;
+   END_VAR
+
+
+BEGIN
+	"mb_device_header"(device := #device, mb := #mb);
+	
+	"mb_query"(unit := #unit,
+	           fc := "mb_#".read_holding_reg,
+	           d_addr := 0,
+	           d_len := "mb_#".auto_length,
+	           data := #query_1,
+	           mb := #mb);
+	
+	"mb_query"(unit := #unit,
+	           fc := "mb_#".read_input_reg,
+	           d_addr := 0,
+	           d_len := "mb_#".auto_length,
+	           data := #query_2,
+	           mb := #mb);
+	
+	"mb_query"(unit := #unit,
+	           fc := "mb_#".read_input_bits,
+	           d_addr := 0,
+	           d_len := "mb_#".auto_length,
+	           data := #query_3,
+	           mb := #mb);
+	
+	"mb_device_footer"(device := #device, mb := #mb);
+END_FUNCTION_BLOCK
+
+FUNCTION_BLOCK "modbus_tcp_start_example"
+{ S7_Optimized_Access := 'TRUE' }
+VERSION : 0.1
+   VAR 
+      mb : "udt_mb";
+      mb_tcp_controller : "mb_tcp_controller";
+      device_start_example : "modbus_device_start_example";
+   END_VAR
+
+
+BEGIN
+	#mb_tcp_controller.ip_addr[1] := 192;
+	#mb_tcp_controller.ip_addr[2] := 168;
+	#mb_tcp_controller.ip_addr[3] := 1;
+	#mb_tcp_controller.ip_addr[4] := 2;
+	
+	#mb_tcp_controller(
+	    interface := "Local~PROFINET_interface_1",
+	    conn_id := 123,
+	    tcp_port := 502,
+	    timeout := 2.0,
+	    buffer_db_any := "modbus_tcp_buffer",
+	    buffer_variant := "modbus_tcp_buffer",
+	    mb := #mb);
+	
+	#device_start_example(unit := 1, mb := #mb);
+	
+END_FUNCTION_BLOCK
+
+FUNCTION_BLOCK "modbus_rtu_start_example"
+{ S7_Optimized_Access := 'TRUE' }
+VERSION : 0.1
+   VAR 
+      mb : "udt_mb";
+      mb_rtu_controller : "mb_rtu_controller";
+      device_start_example_1 : "modbus_device_start_example";
+      device_start_example_2 : "modbus_device_start_example";
+      device_start_example_3 : "modbus_device_start_example";
+   END_VAR
+
+
+BEGIN
+	#mb_rtu_controller(
+	    harware := "Local~CB_1241",
+	    baud := 9600,
+	    parity := true,
+	    timeout := T#500ms,
+	    buffer_db_any := "modbus_rtu_buffer",
+	    buffer_variant := "modbus_rtu_buffer",
+	    mb := #mb);
+	
+	#device_start_example_1(unit := 1, mb := #mb);
+	#device_start_example_2(unit := 2, mb := #mb);
+	#device_start_example_3(unit := 3, mb := #mb);
+END_FUNCTION_BLOCK
+
+DATA_BLOCK "modbus_rtu_start_example_DB"
+{ S7_Optimized_Access := 'TRUE' }
+VERSION : 0.1
+NON_RETAIN
+"modbus_rtu_start_example"
+
+BEGIN
+
+END_DATA_BLOCK
+
+DATA_BLOCK "modbus_tcp_start_example_DB"
+{ S7_Optimized_Access := 'TRUE' }
+VERSION : 0.1
+NON_RETAIN
+"modbus_tcp_start_example"
+
+BEGIN
+
+END_DATA_BLOCK
+
+ORGANIZATION_BLOCK "tcp_ob"
+TITLE = "Main Program Sweep (Cycle)"
+{ S7_Optimized_Access := 'TRUE' }
+VERSION : 0.1
+
+BEGIN
+	
+	"modbus_tcp_start_example_DB"();
+	
+	
+END_ORGANIZATION_BLOCK
+
+ORGANIZATION_BLOCK "rtu_ob"
+TITLE = "Main Program Sweep (Cycle)"
+{ S7_Optimized_Access := 'TRUE' }
+VERSION : 0.1
+
+BEGIN
+	
+	 "modbus_rtu_start_example_DB"();
+	
+END_ORGANIZATION_BLOCK
+
+FUNCTION_BLOCK "example_abb_aquaMaster_3"
+{ S7_Optimized_Access := 'TRUE' }
+VERSION : 0.1
+   VAR_INPUT 
+      unit : USInt;
+   END_VAR
+
+   VAR_IN_OUT 
+      mb : "udt_mb";
+   END_VAR
+
+   VAR 
+      device : "udt_mb_device";
+      flow : Real;
+      pressure : Real;
+      totaliser : Struct
+         fwd : DWord;
+         rev : DWord;
+         net : DWord;
+      END_STRUCT;
+   END_VAR
+
+
+BEGIN
+	// ABB - AquaMaster 3 - Electromagnetic flowmeter
+	
+	// COI/FET2XX/MOD/TBL–EN
+	// https://library.e.abb.com/public/91eead459bb0d349c12577fc0033d2b5/COI_FET2XX_MOD_TBL-EN.pdf
+	
+	// Example code, not tested !
+	
+	"mb_device_header"(device := #device, mb := #mb);
+	
+	"mb_query"(unit := #unit,
+	           fc := "mb_#".read_input_reg,
+	           d_addr := 5017,
+	           d_len := 2,
+	           data := #flow,
+	           mb := #mb);
+	
+	"mb_query"(unit := #unit,
+	           fc := "mb_#".read_input_reg,
+	           d_addr := 5025,
+	           d_len := 2,
+	           data := #pressure,
+	           mb := #mb);
+	
+	"mb_query"(unit := #unit,
+	           fc := "mb_#".read_holding_reg,
+	           d_addr := 12003,
+	           d_len := "mb_#".auto_length,
+	           data := #totaliser,
+	           mb := #mb);
+	
+	"mb_device_footer"(device := #device, mb := #mb);
+END_FUNCTION_BLOCK
+
+FUNCTION_BLOCK "example_siemens_PAC3200"
+{ S7_Optimized_Access := 'TRUE' }
+VERSION : 0.1
+   VAR_INPUT 
+      unit : USInt;
+   END_VAR
+
+   VAR_IN_OUT 
+      mb : "udt_mb";
+   END_VAR
+
+   VAR 
+      device : "udt_mb_device";
+      current : Struct
+         a : Real;   // unit: A
+         b : Real;   // unit: A
+         c : Real;   // unit: A
+      END_STRUCT;
+      common : Struct
+         frequency : Real;   // unit: hz
+         avg_voltage_Vph_n : Real;   // unit: V
+         avg_voltage_Vph_ph : Real;   // unit: V
+         avg_current : Real;   // unit: A
+         total_apparent_power : Real;   // unit: VA
+         total_active_power : Real;   // unit: W
+      END_STRUCT;
+   END_VAR
+
+
+BEGIN
+	// Siemens - PAC3200
+	// http://w3.siemens.com.br/buildingtechnologies/br/documents/manual-sentron-pac3200.pdf
+	// 3.9.3, page 40
+	
+	"mb_device_header"(device := #device, mb := #mb);
+	
+	"mb_query"(unit := #unit,
+	           fc := "mb_#".read_holding_reg,
+	           d_addr := 13,
+	           d_len := "mb_#".auto_length,
+	           data := #current,
+	           mb := #mb);
+	
+	"mb_query"(unit := #unit,
+	           fc := "mb_#".read_holding_reg,
+	           d_addr := 55,
+	           d_len := "mb_#".auto_length,
+	           data := #common,
+	           mb := #mb);
+	
+	"mb_device_footer"(device := #device, mb := #mb);
+END_FUNCTION_BLOCK
+
+FUNCTION_BLOCK "example_novus_tht"
+{ S7_Optimized_Access := 'TRUE' }
+VERSION : 0.1
+   VAR_INPUT 
+      unit : USInt;
+   END_VAR
+
+   VAR_OUTPUT 
+      temperature : Int;
+      humidity : Int;
+   END_VAR
+
+   VAR_IN_OUT 
+      mb : "udt_mb";
+   END_VAR
+
+   VAR 
+      device : "udt_mb_device";
+      serial_number : DWord;
+      raw_values { S7_HMI_Accessible := 'False'; S7_HMI_Visible := 'False'} : Struct
+         temp { S7_HMI_Accessible := 'False'; S7_HMI_Visible := 'False'} : Int;
+         hum { S7_HMI_Accessible := 'False'; S7_HMI_Visible := 'False'} : Int;
+      END_STRUCT;
+   END_VAR
+
+
+BEGIN
+	// Novus - RHT (Temperature transmitter)
+	
+	// http://www.novusautomation.com/downloads/Arquivos/v10x_b_manual_rht_wm-dm-p10_485_lcd_%20english.pdf
+	
+	"mb_device_header"(device := #device, mb := #mb);
+	
+	"mb_query"(unit := #unit,
+	           fc := "mb_#".read_holding_reg,
+	           d_addr := 7,
+	           d_len := "mb_#".auto_length,
+	           data := #raw_values,
+	           mb := #mb);
+	
+	"mb_query"(unit := #unit,
+	           fc := "mb_#".read_holding_reg,
+	           d_addr := 0,
+	           d_len := "mb_#".auto_length,
+	           data := #serial_number,
+	           mb := #mb);
+	
+	IF #device.qError THEN
+	    #serial_number := 0;
+	    #raw_values.temp := 0;
+	    #raw_values.hum := 0;
+	END_IF;
+	#temperature := #raw_values.temp / 10;
+	#humidity := #raw_values.hum / 10;
+	
+	"mb_device_footer"(device := #device, mb := #mb);
+END_FUNCTION_BLOCK
+

@@ -1,4 +1,74 @@
-﻿FUNCTION "mb_buffer_handler" : Void
+﻿TYPE "udt_mb_device"
+VERSION : 0.1
+   STRUCT
+      enable : Bool := true;
+      qError : Bool;   // outputs
+      config : Struct
+         max_err : USInt := 3;   // max repeating errors before qErr is set
+      END_STRUCT;
+      log : Struct
+         done_cnt : UDInt;
+         done_dtl {OriginalPartName := 'DTL'; LibVersion := '1.0'} : DTL;
+         err_cnt : UDInt;
+         err_dtl {OriginalPartName := 'DTL'; LibVersion := '1.0'} : DTL;
+         err_status : Word;
+         err_d_addr : UDInt;
+      END_STRUCT;
+      intern : Struct
+         range_start_qid : UInt;
+         range_end_qid : UInt;
+         err_cnt : USInt;   // repeating errors
+         tmp_exec_cnt : UDInt;
+         skip : Bool;
+      END_STRUCT;
+   END_STRUCT;
+
+END_TYPE
+
+TYPE "udt_mb"
+VERSION : 0.1
+   STRUCT
+      q : Struct   // query
+         unit : USInt := 1;
+         "fc" : UInt := 3;   // function code
+         d_addr : UDInt;
+         d_len : UInt := 1;
+         qid : UInt := 1;   // query id
+         next : UInt := 1;   // id of next query to be exec.
+         priority : SInt;
+      END_STRUCT;
+      options : Struct
+         buffer_handler : Bool := true;   // start mb_buffer_handler inside mb_query
+      END_STRUCT;
+      run : Struct
+         mode : USInt;
+         data_addr : UDInt;
+         qid_cnt : UInt;   // query id cnt, one cycle each plc-scan.
+         insert : Bool := true;   // insert query param
+         exec_cnt : UDInt;   // Execute cnt.
+         exec_d_addr : UDInt;
+      END_STRUCT;
+      status : Struct
+         done : Bool;
+         error : Bool;
+         timeout : Bool;
+         status : Word;
+      END_STRUCT;
+      "const" : Struct
+         buffer_db : DB_ANY;
+         app : Bool;   // false=>rtu, true=>tcp
+         queries : UInt;   // Number of queries
+      END_STRUCT;
+      query_above : Struct
+         done : Bool;
+         error : Bool;
+         insert : Bool;
+      END_STRUCT;
+   END_STRUCT;
+
+END_TYPE
+
+FUNCTION "mb_buffer_handler" : Void
 { S7_Optimized_Access := 'FALSE' }
 VERSION : 1.0
    VAR_INPUT 
@@ -61,7 +131,7 @@ VERSION : 1.0
       unit : USInt;   // Device addr. (0 to 247)
       "fc" : USInt;   // Function code: 1,2,3,4,5,6,15,16. (siemens mode shifted to 200 - 202)
       d_addr : UDInt;   // Data addr. (raw telegram value, 0-65535)
-      d_len : UInt;   // 0=>Auto detect
+      d_len : UInt;   // Data len. 0=>Auto detect
    END_VAR
 
    VAR_IN_OUT 
@@ -80,8 +150,8 @@ VERSION : 1.0
 BEGIN
 	// Lightweight Modbus Abstraction Layer Library. 
 	// Author:   Ola Bjørnli
-	// Version:  0.2-beta_9
-	// License:  GPLv2, MIT (pick the one of your need)
+	// Version:  0.2-beta_11
+	// License:  MIT or GPLv2
 	// Web:      http://mb.sn7.no
 	//           http://github.com/olab84/sn7mb
 	
@@ -93,7 +163,7 @@ BEGIN
 	    RETURN;
 	ELSIF #fc = 0 THEN
 	    #mb.run.insert := true;
-	    #mb.q.qid := #mb.q.qid + 1;
+	    #mb.q.qid := #mb.q.next + BOOL_TO_UINT(#mb.q.next = #mb.q.qid);
 	    #mb.options.buffer_handler := true;
 	    RETURN;
 	END_IF;
@@ -145,8 +215,11 @@ BEGIN
 	        16: // Writing multiple holding registers
 	            #mb.run.mode := 2;
 	            #mb.run.data_addr := 400001 + #d_addr;
-	        200..202: // Siemens mode: 200-202 replaces 0-2
+	        200..202: // Siemens mode 0-2 replaced by 200-202  
 	            #mb.run.mode := #fc - 200;
+	            #mb.run.data_addr := #d_addr;
+	        ELSE
+	            #mb.run.mode := #fc;
 	            #mb.run.data_addr := #d_addr;
 	    END_CASE;
 	    #mb.q.unit := #unit;
@@ -190,38 +263,49 @@ BEGIN
 	        #mb.run.exec_cnt := #mb.run.exec_cnt + 1;
 	    END_IF;
 	    #mb.run.insert := true;
-	    #mb.q.qid := #mb.q.next;
+	    #mb.q.qid := #mb.q.next + BOOL_TO_UINT(#mb.q.next = #mb.q.qid);
 	END_IF;
 	
 	#mb.options.buffer_handler := true;
 END_FUNCTION
 
-FUNCTION "mb_device_header" : Void
+DATA_BLOCK "mb_#"
 { S7_Optimized_Access := 'TRUE' }
-VERSION : 1.0
-   VAR_IN_OUT 
-      device : "udt_mb_device";
-      mb : "udt_mb";
+VERSION : 0.1
+NON_RETAIN
+   VAR 
+      auto_length { S7_HMI_Accessible := 'False'; S7_HMI_Visible := 'False'} : UInt;
+      skip_query { S7_HMI_Accessible := 'False'; S7_HMI_Visible := 'False'} : USInt;
+      read_output_bits { S7_HMI_Accessible := 'False'; S7_HMI_Visible := 'False'} : USInt;
+      read_input_bits { S7_HMI_Accessible := 'False'; S7_HMI_Visible := 'False'} : USInt;
+      read_holding_reg { S7_HMI_Accessible := 'False'; S7_HMI_Visible := 'False'} : USInt;
+      read_input_reg { S7_HMI_Accessible := 'False'; S7_HMI_Visible := 'False'} : USInt;
+      write_single_output_bit { S7_HMI_Accessible := 'False'; S7_HMI_Visible := 'False'} : USInt;
+      write_single_holding_reg { S7_HMI_Accessible := 'False'; S7_HMI_Visible := 'False'} : USInt;
+      write_output_bits { S7_HMI_Accessible := 'False'; S7_HMI_Visible := 'False'} : USInt;
+      write_holding_reg { S7_HMI_Accessible := 'False'; S7_HMI_Visible := 'False'} : USInt;
+      mode_read { S7_HMI_Accessible := 'False'; S7_HMI_Visible := 'False'} : USInt;
+      mode_write_single { S7_HMI_Accessible := 'False'; S7_HMI_Visible := 'False'} : USInt;
+      mode_write { S7_HMI_Accessible := 'False'; S7_HMI_Visible := 'False'} : USInt;
    END_VAR
 
 
 BEGIN
-	#device.intern.tmp_exec_cnt := #mb.run.exec_cnt;
-	#device.intern.skip := false;
-	
-	IF #mb.q.qid >= #device.intern.range_start_qid
-	    AND #mb.q.qid <= #device.intern.range_end_qid
-	    AND (  NOT #mb.run.insert AND #mb.status.timeout
-	        OR NOT #device.enable )
-	THEN
-	    #mb.q.qid := 16#fff0;
-	    #device.intern.skip := true;
-	    #device.intern.tmp_exec_cnt := #device.intern.tmp_exec_cnt
-	        + BOOL_TO_UDINT(#mb.status.timeout);
-	END_IF;
-	
-	#device.intern.range_start_qid := #mb.run.qid_cnt + 1;
-END_FUNCTION
+   auto_length := 0;
+   skip_query := 0;
+   read_output_bits := 1;
+   read_input_bits := 2;
+   read_holding_reg := 3;
+   read_input_reg := 4;
+   write_single_output_bit := 5;
+   write_single_holding_reg := 6;
+   write_output_bits := 15;
+   write_holding_reg := 16;
+   mode_read := 200;
+   mode_write_single := 201;
+   mode_write := 202;
+
+END_DATA_BLOCK
 
 FUNCTION "mb_device_footer" : Void
 { S7_Optimized_Access := 'TRUE' }
@@ -274,68 +358,38 @@ BEGIN
 	#device.intern.skip := false;
 END_FUNCTION
 
-FUNCTION_BLOCK "mb_tcp"
+FUNCTION "mb_device_header" : Void
 { S7_Optimized_Access := 'TRUE' }
 VERSION : 1.0
-   VAR_INPUT 
-      interface_id : HW_ANY;
-      connection_id : CONN_OUC := 42;
-      ip_addr : Array[1..4] of Byte := 192, 168, 1, 0;
-      tcp_port : UInt := 502;   // enable even parity
-      timeout : Real := 1.0;   // sec
-      buffer_db_any : DB_ANY;
-   END_VAR
-
-   VAR_OUTPUT 
-      qError : Bool;
-   END_VAR
-
    VAR_IN_OUT 
-      buffer_variant : Variant;
+      device : "udt_mb_device";
       mb : "udt_mb";
-   END_VAR
-
-   VAR 
-      client {OriginalPartName := 'MB_CLIENT'; LibVersion := '4.0'} : MB_CLIENT;
-      tcon_ip_v4 {OriginalPartName := 'TCON_IP_v4'; LibVersion := '1.0'} : TCON_IP_v4;
    END_VAR
 
 
 BEGIN
-	#mb.const.app := true;
-	#tcon_ip_v4.InterfaceId := #interface_id;
-	#tcon_ip_v4.ID := #connection_id;
-	#tcon_ip_v4.RemoteAddress.ADDR := #ip_addr;
-	#tcon_ip_v4.RemotePort := #tcp_port;
+	#device.intern.tmp_exec_cnt := #mb.run.exec_cnt;
+	#device.intern.skip := false;
 	
-	#client.MB_Unit_ID := #mb.q.unit;
-	#client.Rcv_Timeout := #timeout;
-	#client(REQ := NOT #client.BUSY AND #client.Connected
-	            AND NOT #mb.run.insert,
-	        DISCONNECT := #client.DISCONNECT,
-	        MB_MODE := #mb.run.mode,
-	        MB_DATA_ADDR := #mb.run.data_addr,
-	        MB_DATA_LEN := #mb.q.d_len,
-	        DONE => #mb.status.done,
-	        ERROR => #mb.status.error,
-	        STATUS => #mb.status.status,
-	        MB_DATA_PTR := #buffer_variant,
-	        CONNECT := #tcon_ip_v4);
-	    
-	#mb.status.timeout := #client.ERROR AND #client.rcv_timer.Q;
-	#qError := #client.ERROR;
-	// ------------------------
-	#mb.const.buffer_db := #buffer_db_any;
-	IF #mb.q.qid > #mb.run.qid_cnt THEN #mb.q.qid := 1; END_IF;
-	#mb.const.queries := #mb.run.qid_cnt;
-	#mb.run.qid_cnt := 0;
-END_FUNCTION_BLOCK
+	IF #mb.q.qid >= #device.intern.range_start_qid
+	    AND #mb.q.qid <= #device.intern.range_end_qid
+	    AND (  NOT #mb.run.insert AND #mb.status.timeout
+	        OR NOT #device.enable )
+	THEN
+	    #mb.q.qid := 16#fff0;
+	    #device.intern.skip := true;
+	    #device.intern.tmp_exec_cnt := #device.intern.tmp_exec_cnt
+	        + BOOL_TO_UDINT(#mb.status.timeout);
+	END_IF;
+	
+	#device.intern.range_start_qid := #mb.run.qid_cnt + 1;
+END_FUNCTION
 
-FUNCTION_BLOCK "mb_rtu"
+FUNCTION_BLOCK "mb_rtu_controller"
 { S7_Optimized_Access := 'TRUE' }
 VERSION : 1.0
    VAR_INPUT 
-      hardware_id : PORT;
+      harware : PORT;   // hardware id
       baud : UDInt := 9600;
       parity : Bool := true;   // enable even parity. false=no parity.
       timeout : Time := T#500ms;
@@ -362,7 +416,7 @@ BEGIN
 	
 	#comm_load(REQ := NOT #comm_load.DONE
 	                AND NOT #master.BUSY,
-	           "PORT" := #hardware_id,
+	           "PORT" := #harware,
 	           BAUD := #baud,
 	           PARITY := SEL(G := #parity,
 	                         IN0 := 0, IN1 := 2),
@@ -384,6 +438,64 @@ BEGIN
 	#mb.status.timeout :=
 	#master.ERROR AND #master.STATUS = 16#80C8;
 	#qError := #master.ERROR;
+	// ------------------------
+	#mb.const.buffer_db := #buffer_db_any;
+	IF #mb.q.qid > #mb.run.qid_cnt THEN #mb.q.qid := 1; END_IF;
+	#mb.const.queries := #mb.run.qid_cnt;
+	#mb.run.qid_cnt := 0;
+END_FUNCTION_BLOCK
+
+FUNCTION_BLOCK "mb_tcp_controller"
+{ S7_Optimized_Access := 'TRUE' }
+VERSION : 1.0
+   VAR_INPUT 
+      interface : HW_ANY;
+      conn_id : CONN_OUC := 123;   // connection_id
+      ip_addr : Array[1..4] of Byte := 192, 168, 1, 0;
+      tcp_port : UInt := 502;   // enable even parity
+      timeout : Real := 1.0;   // sec
+      buffer_db_any : DB_ANY;
+   END_VAR
+
+   VAR_OUTPUT 
+      qError : Bool;
+   END_VAR
+
+   VAR_IN_OUT 
+      buffer_variant : Variant;
+      mb : "udt_mb";
+   END_VAR
+
+   VAR 
+      client {OriginalPartName := 'MB_CLIENT'; LibVersion := '4.0'} : MB_CLIENT;
+      tcon_ip_v4 {OriginalPartName := 'TCON_IP_v4'; LibVersion := '1.0'} : TCON_IP_v4;
+   END_VAR
+
+
+BEGIN
+	#mb.const.app := true;
+	#tcon_ip_v4.InterfaceId := #interface;
+	#tcon_ip_v4.ID := #conn_id;
+	#tcon_ip_v4.RemoteAddress.ADDR := #ip_addr;
+	#tcon_ip_v4.RemotePort := #tcp_port;
+	
+	#client.MB_Unit_ID := #mb.q.unit;
+	#client.Rcv_Timeout := #timeout;
+	
+	#client(REQ := NOT #client.BUSY AND #client.Connected
+	            AND NOT #mb.run.insert,
+	        DISCONNECT := #client.DISCONNECT,
+	        MB_MODE := #mb.run.mode,
+	        MB_DATA_ADDR := #mb.run.data_addr,
+	        MB_DATA_LEN := #mb.q.d_len,
+	        DONE => #mb.status.done,
+	        ERROR => #mb.status.error,
+	        STATUS => #mb.status.status,
+	        MB_DATA_PTR := #buffer_variant,
+	        CONNECT := #tcon_ip_v4);
+	    
+	#mb.status.timeout := (*#client.ERROR AND*) #client.rcv_timer.Q;
+	#qError := #client.ERROR;
 	// ------------------------
 	#mb.const.buffer_db := #buffer_db_any;
 	IF #mb.q.qid > #mb.run.qid_cnt THEN #mb.q.qid := 1; END_IF;

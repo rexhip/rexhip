@@ -150,7 +150,7 @@ VERSION : 1.0
 BEGIN
 	// Lightweight Modbus Abstraction Layer Library. 
 	// Author:   Ola Bjørnli
-	// Version:  0.2-beta_12
+	// Version:  0.2_beta13
 	// License:  MIT or GPLv2
 	// Web:      http://mb.sn7.no
 	//           http://github.com/olab84/sn7mb
@@ -274,36 +274,38 @@ DATA_BLOCK "mb_#"
 VERSION : 0.1
 NON_RETAIN
    VAR 
+      "fc" : Struct
+         skip_query { S7_HMI_Accessible := 'False'; S7_HMI_Visible := 'False'} : USInt;
+         read_output_bits { S7_HMI_Accessible := 'False'; S7_HMI_Visible := 'False'} : USInt;
+         read_input_bits { S7_HMI_Accessible := 'False'; S7_HMI_Visible := 'False'} : USInt;
+         read_holding_reg { S7_HMI_Accessible := 'False'; S7_HMI_Visible := 'False'} : USInt;
+         read_input_reg { S7_HMI_Accessible := 'False'; S7_HMI_Visible := 'False'} : USInt;
+         write_single_output_bit { S7_HMI_Accessible := 'False'; S7_HMI_Visible := 'False'} : USInt;
+         write_single_holding_reg { S7_HMI_Accessible := 'False'; S7_HMI_Visible := 'False'} : USInt;
+         write_output_bits { S7_HMI_Accessible := 'False'; S7_HMI_Visible := 'False'} : USInt;
+         write_holding_reg { S7_HMI_Accessible := 'False'; S7_HMI_Visible := 'False'} : USInt;
+         mode_read { S7_HMI_Accessible := 'False'; S7_HMI_Visible := 'False'} : USInt;
+         mode_write_single { S7_HMI_Accessible := 'False'; S7_HMI_Visible := 'False'} : USInt;
+         mode_write { S7_HMI_Accessible := 'False'; S7_HMI_Visible := 'False'} : USInt;
+      END_STRUCT;
       auto_length { S7_HMI_Accessible := 'False'; S7_HMI_Visible := 'False'} : UInt;
-      skip_query { S7_HMI_Accessible := 'False'; S7_HMI_Visible := 'False'} : USInt;
-      read_output_bits { S7_HMI_Accessible := 'False'; S7_HMI_Visible := 'False'} : USInt;
-      read_input_bits { S7_HMI_Accessible := 'False'; S7_HMI_Visible := 'False'} : USInt;
-      read_holding_reg { S7_HMI_Accessible := 'False'; S7_HMI_Visible := 'False'} : USInt;
-      read_input_reg { S7_HMI_Accessible := 'False'; S7_HMI_Visible := 'False'} : USInt;
-      write_single_output_bit { S7_HMI_Accessible := 'False'; S7_HMI_Visible := 'False'} : USInt;
-      write_single_holding_reg { S7_HMI_Accessible := 'False'; S7_HMI_Visible := 'False'} : USInt;
-      write_output_bits { S7_HMI_Accessible := 'False'; S7_HMI_Visible := 'False'} : USInt;
-      write_holding_reg { S7_HMI_Accessible := 'False'; S7_HMI_Visible := 'False'} : USInt;
-      mode_read { S7_HMI_Accessible := 'False'; S7_HMI_Visible := 'False'} : USInt;
-      mode_write_single { S7_HMI_Accessible := 'False'; S7_HMI_Visible := 'False'} : USInt;
-      mode_write { S7_HMI_Accessible := 'False'; S7_HMI_Visible := 'False'} : USInt;
    END_VAR
 
 
 BEGIN
+   "fc".skip_query := 0;
+   "fc".read_output_bits := 1;
+   "fc".read_input_bits := 2;
+   "fc".read_holding_reg := 3;
+   "fc".read_input_reg := 4;
+   "fc".write_single_output_bit := 5;
+   "fc".write_single_holding_reg := 6;
+   "fc".write_output_bits := 15;
+   "fc".write_holding_reg := 16;
+   "fc".mode_read := 200;
+   "fc".mode_write_single := 201;
+   "fc".mode_write := 202;
    auto_length := 0;
-   skip_query := 0;
-   read_output_bits := 1;
-   read_input_bits := 2;
-   read_holding_reg := 3;
-   read_input_reg := 4;
-   write_single_output_bit := 5;
-   write_single_holding_reg := 6;
-   write_output_bits := 15;
-   write_holding_reg := 16;
-   mode_read := 200;
-   mode_write_single := 201;
-   mode_write := 202;
 
 END_DATA_BLOCK
 

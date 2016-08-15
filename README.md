@@ -3,29 +3,27 @@ Lightweight Modbus Abstraction Layer Library.
 For Siemens S7-1200 and S7-1500 PLC's.
 
 ```
- 
 Author:   Ola Bjørnli
-Version:  0.2_beta11
-License:  GPLv2, MIT (pick the one of your need)
+Version:  0.2_beta13
+License:  MIT or GPLv2
 Web:      http://mb.sn7.no
           http://github.com/olab84/sn7mb
-
 ```
 
 All though the new plc series from Siemens has built in support for modbus. It's required to build some additional logic to make the queries being executed in order. This software address that issue, the example bellow illustrate how easy modbus can be done with this library:
 
 ```
-
 // A modbus RTU example shown bellow, the library also 
 // support modbus tcp.
 
-#mb_rtu(hardware_id := "Local~CB_1241_(RS485)",
-        baud := 9600,
-        parity := false,
-        timeout := T#300ms,
-        buffer_db_any := "buffer",
-        buffer_variant := "buffer",
-        mb := #mb);
+#mb_rtu_controller(
+	hw_id := "Local~CB_1241_(RS485)",
+	baud := 9600,
+	parity := false,
+	timeout := T#300ms,
+	buffer_db_any := "buffer",
+	buffer_variant := "buffer",
+	mb := #mb);
 
 // Query 1 - Read holding register.
 "mb_read"(unit := 5,     // device address
@@ -51,8 +49,7 @@ All though the new plc series from Siemens has built in support for modbus. It's
 "mb_read"(unit := 9,
           d_addr := 25,
           data := #resualt_data_2,
-          mb := #mb);	
-		  
+          mb := #mb);			  
 ```
 		  
 Just by adding more "mb_read" function, more queries can 

@@ -53,21 +53,21 @@ BEGIN
 	"mb_device_header"(device := #device, mb := #mb);
 	
 	"mb_query"(unit := #unit,
-	           fc := "mb_#".read_holding_reg,
+	           fc := "mb_#".fc.read_holding_reg,
 	           d_addr := 0,
 	           d_len := "mb_#".auto_length,
 	           data := #query_1,
 	           mb := #mb);
 	
 	"mb_query"(unit := #unit,
-	           fc := "mb_#".read_input_reg,
+	           fc := "mb_#".fc.read_input_reg,
 	           d_addr := 0,
 	           d_len := "mb_#".auto_length,
 	           data := #query_2,
 	           mb := #mb);
 	
 	"mb_query"(unit := #unit,
-	           fc := "mb_#".read_input_bits,
+	           fc := "mb_#".fc.read_input_bits,
 	           d_addr := 0,
 	           d_len := "mb_#".auto_length,
 	           data := #query_3,
@@ -130,6 +130,7 @@ BEGIN
 	#device_start_example_1(unit := 1, mb := #mb);
 	#device_start_example_2(unit := 2, mb := #mb);
 	#device_start_example_3(unit := 3, mb := #mb);
+	
 END_FUNCTION_BLOCK
 
 DATA_BLOCK "modbus_rtu_start_example_DB"
@@ -160,7 +161,6 @@ VERSION : 0.1
 BEGIN
 	
 	"modbus_tcp_start_example_DB"();
-	
 	
 END_ORGANIZATION_BLOCK
 
@@ -209,21 +209,21 @@ BEGIN
 	"mb_device_header"(device := #device, mb := #mb);
 	
 	"mb_query"(unit := #unit,
-	           fc := "mb_#".read_input_reg,
+	           fc := "mb_#".fc.read_input_reg,
 	           d_addr := 5017,
 	           d_len := 2,
 	           data := #flow,
 	           mb := #mb);
 	
 	"mb_query"(unit := #unit,
-	           fc := "mb_#".read_input_reg,
+	           fc := "mb_#".fc.read_input_reg,
 	           d_addr := 5025,
 	           d_len := 2,
 	           data := #pressure,
 	           mb := #mb);
 	
 	"mb_query"(unit := #unit,
-	           fc := "mb_#".read_holding_reg,
+	           fc := "mb_#".fc.read_holding_reg,
 	           d_addr := 12003,
 	           d_len := "mb_#".auto_length,
 	           data := #totaliser,
@@ -269,14 +269,14 @@ BEGIN
 	"mb_device_header"(device := #device, mb := #mb);
 	
 	"mb_query"(unit := #unit,
-	           fc := "mb_#".read_holding_reg,
+	           fc := "mb_#".fc.read_holding_reg,
 	           d_addr := 13,
 	           d_len := "mb_#".auto_length,
 	           data := #current,
 	           mb := #mb);
 	
 	"mb_query"(unit := #unit,
-	           fc := "mb_#".read_holding_reg,
+	           fc := "mb_#".fc.read_holding_reg,
 	           d_addr := 55,
 	           d_len := "mb_#".auto_length,
 	           data := #common,
@@ -319,14 +319,14 @@ BEGIN
 	"mb_device_header"(device := #device, mb := #mb);
 	
 	"mb_query"(unit := #unit,
-	           fc := "mb_#".read_holding_reg,
+	           fc := "mb_#".fc.read_holding_reg,
 	           d_addr := 7,
 	           d_len := "mb_#".auto_length,
 	           data := #raw_values,
 	           mb := #mb);
 	
 	"mb_query"(unit := #unit,
-	           fc := "mb_#".read_holding_reg,
+	           fc := "mb_#".fc.read_holding_reg,
 	           d_addr := 0,
 	           d_len := "mb_#".auto_length,
 	           data := #serial_number,

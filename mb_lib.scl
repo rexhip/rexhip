@@ -2,9 +2,12 @@
 VERSION : 0.1
    STRUCT
       enable : Bool := true;
-      qError : Bool;   // outputs
+      qError : Bool;   // All types of errors
+      qError_tof : Bool;   // All types of errors with a tof timer
+      qComError : Bool;   // Communication error
       config : Struct
-         max_err : USInt := 3;   // max repeating errors before qErr is set
+         max_err : USInt := 3;   // Max repeating errors before qErr is set
+         time_qErrror_tof : Time := T#2s;   // Length of the qError_tof puls
       END_STRUCT;
       log : Struct
          done_cnt : UDInt;
@@ -12,6 +15,7 @@ VERSION : 0.1
          err_cnt : UDInt;
          err_dtl {OriginalPartName := 'DTL'; LibVersion := '1.0'} : DTL;
          err_status : Word;
+         err_timeout : Bool;
          err_d_addr : UDInt;
       END_STRUCT;
       intern : Struct
@@ -20,6 +24,7 @@ VERSION : 0.1
          err_cnt : USInt;   // repeating errors
          tmp_exec_cnt : UDInt;
          skip : Bool;
+         err_tof_dtl {OriginalPartName := 'DTL'; LibVersion := '1.0'} : DTL;
       END_STRUCT;
    END_STRUCT;
 
@@ -35,7 +40,7 @@ VERSION : 0.1
          d_len : UInt := 1;
          qid : UInt := 1;   // query id
          next : UInt := 1;   // id of next query to be exec.
-         priority : SInt;
+         priority : UInt;
       END_STRUCT;
       options : Struct
          buffer_handler : Bool := true;   // start mb_buffer_handler inside mb_query
@@ -150,8 +155,8 @@ VERSION : 1.0
 BEGIN
 	// Lightweight Modbus Abstraction Layer Library. 
 	// Author:   Ola Bjørnli
-	// Version:  0.2_beta13
-	// License:  MIT or GPLv2
+	// Version:  0.2_beta14
+	// License:  MIT-license
 	// Web:      http://mb.sn7.no
 	//           http://github.com/olab84/sn7mb
 	
@@ -274,15 +279,15 @@ DATA_BLOCK "mb_#"
 VERSION : 0.1
 NON_RETAIN
    VAR 
-      "fc" : Struct
+      "fc" : Struct   // function codes
          skip_query { S7_HMI_Accessible := 'False'; S7_HMI_Visible := 'False'} : USInt;
-         read_output_bits { S7_HMI_Accessible := 'False'; S7_HMI_Visible := 'False'} : USInt;
-         read_input_bits { S7_HMI_Accessible := 'False'; S7_HMI_Visible := 'False'} : USInt;
+         read_output_bits { S7_HMI_Accessible := 'False'; S7_HMI_Visible := 'False'} : USInt;   // (coils)
+         read_input_bits { S7_HMI_Accessible := 'False'; S7_HMI_Visible := 'False'} : USInt;   // (discrete inputs)
          read_holding_reg { S7_HMI_Accessible := 'False'; S7_HMI_Visible := 'False'} : USInt;
          read_input_reg { S7_HMI_Accessible := 'False'; S7_HMI_Visible := 'False'} : USInt;
-         write_single_output_bit { S7_HMI_Accessible := 'False'; S7_HMI_Visible := 'False'} : USInt;
+         write_single_output_bit { S7_HMI_Accessible := 'False'; S7_HMI_Visible := 'False'} : USInt;   // (coil)
          write_single_holding_reg { S7_HMI_Accessible := 'False'; S7_HMI_Visible := 'False'} : USInt;
-         write_output_bits { S7_HMI_Accessible := 'False'; S7_HMI_Visible := 'False'} : USInt;
+         write_output_bits { S7_HMI_Accessible := 'False'; S7_HMI_Visible := 'False'} : USInt;   // (coils)
          write_holding_reg { S7_HMI_Accessible := 'False'; S7_HMI_Visible := 'False'} : USInt;
          mode_read { S7_HMI_Accessible := 'False'; S7_HMI_Visible := 'False'} : USInt;
          mode_write_single { S7_HMI_Accessible := 'False'; S7_HMI_Visible := 'False'} : USInt;
@@ -319,7 +324,8 @@ VERSION : 1.0
 
    VAR_TEMP 
       e : Int;
-      direct_err : Bool;
+      tmp_error : Bool;
+      rd_sys_t {OriginalPartName := 'DTL'; LibVersion := '1.0'} : DTL;
    END_VAR
 
 
@@ -329,6 +335,8 @@ BEGIN
 	        #device.log.done_cnt := #device.log.done_cnt + 1;
 	        #e := RD_LOC_T(#device.log.done_dtl);
 	        #device.intern.err_cnt := 0;
+	        #device.qError := false;
+	        #device.log.err_timeout := false;
 	    ELSIF #mb.status.error THEN
 	        #device.log.err_cnt := #device.log.err_cnt + 1;
 	        #e := RD_LOC_T(#device.log.err_dtl);
@@ -337,18 +345,28 @@ BEGIN
 	        #device.intern.err_cnt := MIN(
 	            IN1 := #device.intern.err_cnt + 1,
 	            IN2 := 250 );
-	        #direct_err := NOT #mb.status.timeout;
+	        #device.qError := true;
+	        #device.log.err_timeout := #mb.status.timeout;
 	    END_IF;
 	END_IF;
 	
 	IF NOT #device.enable THEN
+	    #device.qError := false;
+	    #device.qError_tof := false;
 	    #device.intern.err_cnt := 0;
 	END_IF;
-	#device.qError := #direct_err OR
-	#device.intern.err_cnt > #device.config.max_err;
-	    
+	
+	#device.qComError := #device.intern.err_cnt > #device.config.max_err;
+	IF #device.qError  THEN
+	    #e := RD_SYS_T(#device.intern.err_tof_dtl);
+	    #device.qError_tof := true;
+	ELSIF #device.qError_tof THEN
+	    #e := RD_SYS_T(#rd_sys_t);
+	    #device.qError_tof := #rd_sys_t < #device.intern.err_tof_dtl + #device.config.time_qErrror_tof;
+	END_IF;
+	
 	IF #device.intern.skip THEN
-	    #mb.q.qid := #mb.run.qid_cnt + 1;
+	    #mb.q.qid := #mb.run.qid_cnt + 1; 
 	    #mb.run.insert := true;
 	    #mb.options.buffer_handler := true;
 	    #mb.query_above.done := false;
@@ -391,7 +409,7 @@ FUNCTION_BLOCK "mb_rtu_controller"
 { S7_Optimized_Access := 'TRUE' }
 VERSION : 1.0
    VAR_INPUT 
-      harware : PORT;   // hardware id
+      hardware : PORT;   // hardware id
       baud : UDInt := 9600;
       parity : Bool := true;   // enable even parity. false=no parity.
       timeout : Time := T#500ms;
@@ -418,7 +436,7 @@ BEGIN
 	
 	#comm_load(REQ := NOT #comm_load.DONE
 	                AND NOT #master.BUSY,
-	           "PORT" := #harware,
+	           "PORT" := #hardware,
 	           BAUD := #baud,
 	           PARITY := SEL(G := #parity,
 	                         IN0 := 0, IN1 := 2),
@@ -439,8 +457,8 @@ BEGIN
 	
 	#mb.status.timeout :=
 	#master.ERROR AND #master.STATUS = 16#80C8;
-	#qError := #master.ERROR;
 	// ------------------------
+	#qError := #mb.status.error;
 	#mb.const.buffer_db := #buffer_db_any;
 	IF #mb.q.qid > #mb.run.qid_cnt THEN #mb.q.qid := 1; END_IF;
 	#mb.const.queries := #mb.run.qid_cnt;
@@ -455,7 +473,7 @@ VERSION : 1.0
       conn_id : CONN_OUC := 123;   // connection_id
       ip_addr : Array[1..4] of Byte := 192, 168, 1, 0;
       tcp_port : UInt := 502;   // enable even parity
-      timeout : Real := 1.0;   // sec
+      timeout : Time := T#2s;   // sec
       buffer_db_any : DB_ANY;
    END_VAR
 
@@ -471,21 +489,33 @@ VERSION : 1.0
    VAR 
       client {OriginalPartName := 'MB_CLIENT'; LibVersion := '4.0'} : MB_CLIENT;
       tcon_ip_v4 {OriginalPartName := 'TCON_IP_v4'; LibVersion := '1.0'} : TCON_IP_v4;
+      ton_timeout {OriginalPartName := 'IEC_TIMER'; LibVersion := '1.0'} : TON_TIME;
+      ton_timeout_q : Bool;
+      tdiscon {OriginalPartName := 'T_DISCON'; LibVersion := '2.1'} : TDISCON;
+   END_VAR
+
+   VAR_TEMP 
+      tmp_reconnect_after : Bool;
    END_VAR
 
 
 BEGIN
 	#mb.const.app := true;
+	
 	#tcon_ip_v4.InterfaceId := #interface;
 	#tcon_ip_v4.ID := #conn_id;
 	#tcon_ip_v4.RemoteAddress.ADDR := #ip_addr;
 	#tcon_ip_v4.RemotePort := #tcp_port;
 	
-	#client.MB_Unit_ID := #mb.q.unit;
-	#client.Rcv_Timeout := #timeout;
+	#tdiscon(REQ := #client.ERROR AND #client.STATUS = 16#80A3,
+	         ID := #conn_id);
+	IF #tdiscon.BUSY THEN #client.DISCONNECT := true;
+	ELSIF #tdiscon.DONE THEN #client.DISCONNECT := false;
+	END_IF;
 	
-	#client(REQ := NOT #client.BUSY AND #client.Connected
-	            AND NOT #mb.run.insert,
+	#client.MB_Unit_ID := #mb.q.unit;
+	#client.Rcv_Timeout := UINT_TO_REAL(TIME_TO_UINT(#timeout)) / 1000;
+	#client(REQ := NOT #client.BUSY AND NOT #mb.run.insert AND NOT #client.DISCONNECT,
 	        DISCONNECT := #client.DISCONNECT,
 	        MB_MODE := #mb.run.mode,
 	        MB_DATA_ADDR := #mb.run.data_addr,
@@ -495,10 +525,23 @@ BEGIN
 	        STATUS => #mb.status.status,
 	        MB_DATA_PTR := #buffer_variant,
 	        CONNECT := #tcon_ip_v4);
-	    
-	#mb.status.timeout := (*#client.ERROR AND*) #client.rcv_timer.Q;
-	#qError := #client.ERROR;
+	
+	#ton_timeout(IN := NOT #mb.run.insert
+	             AND (NOT #mb.status.done OR NOT #mb.status.error),
+	             PT := #timeout,
+	             Q => #ton_timeout_q);
+	IF #ton_timeout_q THEN
+	    #mb.status.error := true;
+	    #mb.status.timeout := true;
+	    RESET_TIMER(#ton_timeout);
+	ELSE
+	    #mb.status.timeout := #mb.status.error
+	        AND (#mb.status.status = 16#818C
+	            OR #mb.status.status = 16#80C8);
+	END_IF;
+	
 	// ------------------------
+	#qError := #mb.status.error;
 	#mb.const.buffer_db := #buffer_db_any;
 	IF #mb.q.qid > #mb.run.qid_cnt THEN #mb.q.qid := 1; END_IF;
 	#mb.const.queries := #mb.run.qid_cnt;

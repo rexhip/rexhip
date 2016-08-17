@@ -1,34 +1,13 @@
-﻿DATA_BLOCK "modbus_rtu_buffer"
-{ S7_Optimized_Access := 'FALSE' }
-VERSION : 0.1
-NON_RETAIN
-   STRUCT 
-      buffer : Array[0..125] of Word;
-   END_STRUCT;
-
-
-BEGIN
-
-END_DATA_BLOCK
-
-DATA_BLOCK "modbus_tcp_buffer"
-{ S7_Optimized_Access := 'FALSE' }
-VERSION : 0.1
-NON_RETAIN
-   STRUCT 
-      buffer : Array[0..125] of Word;
-   END_STRUCT;
-
-
-BEGIN
-
-END_DATA_BLOCK
-
-FUNCTION_BLOCK "modbus_device_start_example"
+﻿FUNCTION_BLOCK "example_novus_tht"
 { S7_Optimized_Access := 'TRUE' }
 VERSION : 0.1
    VAR_INPUT 
-      unit : USInt := 1;
+      unit : USInt;
+   END_VAR
+
+   VAR_OUTPUT 
+      temperature : Int;
+      humidity : Int;
    END_VAR
 
    VAR_IN_OUT 
@@ -37,143 +16,58 @@ VERSION : 0.1
 
    VAR 
       device : "udt_mb_device";
-      query_1 : Struct
-         word_1 : Word;
-         word_2 : Word;
+      serial_number : DWord;
+      raw_values { S7_HMI_Accessible := 'False'; S7_HMI_Visible := 'False'} : Struct
+         temp { S7_HMI_Accessible := 'False'; S7_HMI_Visible := 'False'} : Int;
+         hum { S7_HMI_Accessible := 'False'; S7_HMI_Visible := 'False'} : Int;
       END_STRUCT;
-      query_2 : Struct
-         word_1 : Bool;
-         word_2 : Bool;
-      END_STRUCT;
-      query_3 : Word;
    END_VAR
 
 
 BEGIN
+	// Novus - RHT (Temperature transmitter)
+	
+	// http://www.novusautomation.com/downloads/Arquivos/v10x_b_manual_rht_wm-dm-p10_485_lcd_%20english.pdf
+	
 	"mb_device_header"(device := #device, mb := #mb);
+	
+	"mb_query"(unit := #unit,
+	           fc := "mb_#".fc.read_holding_reg,
+	           d_addr := 7,
+	           d_len := "mb_#".auto_length,
+	           data := #raw_values,
+	           mb := #mb);
 	
 	"mb_query"(unit := #unit,
 	           fc := "mb_#".fc.read_holding_reg,
 	           d_addr := 0,
 	           d_len := "mb_#".auto_length,
-	           data := #query_1,
+	           data := #serial_number,
 	           mb := #mb);
 	
-	"mb_query"(unit := #unit,
-	           fc := "mb_#".fc.read_input_reg,
-	           d_addr := 0,
-	           d_len := "mb_#".auto_length,
-	           data := #query_2,
-	           mb := #mb);
-	
-	"mb_query"(unit := #unit,
-	           fc := "mb_#".fc.read_input_bits,
-	           d_addr := 0,
-	           d_len := "mb_#".auto_length,
-	           data := #query_3,
-	           mb := #mb);
+	IF #device.qComError THEN
+	    #serial_number := 0;
+	    #raw_values.temp := 0;
+	    #raw_values.hum := 0;
+	END_IF;
+	#temperature := #raw_values.temp / 10;
+	#humidity := #raw_values.hum / 10;
 	
 	"mb_device_footer"(device := #device, mb := #mb);
 END_FUNCTION_BLOCK
 
-FUNCTION_BLOCK "modbus_tcp_start_example"
-{ S7_Optimized_Access := 'TRUE' }
-VERSION : 0.1
-   VAR 
-      mb : "udt_mb";
-      mb_tcp_controller : "mb_tcp_controller";
-      device_start_example : "modbus_device_start_example";
-   END_VAR
-
-
-BEGIN
-	#mb_tcp_controller.ip_addr[1] := 192;
-	#mb_tcp_controller.ip_addr[2] := 168;
-	#mb_tcp_controller.ip_addr[3] := 1;
-	#mb_tcp_controller.ip_addr[4] := 2;
-	
-	#mb_tcp_controller(
-	    interface := "Local~PROFINET_interface_1",
-	    conn_id := 123,
-	    tcp_port := 502,
-	    timeout := 2.0,
-	    buffer_db_any := "modbus_tcp_buffer",
-	    buffer_variant := "modbus_tcp_buffer",
-	    mb := #mb);
-	
-	#device_start_example(unit := 1, mb := #mb);
-	
-END_FUNCTION_BLOCK
-
-FUNCTION_BLOCK "modbus_rtu_start_example"
-{ S7_Optimized_Access := 'TRUE' }
-VERSION : 0.1
-   VAR 
-      mb : "udt_mb";
-      mb_rtu_controller : "mb_rtu_controller";
-      device_start_example_1 : "modbus_device_start_example";
-      device_start_example_2 : "modbus_device_start_example";
-      device_start_example_3 : "modbus_device_start_example";
-   END_VAR
-
-
-BEGIN
-	#mb_rtu_controller(
-	    harware := "Local~CB_1241",
-	    baud := 9600,
-	    parity := true,
-	    timeout := T#500ms,
-	    buffer_db_any := "modbus_rtu_buffer",
-	    buffer_variant := "modbus_rtu_buffer",
-	    mb := #mb);
-	
-	#device_start_example_1(unit := 1, mb := #mb);
-	#device_start_example_2(unit := 2, mb := #mb);
-	#device_start_example_3(unit := 3, mb := #mb);
-	
-END_FUNCTION_BLOCK
-
-DATA_BLOCK "modbus_rtu_start_example_DB"
-{ S7_Optimized_Access := 'TRUE' }
+DATA_BLOCK "modbus_rtu_buffer"
+{ S7_Optimized_Access := 'FALSE' }
 VERSION : 0.1
 NON_RETAIN
-"modbus_rtu_start_example"
+   STRUCT 
+      buffer : Array[0..125] of Word;
+   END_STRUCT;
+
 
 BEGIN
 
 END_DATA_BLOCK
-
-DATA_BLOCK "modbus_tcp_start_example_DB"
-{ S7_Optimized_Access := 'TRUE' }
-VERSION : 0.1
-NON_RETAIN
-"modbus_tcp_start_example"
-
-BEGIN
-
-END_DATA_BLOCK
-
-ORGANIZATION_BLOCK "tcp_ob"
-TITLE = "Main Program Sweep (Cycle)"
-{ S7_Optimized_Access := 'TRUE' }
-VERSION : 0.1
-
-BEGIN
-	
-	"modbus_tcp_start_example_DB"();
-	
-END_ORGANIZATION_BLOCK
-
-ORGANIZATION_BLOCK "rtu_ob"
-TITLE = "Main Program Sweep (Cycle)"
-{ S7_Optimized_Access := 'TRUE' }
-VERSION : 0.1
-
-BEGIN
-	
-	 "modbus_rtu_start_example_DB"();
-	
-END_ORGANIZATION_BLOCK
 
 FUNCTION_BLOCK "example_abb_aquaMaster_3"
 { S7_Optimized_Access := 'TRUE' }
@@ -232,6 +126,256 @@ BEGIN
 	"mb_device_footer"(device := #device, mb := #mb);
 END_FUNCTION_BLOCK
 
+FUNCTION_BLOCK "modbus_device_start_example"
+{ S7_Optimized_Access := 'TRUE' }
+VERSION : 0.1
+   VAR_INPUT 
+      unit : USInt := 1;
+   END_VAR
+
+   VAR_IN_OUT 
+      mb : "udt_mb";
+   END_VAR
+
+   VAR 
+      device : "udt_mb_device";
+      query_1 : Struct
+         word_1 : Word;
+         word_2 : Word;
+      END_STRUCT;
+      query_2 : Array[1..2] of Word;
+      conditon_of_exec_query_4 : Bool;
+      query_3 : Word;
+      query_4 : Word;
+   END_VAR
+
+
+BEGIN
+	// Start example for device. There should be a device block for
+	// each device that is gonna be connected to the modbus-line.
+	
+	// The mb_device_header and the mb_device_footer isn't necessary to
+	// make the queries execute. However implmenting them give some
+	// advantages. First of all they will make sure that the queries
+	// between them are skipped if a timeout is detected at one querie.
+	// A new atempted to execute a querie is done after all other queries
+	// that bellong the mb-udt is finnished. An other big bennefit is the
+	// logging capacities. Inside the device-udt there is logging of
+	// sucessfull and failed queries, which is very helpfull for debugging.
+	// Last but not least, the device udt has a common error flags, that
+	// will be set if any of the intermediate queries report an error.
+	"mb_device_header"(device := #device, mb := #mb);
+	
+	// Read data from a device with the device address "#unit" staring
+	// at holding register with address 0. Two words are read becouse 
+	// #query_1 structure contains two words. The length of the querie
+	// is automatically calculated from the number of byes of the data 
+	// parameter. The structure of the #query_1 has to be customized
+	// for each querie, to match the device. As well as the the d_addr
+	// paramter has to be adjested.
+	"mb_query"(unit := #unit,
+	           fc := "mb_#".fc.read_holding_reg,
+	           d_addr := 0,
+	           d_len := "mb_#".auto_length,
+	           data := #query_1,
+	           mb := #mb);
+	
+	// Simular querie as above, except two input register are read. by
+	// start typing <<"mb_#".fc.>> is possible to see all the avable
+	// function codes that are supported in the autocomple list.
+	"mb_query"(unit := #unit,
+	           fc := "mb_#".fc.read_input_reg,
+	           d_addr := 0,
+	           d_len := "mb_#".auto_length,
+	           data := #query_2,
+	           mb := #mb);
+	
+	// Just an other example. An number of queries can be added.
+	// the library will take care of executing them, one by one.
+	"mb_query"(unit := #unit,
+	           fc := "mb_#".fc.write_output_bits,
+	           d_addr := 0,
+	           d_len := "mb_#".auto_length,
+	           data := #query_3,
+	           mb := #mb);
+	
+	// A query that has a condition for execution.
+	IF #conditon_of_exec_query_4 THEN
+	    "mb_query"(unit := #unit,
+	               fc := "mb_#".fc.write_holding_reg,
+	               d_addr := 0,
+	               d_len := "mb_#".auto_length,
+	               data := #query_4,
+	               mb := #mb);
+	END_IF;
+	// The condition for the querie above will work. However is recommaned
+	// that the example bellow is followed if a condition for querie is 
+	// needed. Every time the number of queries is changed, the the
+	// library is getting a little "hiccup". That is avoid by done it as
+	// showen bellow. Though, the example above will work perfectly fine.
+	"mb_query"(unit := #unit,
+	           fc := SEL(G := #conditon_of_exec_query_4,
+	                     IN0 := "mb_#".fc.skip_query,
+	                     IN1 := "mb_#".fc.write_holding_reg),
+	           d_addr := 0,
+	           d_len := "mb_#".auto_length,
+	           data := #query_4,
+	           mb := #mb);
+	
+	// keep in mind that the data-parameter is not limited to words, but
+	// can contain any complex data structure with all kind of dattypes.
+	// likes reals, bool, bytes etc. The only rule is that the structure
+	// has add up the whole words.
+	
+	// As mession at the top the mb_device_footer is not a most. Hovever,
+	// if the mb_device_header is implemented then the footer has to
+	// be implement as well. Else the library will not work.
+	"mb_device_footer"(device := #device, mb := #mb);
+	
+	// In the example values is set to zero if communcation problems 
+	// accure. 
+	IF #device.qComError THEN
+	    #query_1.word_1 := 0;
+	    #query_1.word_2 := 0;
+	    
+	    #query_2[1] := 0;
+	    #query_2[2] := 0;
+	END_IF;
+END_FUNCTION_BLOCK
+
+DATA_BLOCK "modbus_tcp_buffer"
+{ S7_Optimized_Access := 'FALSE' }
+VERSION : 0.1
+NON_RETAIN
+   STRUCT 
+      buffer : Array[0..125] of Word;
+   END_STRUCT;
+
+
+BEGIN
+
+END_DATA_BLOCK
+
+FUNCTION_BLOCK "modbus_rtu_start_example"
+{ S7_Optimized_Access := 'TRUE' }
+VERSION : 0.1
+   VAR 
+      mb : "udt_mb";
+      mb_rtu_controller : "mb_rtu_controller";
+      device_start_example_device1 : "modbus_device_start_example";
+      device_start_example_device2 : "modbus_device_start_example";
+      device_start_example_device3 : "modbus_device_start_example";
+      example_novus_tht_device1 : "example_novus_tht";
+      example_novus_tht_device2 : "example_novus_tht";
+      example_abb_aquaMaster_3_device1 : "example_abb_aquaMaster_3";
+      example_abb_aquaMaster_3_device2 : "example_abb_aquaMaster_3";
+   END_VAR
+
+
+BEGIN
+	#mb_rtu_controller(
+	    hardware := "Local~CB_1241",
+	    baud := 9600,
+	    parity := true,  // enable even parity.
+	    timeout := T#500ms,
+	    buffer_db_any := "modbus_rtu_buffer",
+	    buffer_variant := "modbus_rtu_buffer",
+	    mb := #mb);
+	
+	// In this example there are 7 devices (units) connected to the
+	// modbus rtu line. Each instance of the blocks bellow represent 
+	// one unit on the line. (unit => device address, or modbus address)
+	
+	// Open the start example to see how to make a device block.
+	
+	#device_start_example_device1(unit := 1, mb := #mb);
+	#device_start_example_device2(unit := 2, mb := #mb);
+	#device_start_example_device3(unit := 3, mb := #mb);
+	
+	#example_novus_tht_device1(unit := 4, mb := #mb);
+	#example_novus_tht_device2(unit := 5, mb := #mb);
+	
+	#example_abb_aquaMaster_3_device1(unit := 6, mb := #mb);
+	#example_abb_aquaMaster_3_device2(unit := 7, mb := #mb);
+	
+	
+END_FUNCTION_BLOCK
+
+FUNCTION_BLOCK "modbus_tcp_start_example"
+{ S7_Optimized_Access := 'TRUE' }
+VERSION : 0.1
+   VAR 
+      mb : "udt_mb";
+      mb_tcp_controller : "mb_tcp_controller";
+      device_start_example : "modbus_device_start_example";
+   END_VAR
+
+
+BEGIN
+	#mb_tcp_controller.ip_addr[1] := 192;
+	#mb_tcp_controller.ip_addr[2] := 168;
+	#mb_tcp_controller.ip_addr[3] := 1;
+	#mb_tcp_controller.ip_addr[4] := 2;
+	
+	// The tcp controller is not able to handle a timeout yet,
+	// 
+	// in feature relaces this will be fixed.
+	
+	#mb_tcp_controller(
+	    interface := "Local~PROFINET_interface_1",
+	    conn_id := 123, 
+	    tcp_port := 502,
+	    timeout := T#2s,
+	    buffer_db_any := "modbus_tcp_buffer",
+	    buffer_variant := "modbus_tcp_buffer",
+	    mb := #mb);
+	
+	#device_start_example(unit := 1, mb := #mb);
+	
+END_FUNCTION_BLOCK
+
+DATA_BLOCK "modbus_rtu_start_example_DB"
+{ S7_Optimized_Access := 'TRUE' }
+VERSION : 0.1
+NON_RETAIN
+"modbus_rtu_start_example"
+
+BEGIN
+
+END_DATA_BLOCK
+
+DATA_BLOCK "modbus_tcp_start_example_DB"
+{ S7_Optimized_Access := 'TRUE' }
+VERSION : 0.1
+NON_RETAIN
+"modbus_tcp_start_example"
+
+BEGIN
+
+END_DATA_BLOCK
+
+ORGANIZATION_BLOCK "rtu_ob"
+TITLE = "Main Program Sweep (Cycle)"
+{ S7_Optimized_Access := 'TRUE' }
+VERSION : 0.1
+
+BEGIN
+	
+	 "modbus_rtu_start_example_DB"();
+	
+END_ORGANIZATION_BLOCK
+
+ORGANIZATION_BLOCK "tcp_ob"
+TITLE = "Main Program Sweep (Cycle)"
+{ S7_Optimized_Access := 'TRUE' }
+VERSION : 0.1
+
+BEGIN
+	
+	"modbus_tcp_start_example_DB"();
+	
+END_ORGANIZATION_BLOCK
+
 FUNCTION_BLOCK "example_siemens_PAC3200"
 { S7_Optimized_Access := 'TRUE' }
 VERSION : 0.1
@@ -281,64 +425,6 @@ BEGIN
 	           d_len := "mb_#".auto_length,
 	           data := #common,
 	           mb := #mb);
-	
-	"mb_device_footer"(device := #device, mb := #mb);
-END_FUNCTION_BLOCK
-
-FUNCTION_BLOCK "example_novus_tht"
-{ S7_Optimized_Access := 'TRUE' }
-VERSION : 0.1
-   VAR_INPUT 
-      unit : USInt;
-   END_VAR
-
-   VAR_OUTPUT 
-      temperature : Int;
-      humidity : Int;
-   END_VAR
-
-   VAR_IN_OUT 
-      mb : "udt_mb";
-   END_VAR
-
-   VAR 
-      device : "udt_mb_device";
-      serial_number : DWord;
-      raw_values { S7_HMI_Accessible := 'False'; S7_HMI_Visible := 'False'} : Struct
-         temp { S7_HMI_Accessible := 'False'; S7_HMI_Visible := 'False'} : Int;
-         hum { S7_HMI_Accessible := 'False'; S7_HMI_Visible := 'False'} : Int;
-      END_STRUCT;
-   END_VAR
-
-
-BEGIN
-	// Novus - RHT (Temperature transmitter)
-	
-	// http://www.novusautomation.com/downloads/Arquivos/v10x_b_manual_rht_wm-dm-p10_485_lcd_%20english.pdf
-	
-	"mb_device_header"(device := #device, mb := #mb);
-	
-	"mb_query"(unit := #unit,
-	           fc := "mb_#".fc.read_holding_reg,
-	           d_addr := 7,
-	           d_len := "mb_#".auto_length,
-	           data := #raw_values,
-	           mb := #mb);
-	
-	"mb_query"(unit := #unit,
-	           fc := "mb_#".fc.read_holding_reg,
-	           d_addr := 0,
-	           d_len := "mb_#".auto_length,
-	           data := #serial_number,
-	           mb := #mb);
-	
-	IF #device.qError THEN
-	    #serial_number := 0;
-	    #raw_values.temp := 0;
-	    #raw_values.hum := 0;
-	END_IF;
-	#temperature := #raw_values.temp / 10;
-	#humidity := #raw_values.hum / 10;
 	
 	"mb_device_footer"(device := #device, mb := #mb);
 END_FUNCTION_BLOCK

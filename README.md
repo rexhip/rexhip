@@ -4,8 +4,8 @@ For Siemens S7-1200 and S7-1500 PLC's.
 
 ```
 Author:   Ola Bjørnli
-Version:  0.2_beta13
-License:  MIT or GPLv2
+Version:  0.2_beta14
+License:  MIT-license
 Web:      http://mb.sn7.no
           http://github.com/olab84/sn7mb
 ```

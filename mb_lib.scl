@@ -3,11 +3,10 @@ VERSION : 0.1
    STRUCT
       enable : Bool := true;
       qError : Bool;   // All types of errors
-      qError_tof : Bool;   // All types of errors with a tof timer
       qComError : Bool;   // Communication error
       config : Struct
-         max_err : USInt := 3;   // Max repeating errors before qErr is set
-         time_qErrror_tof : Time := T#2s;   // Length of the qError_tof puls
+         max_qComError { S7_SetPoint := 'True'} : USInt := 3;   // Max repeating timeout errors before qComError is set
+         tof_qErrror { S7_SetPoint := 'True'} : Time := T#2s;   // Length of the qError_tof puls
       END_STRUCT;
       log : Struct
          done_cnt : UDInt;
@@ -24,7 +23,7 @@ VERSION : 0.1
          err_cnt : USInt;   // repeating errors
          tmp_exec_cnt : UDInt;
          skip : Bool;
-         err_tof_dtl {OriginalPartName := 'DTL'; LibVersion := '1.0'} : DTL;
+         err_dtl {OriginalPartName := 'DTL'; LibVersion := '1.0'} : DTL;
       END_STRUCT;
    END_STRUCT;
 
@@ -155,7 +154,7 @@ VERSION : 1.0
 BEGIN
 	// Lightweight Modbus Abstraction Layer Library. 
 	// Author:   Ola Bjørnli
-	// Version:  0.2_beta14
+	// Version:  0.2_beta15
 	// License:  MIT-license
 	// Web:      http://mb.sn7.no
 	//           http://github.com/olab84/sn7mb
@@ -173,7 +172,9 @@ BEGIN
 	    RETURN;
 	END_IF;
 	
-	IF #d_len = 0 AND #mb.options.buffer_handler THEN // auto    
+	IF #d_len = 0 AND #mb.options.buffer_handler AND // auto  
+	    (#mb.run.insert OR #mb.status.done OR #mb.status.error)
+	THEN   
 	    "mb_buffer_handler"(action := 1, // count
 	                        buffer_db := 0,
 	                        data := #data,
@@ -326,44 +327,44 @@ VERSION : 1.0
       e : Int;
       tmp_error : Bool;
       rd_sys_t {OriginalPartName := 'DTL'; LibVersion := '1.0'} : DTL;
+      tmp_err : Bool;
    END_VAR
 
 
 BEGIN
-	IF #mb.run.exec_cnt <> #device.intern.tmp_exec_cnt THEN
+	IF NOT #device.enable THEN
+	    #device.qError := false;
+	    #device.intern.err_cnt := 0;
+	ELSIF #mb.run.exec_cnt <> #device.intern.tmp_exec_cnt THEN
 	    IF #mb.status.done THEN
 	        #device.log.done_cnt := #device.log.done_cnt + 1;
 	        #e := RD_LOC_T(#device.log.done_dtl);
 	        #device.intern.err_cnt := 0;
-	        #device.qError := false;
 	        #device.log.err_timeout := false;
 	    ELSIF #mb.status.error THEN
 	        #device.log.err_cnt := #device.log.err_cnt + 1;
 	        #e := RD_LOC_T(#device.log.err_dtl);
 	        #device.log.err_status := #mb.status.status;
 	        #device.log.err_d_addr := #mb.run.exec_d_addr;
-	        #device.intern.err_cnt := MIN(
-	            IN1 := #device.intern.err_cnt + 1,
-	            IN2 := 250 );
-	        #device.qError := true;
+	        #device.intern.err_cnt := SEL(G := #mb.status.timeout,
+	              IN0 := 0,
+	              IN1 := MIN(IN1 := #device.intern.err_cnt + 1,
+	                         IN2 := 250));
 	        #device.log.err_timeout := #mb.status.timeout;
+	        #device.qError := true;
+	        #e := RD_SYS_T(#device.intern.err_dtl);
+	        #tmp_err := true;
 	    END_IF;
 	END_IF;
 	
-	IF NOT #device.enable THEN
-	    #device.qError := false;
-	    #device.qError_tof := false;
-	    #device.intern.err_cnt := 0;
-	END_IF;
-	
-	#device.qComError := #device.intern.err_cnt > #device.config.max_err;
-	IF #device.qError  THEN
-	    #e := RD_SYS_T(#device.intern.err_tof_dtl);
-	    #device.qError_tof := true;
-	ELSIF #device.qError_tof THEN
+	IF #device.qError AND NOT #tmp_err THEN
 	    #e := RD_SYS_T(#rd_sys_t);
-	    #device.qError_tof := #rd_sys_t < #device.intern.err_tof_dtl + #device.config.time_qErrror_tof;
+	    #device.qError := #device.config.tof_qErrror <> 0
+	    AND #rd_sys_t < #device.intern.err_dtl
+	    + #device.config.tof_qErrror;
 	END_IF;
+	#device.qComError :=
+	#device.intern.err_cnt > #device.config.max_qComError;
 	
 	IF #device.intern.skip THEN
 	    #mb.q.qid := #mb.run.qid_cnt + 1; 

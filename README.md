@@ -4,7 +4,7 @@ For Siemens S7-1200 and S7-1500 PLC's.
 
 ```
 Author:   Ola Bjørnli
-Version:  0.2_beta15
+Version:  0.2_beta16
 License:  MIT-license
 Web:      http://mb.sn7.no
           http://github.com/olab84/sn7mb
@@ -68,3 +68,7 @@ For S7-1200: firmware version >= 4.1.3
 Download the blocks and the example from github to get started.
 I you find scl-programming hard, you can of course also use
 lad or fbd.
+
+```
+The software is not affiliated with Siemens AG
+```

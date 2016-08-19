@@ -4,7 +4,7 @@ For Siemens S7-1200 and S7-1500 PLC's.
 
 ```
 Author:   Ola Bjørnli
-Version:  0.2_beta16
+Version:  0.2_beta17
 License:  MIT-license
 Web:      http://mb.sn7.no
           http://github.com/olab84/sn7mb
@@ -17,20 +17,30 @@ All though the new plc series from Siemens has built in support for modbus. It's
 // support modbus tcp.
 
 #mb_rtu_controller(
-	hw_id := "Local~CB_1241_(RS485)",
-	baud := 9600,
-	parity := false,
-	timeout := T#300ms,
-	buffer_db_any := "buffer",
-	buffer_variant := "buffer",
-	mb := #mb);
+    hardware := "Local~CB_1241_(RS485)", 
+    baud := 9600,  // bps
+    parity := true,     // Enable even parity.
+    timeout := T#500ms,   
+    buffer_db_any := "modbus_rtu_buffer",  
+    buffer_variant := "modbus_rtu_buffer",  
+    mb := #mb ); // a udt that comes with the library
 
 // Query 1 - Read holding register.
-"mb_read"(unit := 5,     // device address
-          d_addr := 34,   // data address, 
-          data := #resualt_data,  
-          mb := #mb); // same udt as on the block above.
-		  
+"mb_query"(unit := 2,                     // device address
+           fc := #mb.fc.read_holding_reg, // function code
+           d_addr := 55,                  // data address
+           d_len := 4,                    // data length
+           data := #resualt_data,
+           mb := #mb); // same udt as on the controller
+
+            
+A standard modbus telegram: Parameters of the FC are 
+correlate to the fields of a telegram.  
+.------.------.------------.------------.--  ..  ..  ..   -- --.------------.
+| unit |  fc  |   d_addr   |   d_len    | data ( n x 2 bytes ) |   CRC      |
+'------'------'------------'------------'-- -- ..  ..  .. .. --'------------'		   
+```
+		   
 // "data" is a inOut variant parameter where the query result 
 // will be stored. The parameter can be any kind of data type, 
 // including arrays and udt's. The datatype should match 
@@ -45,28 +55,28 @@ All though the new plc series from Siemens has built in support for modbus. It's
 // wasted of figure out a offset. Just type the address from
 // the data sheets. (Same as for JBus)
 
-// Query 2 
-"mb_read"(unit := 9,
-          d_addr := 25,
-          data := #resualt_data_2,
-          mb := #mb);			  
-```
+// Query 2 - Read input register.
+"mb_query"(unit := 4,                    // device address
+           fc := #mb.fc.read_input_reg,  // function code
+           d_addr := 123,                // data address
+           d_len := #mb.c.auto_len,      // data length
+           data := #resualt_data,
+           mb := #mb); // same udt as above		  
+```	
 		  
 Just by adding more "mb_read" function, more queries can 
 be included. The library will take care of executing the 
-queries one by one in order. There is a corresponding 
-function mb_write. For coils and inputs there is also
-additional functions. 
+queries one by one in order. 
 
 If a timeout occur, the library is smart enough to skip other
 quires with the same device address, until all other queries
 has been executed. Other functionality worth mention, is the
-error log, which is great for debugging.
+error logging, which is great for debugging.
 
 For S7-1200: firmware version >= 4.1.3
 	 
 Download the blocks and the example from github to get started.
-I you find scl-programming hard, you can of course also use
+I you find scl-programming hard, you can of course instead use
 lad or fbd.
 
 ```

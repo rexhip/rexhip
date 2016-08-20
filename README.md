@@ -4,7 +4,6 @@ For Siemens S7-1200 and S7-1500 PLC's.
 
 ```
 Author:   Ola Bjørnli
-Version:  0.2_beta17
 License:  MIT-license
 Web:      http://mb.sn7.no
           http://github.com/olab84/sn7mb
@@ -36,11 +35,11 @@ All though the new plc series from Siemens has built in support for modbus. It's
             
 A standard modbus telegram: Parameters of the FC are 
 correlate to the fields of a telegram.  
-.------.------.------------.------------.--  ..  ..  ..   -- --.------------.
-| unit |  fc  |   d_addr   |   d_len    | data ( n x 2 bytes ) |   CRC      |
-'------'------'------------'------------'-- -- ..  ..  .. .. --'------------'		   
+.---1---.---1---.------2------.------2------.- . .2n . . ---.------2------.
+| unit  |  fc   |   d_addr    |    d_len    |     data      |     CRC     |
+'-------'-------'-------------'-------------'--- . . . . . -'-------------'		   
 ```
-		   
+
 // "data" is a inOut variant parameter where the query result 
 // will be stored. The parameter can be any kind of data type, 
 // including arrays and udt's. The datatype should match 
@@ -55,6 +54,7 @@ correlate to the fields of a telegram.
 // wasted of figure out a offset. Just type the address from
 // the data sheets. (Same as for JBus)
 
+```
 // Query 2 - Read input register.
 "mb_query"(unit := 4,                    // device address
            fc := #mb.fc.read_input_reg,  // function code
@@ -62,7 +62,7 @@ correlate to the fields of a telegram.
            d_len := #mb.c.auto_len,      // data length
            data := #resualt_data,
            mb := #mb); // same udt as above		  
-```	
+```
 		  
 Just by adding more "mb_read" function, more queries can 
 be included. The library will take care of executing the 
@@ -82,3 +82,5 @@ lad or fbd.
 ```
 The software is not affiliated with Siemens AG
 ```
+
+|       |       |             |             |               |            |		   

@@ -27,7 +27,7 @@ BEGIN
 	// COI/FET2XX/MOD/TBL–EN
 	// https://library.e.abb.com/public/91eead459bb0d349c12577fc0033d2b5/COI_FET2XX_MOD_TBL-EN.pdf
 	
-	// Example code, not tested !
+	// Example code, no test with equipment done.
 	
 	"mb_device_header"(device := #device, mb := #mb);
 	
@@ -53,6 +53,12 @@ BEGIN
 	           mb := #mb);
 	
 	"mb_device_footer"(device := #device, mb := #mb);
+	
+	IF #device.qComError THEN
+	    #flow := 0;
+	    #pressure := 0;
+	END_IF;
+	
 END_FUNCTION_BLOCK
 
 FUNCTION_BLOCK "example_novus_tht"
@@ -86,6 +92,8 @@ BEGIN
 	
 	// http://www.novusautomation.com/downloads/Arquivos/v10x_b_manual_rht_wm-dm-p10_485_lcd_%20english.pdf
 	
+	// Example code, no test with equipment done.
+	
 	"mb_device_header"(device := #device, mb := #mb);
 	
 	"mb_query"(unit := #unit,
@@ -102,15 +110,17 @@ BEGIN
 	           data := #serial_number,
 	           mb := #mb);
 	
+	"mb_device_footer"(device := #device, mb := #mb);
+	
 	IF #device.qComError THEN
 	    #serial_number := 0;
 	    #raw_values.temp := 0;
 	    #raw_values.hum := 0;
 	END_IF;
+	
 	#temperature := #raw_values.temp / 10;
 	#humidity := #raw_values.hum / 10;
 	
-	"mb_device_footer"(device := #device, mb := #mb);
 END_FUNCTION_BLOCK
 
 DATA_BLOCK "modbus_rtu_buffer"
@@ -165,12 +175,13 @@ VERSION : 0.1
 
 BEGIN
 	// Start example for a device blocks. A device block is a FB 
-	// that is written for one spesific modbus device. It mapps
+	// that is written for one spesific modbus device. It maps
 	// registers of the device to variables inside the FB.
+	// Simular to a gsd-file for profibus.
 	
 	
 	// Just igone the mb_device_header for now. It isn't a
-	// hundred percent necessary, but give some advantages.
+	// hundred percent necessary, but give advantageses.
 	"mb_device_header"(device := #device, mb := #mb);
 	
 	
@@ -183,33 +194,32 @@ BEGIN
 	// device. And of course the d_addr param has to be set.
 	"mb_query"(unit := #unit,
 	           fc := #mb.fc.read_holding_reg,
-	           d_addr := 0,
+	           d_addr := 123,
 	           d_len := #mb.c.auto_len,
 	           data := #query_1,
 	           mb := #mb);
 	
-	(* A standard modbus telegram:     
-	.------.------.------------.------------.--  ..  ..  ..   -- --.------------.
-	| unit |  fc  |   d_addr   |   d_len    | data ( n x 2 bytes ) |   CRC      |
-	'------'------'------------'------------'-- -- ..  ..  .. .. --'------------'
+	// A standard modbus telegram:     
+	// .------.------.------------.------------.--  ..  ..  -- --.------------.
+	// | unit |  fc  |   d_addr   |   d_len    |      data       |   CRC      |
+	// '------'------'------------'------------'-- --  ..  ..  --'------------'
+	// 
+	// Keep in mind that the value of "d_addr" will be the acctual value
+	// inside the modbus telegram. Eg. to read holding address 123 in 
+	// the device, you simply pass 123 to d_addr and 3 [read_holding_reg] 
+	// to the fc-param. Don't add 40001 to 123 as with the tia-portal 
+	// mb_master or mb_client block.
+	// 
+	// When the read query is sucssefully executed the content of the 
+	// modbus telegram will be written in to the varable connected to 
+	// data-param. Equally the conntent of the varable will be sent to
+	// a modbus device when a write query is executed.
 	
-	Keep in mind that the value of "d_addr" will be the acctual value
-	inside the modbus telegram. Eg. to read holding address 123 in 
-	the device, you simply pass 123 to d_addr and 3 [read_holding_reg] 
-	to the fc-param. Don't add 40001 to 123 as with the tia-portal 
-	mb_master or mb_client block.
-	
-	When the read query is sucssefully executed the content of the 
-	modbus telegram will be written in to the varable connected to 
-	data-param. Equally the conntent of the varable will be sent to
-	a modbus device when a write query is executed.
-	*)
 	
 	// For the d_len parameter, it's easiest to just type #mb.c.auto_len,
 	// and the library will calculate the length automatacally based
-	// on how many words the data-parameter consist of. The library,
-	// will run a little faster if the d_len parameter is typed 
-	// manually. 
+	// on how many words the data-parameter consist of. The library,will 
+	// run a little faster if the d_len parameter is typed manually. 
 	
 	
 	// Simular querie as above, except two input register are read. By
@@ -260,8 +270,8 @@ BEGIN
 	// can contain any complex data structure with all kind of dattypes.
 	// Likes reals, bool, bytes, arrays, etc. The only rule that need to
 	// be followedis, is that the structure has add up the whole words
-	// (16 bits). Also the modbus protocol limit each query to amaximum
-	// of 123 words.
+	// (16 bits). Also the modbus protocol limit each query to maximum
+	// of 123 words. (Sometimes up to 125 words)
 	
 	
 	// If the siemens modes are preferred, they are still available.
@@ -274,7 +284,7 @@ BEGIN
 	// Just keep in mind that the codes are shifted: 200 for mode 0, 201
 	// for mode 1, and 202 for mode 2. By using the constants inside
 	// #mb.fc this is automaticaly taken care of. When the Siemens modes
-	// are used, function code is "embedded" to the d_addr. Eg query
+	// are used, function code is "embedded" to the d_addr. Eg. query
 	// 40005 will acctually query holding register with address 4.
 	
 	
@@ -287,7 +297,7 @@ BEGIN
 	    device := #device, // udt_device                  
 	    mb := #mb); // udt_mb
 	
-	// This are the bennefits of the device header and the footer FC's:
+	// This are the bennefits of using the device header and the footer FC's:
 	//  - First of all they will make sure that the queries
 	//    between them are skipped if a timeout is detected at one querie.
 	//    A new atempted to execute a querie is done after all other queries
@@ -302,8 +312,7 @@ BEGIN
 	//    quite handy as you can se bellow.
 	
 	
-	// For this example values are set to zero if
-	// communcation problems accure.
+	// For this example values are set to zero if communcation problems accure.
 	IF #device.qComError THEN
 	    #query_1.word_1 := 0;
 	    #query_1.word_2 := 0;
@@ -329,23 +338,35 @@ BEGIN
 	#mb_tcp_controller.ip_addr[3] := 1;
 	#mb_tcp_controller.ip_addr[4] := 2;
 	
+	// - interface:      Ethernet port to be used The const. is found
+	//                   inside the "hardware configuration".              
+	// - conn_id:        A unique id for each tcp connectin in the plc.
+	// - tcp_port:       502 is the standard modbus tcp port.
+	// - timeout:
+	// - buffer_db_any:  A db with standard access consisting a array of 125 words.
+	// - buffer_variant: Input the same variable as above.
+	// - udt_mb:         The udt is the link the controller to its belonging queries.
 	#mb_tcp_controller(
-	    interface := "Local~PROFINET_interface_1", // The const. is found inside the "hardware configuration".
-	    conn_id := 123, // Should be unique for each tcp connectin in the plc
-	    tcp_port := 502, 
-	    timeout := T#2s,  
-	    buffer_db_any := "modbus_tcp_buffer",  // A db with standard access consisting a array of 125 words.
-	    buffer_variant := "modbus_tcp_buffer", // Input the same as above.
-	    mb := #mb); // udt_mb, The udt is the link the controller and its belonging queries.
+	    interface := "Local~PROFINET_interface_1",
+	    conn_id := 123, 
+	    tcp_port := 502,  
+	    timeout := T#2s,
+	    buffer_db_any := "modbus_tcp_buffer",  
+	    buffer_variant := "modbus_tcp_buffer", 
+	    mb := #mb); 
 	
 	
 	#device_start_example(
-	    unit := 1, // device address. For tcp devices unit can mostly be set to "1".                                  
+	    unit := 1, // device address. For tcp devices unit can usually be set to "1".                                  
 	    mb := #mb);
 	
 	// Note that a device block cen be used for both tcp and rtu. This of
-	// course require that the device has interface or interface extension
+	// course require that the device has interface or a interface extension,
 	// for both for Ethernet and RS-485. (Or a RS-485 alternativ)
+	
+	// If a tcp-rtu-gateway is used, then more device blocks can be placed here
+	// as in the rtu example.
+	
 	
 END_FUNCTION_BLOCK
 
@@ -367,9 +388,9 @@ VERSION : 0.1
 
 BEGIN
 	#mb_rtu_controller(
-	    hardware := "Local~CB_1241", 
-	    baud := 9600,  // bps
-	    parity := true,     // Enable even parity.
+	    hardware_id := "Local~CB_1241_(RS485)", 
+	    baud := 9600, // bps
+	    parity := true, // Enable even parity.
 	    timeout := T#500ms,   
 	    buffer_db_any := "modbus_rtu_buffer",  
 	    buffer_variant := "modbus_rtu_buffer",  
@@ -396,8 +417,9 @@ BEGIN
 	#example_abb_aquaMaster_3_device2(unit := 7, mb := #mb);
 	
 	// Keep in mind that a device block can be used both for modbus rtu
-	// and tcp. If a tcp-rtu-gateway is used this is very useful.
-	
+	// and tcp. This is specially useful if a tcp-rtu-gateway is used.
+	// The same program could be used, just swap the rtu controller, with
+	// the tcp controller.
 	
 END_FUNCTION_BLOCK
 
@@ -479,6 +501,8 @@ BEGIN
 	// http://w3.siemens.com.br/buildingtechnologies/br/documents/manual-sentron-pac3200.pdf
 	// 3.9.3, page 40
 	
+	// Example code, no test with equipment done.
+	
 	"mb_device_header"(device := #device, mb := #mb);
 	
 	"mb_query"(unit := #unit,
@@ -504,18 +528,27 @@ VERSION : 0.1
 
 BEGIN
 	(*
-	Readme for modbus rtu and tcp.
+	Readme.
+	------------
+	
+	The software is written for both S7-1200 and S7-1500 series, but unfortunately not 
+	for S7-300 and S7-400 series. 
+	
+	Requirements:
+	 - TIA-portal: v13, sp1, upd8 (or greater)
+	 - S7-1200: firmware version >= 4.1.3
 	
 	If the library is only used for rtu then all blocks related to tcp should be removed 
 	to save memory in the PLC. Equally all rtu blocks should be removed if the library
 	is only used for tcp. Also all the example device blocks can be removed to save 
 	memory.
 	
-	Open the rtu_ob or the tcp_ob, and dig into the code, the api should be fairly easy 
-	to understand. The code of the library itself (mb_lib.scl) is a bit tortuous, however 
-	it is there to it's magic job, and it's not intended to be changed.
-	
-	For S7-1200: firmware version >= 4.1.3
+	Key features.
+	 - Take care of execute queries one by one.
+	 - Logging capabilities for development and debugging.
+	 - Avoid global states, to make reusable code.
+	 - Clean and readable API.
+	 - Good timeout handeling to avoiding delay on the bus for other queries.
 	
 END_FUNCTION
 

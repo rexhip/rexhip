@@ -419,15 +419,14 @@ VERSION : 1.0
 
 
 BEGIN
-	// #mb.fix.app := 21;
+	#mb.fix.app := 20;
 	
 	#tcon_ip_v4.InterfaceId := #interface;
 	#tcon_ip_v4.ID := #conn_id;
 	#tcon_ip_v4.RemoteAddress.ADDR := #ip_addr;
 	#tcon_ip_v4.RemotePort := #tcp_port;
 	
-	#tdiscon(REQ := #client.ERROR AND #client.STATUS = 16#80A3,
-	         ID := #conn_id);
+	#tdiscon(REQ := #client.ERROR AND #client.STATUS = 16#80A3, ID := #conn_id);
 	IF #tdiscon.BUSY THEN #client.DISCONNECT := true;
 	ELSIF #tdiscon.DONE THEN #client.DISCONNECT := false;
 	END_IF;
@@ -471,7 +470,7 @@ FUNCTION_BLOCK "mb_rtu_controller"
 { S7_Optimized_Access := 'TRUE' }
 VERSION : 1.0
    VAR_INPUT 
-      hardware : PORT;   // hardware id
+      hardware_id : PORT;   // hardware id
       baud : UDInt := 9600;
       parity : Bool := true;   // enable even parity. false=no parity.
       timeout : Time := T#500ms;
@@ -494,19 +493,16 @@ VERSION : 1.0
 
 
 BEGIN
-	// #mb.fix.app := 11;
+	#mb.fix.app := 10;
 	
-	#comm_load(REQ := NOT #comm_load.DONE
-	                AND NOT #master.BUSY,
-	           "PORT" := #hardware,
+	#comm_load(REQ := NOT #comm_load.DONE AND NOT #master.BUSY,
+	           "PORT" := #hardware_id,
 	           BAUD := #baud,
-	           PARITY := SEL(G := #parity,
-	                         IN0 := 0, IN1 := 2),
+	           PARITY := SEL(G := #parity, IN0 := 0, IN1 := 2),
 	           RESP_TO := TIME_TO_UINT( #timeout ),
 	           MB_DB := #master );
 	
-	#master(REQ := #comm_load.DONE
-	            AND NOT #master.BUSY
+	#master(REQ := #comm_load.DONE AND NOT #master.BUSY
 	            AND NOT #mb.run.insert,
 	        MB_ADDR := #mb.q.unit,
 	        MODE := #mb.run.mode,
@@ -517,8 +513,8 @@ BEGIN
 	        STATUS => #mb.status.status,
 	        DATA_PTR := #buffer_variant );
 	
-	#mb.status.timeout :=
-	#master.ERROR AND #master.STATUS = 16#80C8;
+	#mb.status.timeout := #master.ERROR
+	AND #master.STATUS = 16#80C8;
 	// ------------------------
 	#qError := #mb.status.error;
 	#mb.fix.buffer_db := #buffer_db_any;

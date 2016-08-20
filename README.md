@@ -12,7 +12,7 @@ Web:      http://mb.sn7.no
 All though the new plc-series from Siemens has built in support for modbus. The opinion of the author is that modbus can be done slightly easier with an abstraction layer on top of mb_master or mb_client. This apply especially if there is a lot of modbus devices connected to one bus.
 
 ```
-// A modbus RTU example that illustrate the library. Support modbus tcp is also included.
+// A modbus RTU example that illustrate the library. Support for modbus tcp is also included.
 
 #mb_rtu_controller(
     hardware := "Local~CB_1241_(RS485)", 
@@ -52,7 +52,16 @@ All though the new plc-series from Siemens has built in support for modbus. The 
            mb := #mb); // same udt as above		  
 ```
 
-The library will take care of executing the queries one by one, no need of a state machine. If a timeout occur, the library is smart enough to skip other quires with the same device address. For debugging the library has logging to help out. Download the software from github to get started. You can of course use LAD or FBD instead. For S7-1200: firmware version >= 4.1.3
+Key features.
+ - Take care of executing the queries one by one.
+ - Logging capabilities for development and debugging.
+ - Avoid global states, to make reusable code.
+ - Clean and readable user API.
+ - Good timeout handling to avoiding delay on the bus for other queries.
+
+Requirements:
+ - TIA-portal: v13, sp1, upd8 (or greater)
+ - S7-1200: firmware version >= 4.1.3
 
 ```
 The software is not affiliated with Siemens AG

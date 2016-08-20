@@ -1,96 +1,4 @@
-﻿TYPE "udt_mb_device"
-VERSION : 0.1
-   STRUCT
-      enable : Bool := true;
-      unit : Bool;   // (not in use)
-      qError : Bool;   // All types of errors including comError
-      qComError : Bool;   // Communication error
-      config : Struct
-         max_qComError { S7_SetPoint := 'True'} : USInt := 3;   // Max repeating timeout errors before qComError is set
-         tof_qErrror { S7_SetPoint := 'True'} : Time := T#2s;   // Length of the qError_tof puls
-      END_STRUCT;
-      log : Struct
-         done_cnt : UDInt;
-         done_dtl {OriginalPartName := 'DTL'; LibVersion := '1.0'} : DTL;
-         err_cnt : UDInt;
-         err_dtl {OriginalPartName := 'DTL'; LibVersion := '1.0'} : DTL;
-         err_status : Word;
-         err_timeout : Bool;
-         err_d_addr : UDInt;
-      END_STRUCT;
-      intern : Struct
-         range_start_qid : UInt;
-         range_end_qid : UInt;
-         err_cnt : USInt;   // repeating errors
-         tmp_exec_cnt : UDInt;
-         skip : Bool;
-         err_dtl {OriginalPartName := 'DTL'; LibVersion := '1.0'} : DTL;
-      END_STRUCT;
-   END_STRUCT;
-
-END_TYPE
-
-TYPE "udt_mb"
-VERSION : 0.1
-   STRUCT
-      q : Struct   // query
-         unit : USInt := 1;
-         "fc" : UInt := 3;   // function code
-         d_addr : UDInt;
-         d_len : UInt := 1;
-         qid : UInt := 1;   // query id
-         next : UInt := 1;   // id of next query to be exec.
-         priority : UInt;
-      END_STRUCT;
-      run : Struct
-         mode : USInt;
-         data_addr : UDInt;
-         qid_cnt : UInt;   // query id cnt, one cycle each plc-scan.
-         insert : Bool := true;   // insert query param
-         exec_cnt : UDInt;   // Execute cnt.
-         exec_d_addr : UDInt;
-      END_STRUCT;
-      fix : Struct   // Static varables.
-         buffer_db : DB_ANY;
-         app : SInt;
-         queries : UInt;   // Number of queries
-      END_STRUCT;
-      status : Struct
-         done : Bool;
-         error : Bool;
-         timeout : Bool;
-         status : Word;
-      END_STRUCT;
-      query_above : Struct
-         done : Bool;
-         error : Bool;
-         insert : Bool;
-      END_STRUCT;
-      options : Struct
-         buffer_handler : Bool;
-      END_STRUCT;
-      "fc" : Struct   // Function codes
-         skip_query { S7_HMI_Accessible := 'False'; S7_HMI_Visible := 'False'} : USInt := 0;   // 0
-         read_output_bits { S7_HMI_Accessible := 'False'; S7_HMI_Visible := 'False'} : USInt := 1;   // 1 - (coils)
-         read_input_bits { S7_HMI_Accessible := 'False'; S7_HMI_Visible := 'False'} : USInt := 2;   // 2 - (discrete inputs)
-         read_holding_reg { S7_HMI_Accessible := 'False'; S7_HMI_Visible := 'False'} : USInt := 3;   // 3
-         read_input_reg { S7_HMI_Accessible := 'False'; S7_HMI_Visible := 'False'} : USInt := 4;   // 4
-         write_single_output_bit { S7_HMI_Accessible := 'False'; S7_HMI_Visible := 'False'} : USInt := 5;   // 5 - (coil)
-         write_single_holding_reg { S7_HMI_Accessible := 'False'; S7_HMI_Visible := 'False'} : USInt := 6;   // 6
-         write_output_bits { S7_HMI_Accessible := 'False'; S7_HMI_Visible := 'False'} : USInt := 15;   // 15 - (coils)
-         write_holding_reg { S7_HMI_Accessible := 'False'; S7_HMI_Visible := 'False'} : USInt := 16;   // 16
-         mode_read { S7_HMI_Accessible := 'False'; S7_HMI_Visible := 'False'} : USInt := 200;   // 200
-         mode_write_single { S7_HMI_Accessible := 'False'; S7_HMI_Visible := 'False'} : USInt := 201;   // 201
-         mode_write { S7_HMI_Accessible := 'False'; S7_HMI_Visible := 'False'} : USInt := 202;   // 202
-      END_STRUCT;
-      c : Struct   // Other constants
-         auto_len : UInt := 0;   // 0
-      END_STRUCT;
-   END_STRUCT;
-
-END_TYPE
-
-FUNCTION "mb_buffer_handler" : Void
+﻿FUNCTION "mb_buffer_handler" : Void
 { S7_Optimized_Access := 'FALSE' }
 VERSION : 1.0
    VAR_INPUT 
@@ -172,7 +80,7 @@ VERSION : 1.0
 BEGIN
 	// Lightweight Modbus Abstraction Layer Library. 
 	// Author:   Ola Bjørnli
-	// Version:  0.2_beta18
+	// Version:  0.2_beta19
 	// License:  MIT-license
 	// Web:      http://mb.sn7.no
 	//           http://github.com/olab84/sn7mb

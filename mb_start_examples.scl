@@ -543,12 +543,5 @@ BEGIN
 	is only used for tcp. Also all the example device blocks can be removed to save 
 	memory.
 	
-	Key features.
-	 - Take care of execute queries one by one.
-	 - Logging capabilities for development and debugging.
-	 - Avoid global states, to make reusable code.
-	 - Clean and readable API.
-	 - Good timeout handeling to avoiding delay on the bus for other queries.
-	
 END_FUNCTION
 

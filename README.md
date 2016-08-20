@@ -9,78 +9,50 @@ Web:      http://mb.sn7.no
           http://github.com/olab84/sn7mb
 ```
 
-All though the new plc series from Siemens has built in support for modbus. It's required to build some additional logic to make the queries being executed in order. This software address that issue, the example bellow illustrate how easy modbus can be done with this library:
+All though the new plc-series from Siemens has built in support for modbus. The opinion of the author is that modbus can be done slightly easier with an abstraction layer on top of mb_master or mb_client. This apply especially if there is a lot of modbus devices connected to one bus.
 
 ```
-// A modbus RTU example shown bellow, the library also 
-// support modbus tcp.
+// A modbus RTU example that illustrate the library, the library also support modbus tcp.
 
 #mb_rtu_controller(
     hardware := "Local~CB_1241_(RS485)", 
-    baud := 9600,  // bps
-    parity := true,     // Enable even parity.
+    baud := 9600, // bps
+    parity := true, // Enable even parity.
     timeout := T#500ms,   
     buffer_db_any := "modbus_rtu_buffer",  
     buffer_variant := "modbus_rtu_buffer",  
     mb := #mb ); // a udt that comes with the library
 
-// Query 1 - Read holding register.
+// Query 1: Read holding registers.
 "mb_query"(unit := 2,                     // device address
            fc := #mb.fc.read_holding_reg, // function code
            d_addr := 55,                  // data address
-           d_len := 4,                    // data length
-           data := #resualt_data,
+           d_len := 10,                   // data length
+           data := #resualt_data_1,
            mb := #mb); // same udt as on the controller
-
             
-A standard modbus telegram: Parameters of the FC are 
-correlate to the fields of a telegram.  
-.---1---.---1---.------2------.------2------.- . .2n . . ---.------2------.
-| unit  |  fc   |   d_addr    |    d_len    |     data      |     CRC     |
-'-------'-------'-------------'-------------'--- . . . . . -'-------------'		   
-```
+// .-------.-------.-------------.-------------.- . . . . ---.-------------.		   
+// | unit  |  fc   |   d_addr    |    d_len    |     data    |     CRC     |
+// '-------'-------'-------------'-------------'--- . . . . -'-------------'		   
+//
+// - Parameters of the FC above correlate to the fields in the telegram.  
+// - "data" is a inOut variant parameter where the query result will be stored. 
+//   The parameter can be any kind of data type, including arrays and udt's. 
+// - The datatype should match the datatype of the registers being queried.   
+// - "d_addr" is the value that will be sent in the modbus telegram. To access 
+//   holding register number 55 as in the example, just put 55, and not 40056. 
 
-// "data" is a inOut variant parameter where the query result 
-// will be stored. The parameter can be any kind of data type, 
-// including arrays and udt's. The datatype should match 
-// the datatype of the registers being queried.
-
-// The function will automatically calculate the length field
-// in the modbus telegram. Eg. if "data" is an array of 4 
-// dwords, then the length will automatically be set to 8.
-
-// "d_addr" is the raw telegram address, there is no adding 
-// 40001, or no senseless waste of costly engineers hours 
-// wasted of figure out a offset. Just type the address from
-// the data sheets. (Same as for JBus)
-
-```
-// Query 2 - Read input register.
-"mb_query"(unit := 4,                    // device address
-           fc := #mb.fc.read_input_reg,  // function code
-           d_addr := 123,                // data address
-           d_len := #mb.c.auto_len,      // data length
-           data := #resualt_data,
+// Query 2 - Read input registers.
+"mb_query"(unit := 4,                   // device address
+           fc := #mb.fc.read_input_reg, // function code
+           d_addr := 123,               // data address
+           d_len := #mb.c.auto_len,     // data length
+           data := #resualt_data_2,
            mb := #mb); // same udt as above		  
 ```
-		  
-Just by adding more "mb_read" function, more queries can 
-be included. The library will take care of executing the 
-queries one by one in order. 
 
-If a timeout occur, the library is smart enough to skip other
-quires with the same device address, until all other queries
-has been executed. Other functionality worth mention, is the
-error logging, which is great for debugging.
-
-For S7-1200: firmware version >= 4.1.3
-	 
-Download the blocks and the example from github to get started.
-I you find scl-programming hard, you can of course instead use
-lad or fbd.
+The library will take care of executing the queries one by one, no need of a state machine. If a timeout occur, the library is smart enough to skip other quires with the same device address. For debugging the library has logging to help out. Download the blocks and a example from github to get started. I you find the SCL language hard, you can of course use LAD or FBD. For S7-1200: firmware version >= 4.1.3
 
 ```
 The software is not affiliated with Siemens AG
-```
-
-|       |       |             |             |               |            |		   
+```  

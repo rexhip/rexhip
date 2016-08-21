@@ -22,12 +22,11 @@ VERSION : 0.1
 
 
 BEGIN
-	// ABB - AquaMaster 3 - Electromagnetic flowmeter
-	
-	// COI/FET2XX/MOD/TBL–EN
-	// https://library.e.abb.com/public/91eead459bb0d349c12577fc0033d2b5/COI_FET2XX_MOD_TBL-EN.pdf
-	
-	// Example code, no test with equipment done.
+	// - ABB - AquaMaster 3 - Electromagnetic flowmeter
+	// - COI/FET2XX/MOD/TBL–EN
+	// - https://library.e.abb.com/public/
+	//   91eead459bb0d349c12577fc0033d2b5/COI_FET2XX_MOD_TBL-EN.pdf
+	// - Example code, no test with equipment done.
 	
 	"mb_device_header"(device := #device, mb := #mb);
 	
@@ -60,94 +59,6 @@ BEGIN
 	END_IF;
 	
 END_FUNCTION_BLOCK
-
-FUNCTION_BLOCK "example_novus_tht"
-{ S7_Optimized_Access := 'TRUE' }
-VERSION : 0.1
-   VAR_INPUT 
-      unit : USInt;
-   END_VAR
-
-   VAR_OUTPUT 
-      temperature : Int;
-      humidity : Int;
-   END_VAR
-
-   VAR_IN_OUT 
-      mb : "udt_mb";
-   END_VAR
-
-   VAR 
-      device : "udt_mb_device";
-      serial_number : DWord;
-      raw_values { S7_HMI_Accessible := 'False'; S7_HMI_Visible := 'False'} : Struct
-         temp { S7_HMI_Accessible := 'False'; S7_HMI_Visible := 'False'} : Int;
-         hum { S7_HMI_Accessible := 'False'; S7_HMI_Visible := 'False'} : Int;
-      END_STRUCT;
-   END_VAR
-
-
-BEGIN
-	// Novus - RHT (Temperature transmitter)
-	
-	// http://www.novusautomation.com/downloads/Arquivos/v10x_b_manual_rht_wm-dm-p10_485_lcd_%20english.pdf
-	
-	// Example code, no test with equipment done.
-	
-	"mb_device_header"(device := #device, mb := #mb);
-	
-	"mb_query"(unit := #unit,
-	           fc := #mb.fc.read_holding_reg,
-	           d_addr := 7,
-	           d_len := #mb.c.auto_len,
-	           data := #raw_values,
-	           mb := #mb);
-	
-	"mb_query"(unit := #unit,
-	           fc := #mb.fc.read_holding_reg,
-	           d_addr := 0,
-	           d_len := #mb.c.auto_len,
-	           data := #serial_number,
-	           mb := #mb);
-	
-	"mb_device_footer"(device := #device, mb := #mb);
-	
-	IF #device.qComError THEN
-	    #serial_number := 0;
-	    #raw_values.temp := 0;
-	    #raw_values.hum := 0;
-	END_IF;
-	
-	#temperature := #raw_values.temp / 10;
-	#humidity := #raw_values.hum / 10;
-	
-END_FUNCTION_BLOCK
-
-DATA_BLOCK "modbus_rtu_buffer"
-{ S7_Optimized_Access := 'FALSE' }
-VERSION : 0.1
-NON_RETAIN
-   STRUCT 
-      buffer : Array[0..125] of Word;
-   END_STRUCT;
-
-
-BEGIN
-
-END_DATA_BLOCK
-
-DATA_BLOCK "modbus_tcp_buffer"
-{ S7_Optimized_Access := 'FALSE' }
-VERSION : 0.1
-NON_RETAIN
-   STRUCT 
-      buffer : Array[0..125] of Word;
-   END_STRUCT;
-
-
-BEGIN
-
-END_DATA_BLOCK
 
 FUNCTION_BLOCK "modbus_device_start_example"
 { S7_Optimized_Access := 'TRUE' }
@@ -189,7 +100,7 @@ BEGIN
 	// "#unit" staring at holding register with address "d_addr". Two words
 	// are read becouse the #query_1 structure contains two words. The
 	// length of the querie is automatically calculated from the number of
-	// byes in the data parameter. The structure of the #query_1 has to be
+	// bytes in the data parameter. The structure of the #query_1 has to be
 	// customized for each querie, to match the data of the register in the
 	// device. And of course the d_addr param has to be set.
 	"mb_query"(unit := #unit,
@@ -201,25 +112,24 @@ BEGIN
 	
 	// A standard modbus telegram:     
 	// .------.------.------------.------------.--  ..  ..  -- --.------------.
-	// | unit |  fc  |   d_addr   |   d_len    |      data       |   CRC      |
+	// | unit |  fc  |   d_addr   |   d_len    |      data       |    CRC     |
 	// '------'------'------------'------------'-- --  ..  ..  --'------------'
 	// 
-	// Keep in mind that the value of "d_addr" will be the acctual value
-	// inside the modbus telegram. Eg. to read holding address 123 in 
-	// the device, you simply pass 123 to d_addr and 3 [read_holding_reg] 
-	// to the fc-param. Don't add 40001 to 123 as with the tia-portal 
-	// mb_master or mb_client block.
+	// Keep in mind that the value of "d_addr" will be the acctual value inside
+	// the modbus telegram. Eg. to read holding address 123 in the device, you
+	// simply pass 123 to d_addr and 3 [read_holding_reg] to the fc-param.
+	// Don't add 40001 to 123 as with the tia-portal mb_master or mb_client
+	// block.
 	// 
-	// When the read query is sucssefully executed the content of the 
-	// modbus telegram will be written in to the varable connected to 
-	// data-param. Equally the conntent of the varable will be sent to
-	// a modbus device when a write query is executed.
-	
-	
-	// For the d_len parameter, it's easiest to just type #mb.c.auto_len,
-	// and the library will calculate the length automatacally based
-	// on how many words the data-parameter consist of. The library,will 
-	// run a little faster if the d_len parameter is typed manually. 
+	// When the read query is sucssefully executed the content of the  modbus
+	// telegram will be written in to the varable connected to data-param.
+	// Equally the conntent of the varable will be sent to a modbus device when
+	// a write query is executed.
+	//
+	// Regards the d_len parameter, it's easiest to just type #mb.c.auto_len,
+	// and the library will calculate the length automatacally based on how
+	// many words the data-parameter consist of. The library, will run a
+	// little faster if the d_len parameter is typed manually.
 	
 	
 	// Simular querie as above, except two input register are read. By
@@ -281,7 +191,7 @@ BEGIN
 	           d_len := #mb.c.auto_len,
 	           data := #query_4,
 	           mb := #mb);
-	// Just keep in mind that the codes are shifted: 200 for mode 0, 201
+	// Just keep in mind that the modes are shifted: 200 for mode 0, 201
 	// for mode 1, and 202 for mode 2. By using the constants inside
 	// #mb.fc this is automaticaly taken care of. When the Siemens modes
 	// are used, function code is "embedded" to the d_addr. Eg. query
@@ -322,53 +232,92 @@ BEGIN
 	END_IF;
 END_FUNCTION_BLOCK
 
-FUNCTION_BLOCK "modbus_tcp_start_example"
+DATA_BLOCK "modbus_rtu_buffer"
+{ S7_Optimized_Access := 'FALSE' }
+VERSION : 0.1
+NON_RETAIN
+   STRUCT 
+      buffer : Array[0..125] of Word;
+   END_STRUCT;
+
+
+BEGIN
+
+END_DATA_BLOCK
+
+FUNCTION_BLOCK "example_novus_tht"
 { S7_Optimized_Access := 'TRUE' }
 VERSION : 0.1
-   VAR 
+   VAR_INPUT 
+      unit : USInt;
+   END_VAR
+
+   VAR_OUTPUT 
+      temperature : Int;
+      humidity : Int;
+   END_VAR
+
+   VAR_IN_OUT 
       mb : "udt_mb";
-      mb_tcp_controller : "mb_tcp_controller";
-      device_start_example : "modbus_device_start_example";
+   END_VAR
+
+   VAR 
+      device : "udt_mb_device";
+      serial_number : DWord;
+      raw_values { S7_HMI_Accessible := 'False'; S7_HMI_Visible := 'False'} : Struct
+         temp { S7_HMI_Accessible := 'False'; S7_HMI_Visible := 'False'} : Int;
+         hum { S7_HMI_Accessible := 'False'; S7_HMI_Visible := 'False'} : Int;
+      END_STRUCT;
    END_VAR
 
 
 BEGIN
-	#mb_tcp_controller.ip_addr[1] := 192;
-	#mb_tcp_controller.ip_addr[2] := 168;
-	#mb_tcp_controller.ip_addr[3] := 1;
-	#mb_tcp_controller.ip_addr[4] := 2;
+	// - Novus - RHT (Temperature transmitter)
+	// - http://www.novusautomation.com/downloads/Arquivos/
+	//   v10x_b_manual_rht_wm-dm-p10_485_lcd_%20english.pdf
+	// - Example code, no test with equipment done.
 	
-	// - interface:      Ethernet port to be used The const. is found
-	//                   inside the "hardware configuration".              
-	// - conn_id:        A unique id for each tcp connectin in the plc.
-	// - tcp_port:       502 is the standard modbus tcp port.
-	// - timeout:
-	// - buffer_db_any:  A db with standard access consisting a array of 125 words.
-	// - buffer_variant: Input the same variable as above.
-	// - udt_mb:         The udt is the link the controller to its belonging queries.
-	#mb_tcp_controller(
-	    interface := "Local~PROFINET_interface_1",
-	    conn_id := 123, 
-	    tcp_port := 502,  
-	    timeout := T#2s,
-	    buffer_db_any := "modbus_tcp_buffer",  
-	    buffer_variant := "modbus_tcp_buffer", 
-	    mb := #mb); 
+	"mb_device_header"(device := #device, mb := #mb);
 	
+	"mb_query"(unit := #unit,
+	           fc := #mb.fc.read_holding_reg,
+	           d_addr := 7,
+	           d_len := #mb.c.auto_len,
+	           data := #raw_values,
+	           mb := #mb);
 	
-	#device_start_example(
-	    unit := 1, // device address. For tcp devices unit can usually be set to "1".                                  
-	    mb := #mb);
+	"mb_query"(unit := #unit,
+	           fc := #mb.fc.read_holding_reg,
+	           d_addr := 0,
+	           d_len := #mb.c.auto_len,
+	           data := #serial_number,
+	           mb := #mb);
 	
-	// Note that a device block cen be used for both tcp and rtu. This of
-	// course require that the device has interface or a interface extension,
-	// for both for Ethernet and RS-485. (Or a RS-485 alternativ)
+	"mb_device_footer"(device := #device, mb := #mb);
 	
-	// If a tcp-rtu-gateway is used, then more device blocks can be placed here
-	// as in the rtu example.
+	IF #device.qComError THEN
+	    #serial_number := 0;
+	    #raw_values.temp := 0;
+	    #raw_values.hum := 0;
+	END_IF;
 	
+	#temperature := #raw_values.temp / 10;
+	#humidity := #raw_values.hum / 10;
 	
 END_FUNCTION_BLOCK
+
+DATA_BLOCK "modbus_tcp_buffer"
+{ S7_Optimized_Access := 'FALSE' }
+VERSION : 0.1
+NON_RETAIN
+   STRUCT 
+      buffer : Array[0..125] of Word;
+   END_STRUCT;
+
+
+BEGIN
+
+END_DATA_BLOCK
 
 FUNCTION_BLOCK "modbus_rtu_start_example"
 { S7_Optimized_Access := 'TRUE' }
@@ -423,15 +372,53 @@ BEGIN
 	
 END_FUNCTION_BLOCK
 
-DATA_BLOCK "modbus_rtu_start_example_DB"
+FUNCTION_BLOCK "modbus_tcp_start_example"
 { S7_Optimized_Access := 'TRUE' }
 VERSION : 0.1
-NON_RETAIN
-"modbus_rtu_start_example"
+   VAR 
+      mb : "udt_mb";
+      mb_tcp_controller : "mb_tcp_controller";
+      device_start_example : "modbus_device_start_example";
+   END_VAR
+
 
 BEGIN
-
-END_DATA_BLOCK
+	#mb_tcp_controller.ip_addr[1] := 192;
+	#mb_tcp_controller.ip_addr[2] := 168;
+	#mb_tcp_controller.ip_addr[3] := 1;
+	#mb_tcp_controller.ip_addr[4] := 2;
+	#mb_tcp_controller(
+	    interface := "Local~PROFINET_interface_1",
+	    conn_id := 123, 
+	    tcp_port := 502,  
+	    timeout := T#2s,
+	    buffer_db_any := "modbus_tcp_buffer",  
+	    buffer_variant := "modbus_tcp_buffer", 
+	    mb := #mb);
+	
+	// - interface:      Ethernet port to be used The const. is found
+	//                   inside the "hardware configuration".              
+	// - conn_id:        A unique id for each tcp connectin in the plc.
+	// - tcp_port:       502 is the standard modbus tcp port.
+	// - timeout:
+	// - buffer_db_any:  A db with standard access consisting a array of 125 words.
+	// - buffer_variant: Input the same variable as above.
+	// - udt_mb:         The udt is the link the controller to its belonging queries.
+	
+	
+	#device_start_example(
+	    unit := 1, // device address. For tcp devices unit can usually be set to "1".                                  
+	    mb := #mb);
+	
+	// Note that a device block cen be used for both tcp and rtu. This of
+	// course require that the device has interface or a interface extension,
+	// for both for Ethernet and RS-485. (Or a RS-485 alternativ)
+	
+	// If a tcp-rtu-gateway is used, then more device blocks can be placed here
+	// as in the rtu example.
+	
+	
+END_FUNCTION_BLOCK
 
 DATA_BLOCK "modbus_tcp_start_example_DB"
 { S7_Optimized_Access := 'TRUE' }
@@ -442,6 +429,51 @@ NON_RETAIN
 BEGIN
 
 END_DATA_BLOCK
+
+DATA_BLOCK "modbus_rtu_start_example_DB"
+{ S7_Optimized_Access := 'TRUE' }
+VERSION : 0.1
+NON_RETAIN
+"modbus_rtu_start_example"
+
+BEGIN
+
+END_DATA_BLOCK
+
+ORGANIZATION_BLOCK "rtu_ob"
+TITLE = "Main Program Sweep (Cycle)"
+{ S7_Optimized_Access := 'TRUE' }
+VERSION : 0.1
+
+BEGIN
+	
+	// Open the block to see the example.
+	"modbus_rtu_start_example_DB"();
+	
+END_ORGANIZATION_BLOCK
+
+FUNCTION "readme" : Void
+{ S7_Optimized_Access := 'TRUE' }
+VERSION : 0.1
+
+BEGIN
+	(*
+	Readme.
+	------------
+	
+	The software is written for both S7-1200 and S7-1500 series, but unfortunately not 
+	for S7-300 and S7-400 series. 
+	
+	Requirements:
+	 - TIA-portal: v13, sp1, upd8 (or greater)
+	 - S7-1200: firmware version >= 4.1.3
+	
+	If the library is only used for rtu then all blocks related to tcp should be removed 
+	to save memory in the PLC. Equally all rtu blocks should be removed if the library
+	is only used for tcp. Also all the example device blocks can be removed to save 
+	memory.
+	
+END_FUNCTION
 
 ORGANIZATION_BLOCK "tcp_ob"
 TITLE = "Main Program Sweep (Cycle)"
@@ -455,17 +487,65 @@ BEGIN
 	
 END_ORGANIZATION_BLOCK
 
-ORGANIZATION_BLOCK "rtu_ob"
-TITLE = "Main Program Sweep (Cycle)"
+FUNCTION_BLOCK "example_sm"
 { S7_Optimized_Access := 'TRUE' }
 VERSION : 0.1
+   VAR_INPUT 
+      unit : USInt := 1;
+   END_VAR
+
+   VAR_IN_OUT 
+      mb : "udt_mb";
+   END_VAR
+
+   VAR 
+      query_1 : Word;
+      query_2 : Word;
+      query_3 : Word;
+      state : SInt;
+   END_VAR
+
 
 BEGIN
+	// This is an advanced example which most users don't need to
+	// worry about. Read "modbus_device_start_example" before
+	// reading this example.
+	// 
+	// If there is a need of forcing some queries to be executed
+	// in a given order, then the example bellow should be followed.
 	
-	// Open the block to see the example.
-	"modbus_rtu_start_example_DB"();
+	CASE #state OF
+	    0:
+	        "mb_query"(unit := #unit,
+	                   fc := #mb.fc.write_holding_reg,
+	                   d_addr := 123,
+	                   d_len := #mb.c.auto_len,
+	                   data := #query_1,
+	                   mb := #mb);
+	        #state := #state + BOOL_TO_SINT(#mb.query_above.done);
+	        // "#mb.query_above.done" is true if the query above
+	        // in the code just finnished a sucessfull query.
+	        // There is also "#mb.query_above.error" to check if
+	        // the query above resualted in an error.    
+	    1:
+	        "mb_query"(unit := #unit,
+	                   fc := #mb.fc.write_holding_reg,
+	                   d_addr := 456,
+	                   d_len := #mb.c.auto_len,
+	                   data := #query_2,
+	                   mb := #mb);
+	        #state := #state + BOOL_TO_SINT(#mb.query_above.done);
+	    2:
+	        "mb_query"(unit := #unit,
+	                   fc := #mb.fc.read_holding_reg,
+	                   d_addr := 789,
+	                   d_len := #mb.c.auto_len,
+	                   data := #query_3,
+	                   mb := #mb);
+	        #state := #state + BOOL_TO_SINT(#mb.query_above.done);
+	END_CASE;
 	
-END_ORGANIZATION_BLOCK
+END_FUNCTION_BLOCK
 
 FUNCTION_BLOCK "example_siemens_PAC3200"
 { S7_Optimized_Access := 'TRUE' }
@@ -497,11 +577,11 @@ VERSION : 0.1
 
 
 BEGIN
-	// Siemens - PAC3200
-	// http://w3.siemens.com.br/buildingtechnologies/br/documents/manual-sentron-pac3200.pdf
-	// 3.9.3, page 40
-	
-	// Example code, no test with equipment done.
+	// - Siemens - PAC3200
+	// - http://w3.siemens.com.br/buildingtechnologies/br/
+	//   documents/manual-sentron-pac3200.pdf
+	//   3.9.3, page 40
+	// - Example code, no test with equipment done.
 	
 	"mb_device_header"(device := #device, mb := #mb);
 	
@@ -521,27 +601,4 @@ BEGIN
 	
 	"mb_device_footer"(device := #device, mb := #mb);
 END_FUNCTION_BLOCK
-
-FUNCTION "readme" : Void
-{ S7_Optimized_Access := 'TRUE' }
-VERSION : 0.1
-
-BEGIN
-	(*
-	Readme.
-	------------
-	
-	The software is written for both S7-1200 and S7-1500 series, but unfortunately not 
-	for S7-300 and S7-400 series. 
-	
-	Requirements:
-	 - TIA-portal: v13, sp1, upd8 (or greater)
-	 - S7-1200: firmware version >= 4.1.3
-	
-	If the library is only used for rtu then all blocks related to tcp should be removed 
-	to save memory in the PLC. Equally all rtu blocks should be removed if the library
-	is only used for tcp. Also all the example device blocks can be removed to save 
-	memory.
-	
-END_FUNCTION
 

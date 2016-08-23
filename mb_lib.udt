@@ -2,7 +2,7 @@
 VERSION : 0.1
    STRUCT
       enable : Bool := true;
-      unit : Bool;   // (not in use)
+      unit : USInt;   // (not in use)
       qError : Bool;   // All types of errors including comError
       qComError : Bool;   // Communication error
       config : Struct
@@ -23,7 +23,6 @@ VERSION : 0.1
          range_end_qid : UInt;
          err_cnt : USInt;   // repeating errors
          tmp_exec_cnt : UDInt;
-         skip : Bool;
          err_dtl {OriginalPartName := 'DTL'; LibVersion := '1.0'} : DTL;
       END_STRUCT;
    END_STRUCT;
@@ -55,6 +54,11 @@ VERSION : 0.1
          app : SInt;
          queries : UInt;   // Number of queries
       END_STRUCT;
+      ath : Struct   // Advanced timeout handler
+         timeout : Bool;
+         d_cnt : UInt;   // device cnt, simular to qid_cnt
+         last : UInt := 1;
+      END_STRUCT;
       status : Struct
          done : Bool;
          error : Bool;
@@ -67,7 +71,8 @@ VERSION : 0.1
          insert : Bool;
       END_STRUCT;
       options : Struct
-         buffer_handler : Bool;
+         buffer_handler : Bool := true;
+         en_ath { S7_SetPoint := 'True'} : Bool := true;   // Enable advanced timeout handler
       END_STRUCT;
       "fc" : Struct   // Function codes
          skip_query { S7_HMI_Accessible := 'False'; S7_HMI_Visible := 'False'} : USInt := 0;   // 0

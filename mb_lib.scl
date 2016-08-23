@@ -80,7 +80,7 @@ VERSION : 1.0
 BEGIN
 	// Lightweight Modbus Abstraction Layer Library. 
 	// Author:   Ola Bjørnli
-	// Version:  0.2_beta19
+	// Version:  0.2_beta20
 	// License:  MIT-license
 	// Web:      http://mb.sn7.no
 	//           http://github.com/olab84/sn7mb
@@ -211,18 +211,24 @@ VERSION : 1.0
 
 
 BEGIN
+	#mb.ath.d_cnt := #mb.ath.d_cnt + 1;
 	#device.intern.tmp_exec_cnt := #mb.run.exec_cnt;
-	#device.intern.skip := false;
 	
 	IF #mb.q.qid >= #device.intern.range_start_qid
 	    AND #mb.q.qid <= #device.intern.range_end_qid
-	    AND (  NOT #mb.run.insert AND #mb.status.timeout
-	        OR NOT #device.enable )
 	THEN
-	    #mb.q.qid := 16#fff0;
-	    #device.intern.skip := true;
-	    #device.intern.tmp_exec_cnt := #device.intern.tmp_exec_cnt
-	        + BOOL_TO_UDINT(#mb.status.timeout);
+	    IF NOT #device.enable THEN
+	        #mb.q.qid := 16#ffff; // ffff -> skip device.        
+	    ELSIF NOT #mb.run.insert AND #mb.status.timeout THEN
+	        #mb.q.qid := 16#ffff;
+	        #device.intern.tmp_exec_cnt := #device.intern.tmp_exec_cnt + 1;
+	        #mb.ath.timeout := true;
+	        #mb.ath.last := #mb.ath.last + 1;
+	    ELSIF #device.qComError AND #mb.options.en_ath
+	        AND (#mb.ath.d_cnt < #mb.ath.last OR #mb.ath.timeout)
+	    THEN
+	        #mb.q.qid := 16#ffff;
+	    END_IF;
 	END_IF;
 	
 	#device.intern.range_start_qid := #mb.run.qid_cnt + 1;
@@ -279,7 +285,7 @@ BEGIN
 	#device.qComError :=
 	#device.intern.err_cnt > #device.config.max_qComError;
 	
-	IF #device.intern.skip THEN
+	IF #mb.q.qid = 16#ffff THEN
 	    #mb.q.qid := #mb.run.qid_cnt + 1; 
 	    #mb.run.insert := true;
 	    #mb.options.buffer_handler := true;
@@ -289,7 +295,6 @@ BEGIN
 	END_IF;
 	
 	#device.intern.range_end_qid := #mb.run.qid_cnt;
-	#device.intern.skip := false;
 END_FUNCTION
 
 FUNCTION_BLOCK "mb_tcp_controller"
@@ -319,6 +324,8 @@ VERSION : 1.0
       ton_timeout {OriginalPartName := 'IEC_TIMER'; LibVersion := '1.0'} : TON_TIME;
       ton_timeout_q : Bool;
       tdiscon {OriginalPartName := 'T_DISCON'; LibVersion := '2.1'} : TDISCON;
+      aa : UInt;
+      aa2 : UInt;
    END_VAR
 
    VAR_TEMP 
@@ -369,9 +376,18 @@ BEGIN
 	// ------------------------
 	#qError := #mb.status.error;
 	#mb.fix.buffer_db := #buffer_db_any;
-	IF #mb.q.qid > #mb.run.qid_cnt THEN #mb.q.qid := 1; END_IF;
+	IF #mb.q.qid > #mb.run.qid_cnt THEN
+	    #mb.q.qid := 1;
+	    #aa := #aa + 1;
+	    IF NOT #mb.ath.timeout THEN
+	        #mb.ath.last := 1;
+	        #aa2 := #aa2 + 1;
+	    END_IF;
+	    #mb.ath.timeout := false;
+	END_IF;
 	#mb.fix.queries := #mb.run.qid_cnt;
 	#mb.run.qid_cnt := 0;
+	#mb.ath.d_cnt := 0;
 END_FUNCTION_BLOCK
 
 FUNCTION_BLOCK "mb_rtu_controller"
@@ -423,11 +439,19 @@ BEGIN
 	
 	#mb.status.timeout := #master.ERROR
 	AND #master.STATUS = 16#80C8;
+	
 	// ------------------------
 	#qError := #mb.status.error;
 	#mb.fix.buffer_db := #buffer_db_any;
-	IF #mb.q.qid > #mb.run.qid_cnt THEN #mb.q.qid := 1; END_IF;
+	IF #mb.q.qid > #mb.run.qid_cnt THEN
+	    #mb.q.qid := 1;
+	    IF NOT #mb.ath.timeout THEN
+	        #mb.ath.last := 1;
+	    END_IF;
+	    #mb.ath.timeout := false;
+	END_IF;
 	#mb.fix.queries := #mb.run.qid_cnt;
 	#mb.run.qid_cnt := 0;
+	#mb.ath.d_cnt := 0;
 END_FUNCTION_BLOCK
 

@@ -80,7 +80,7 @@ VERSION : 1.0
 BEGIN
 	// Lightweight Modbus Abstraction Layer Library. 
 	// Author:   Ola Bjørnli
-	// Version:  0.2_beta21
+	// Version:  0.2_beta22
 	// License:  MIT-license
 	// Web:      http://mb.sn7.no
 	//           http://github.com/olab84/sn7mb
@@ -122,18 +122,15 @@ BEGIN
 	END_IF;
 	
 	IF #mb.run.insert THEN
+	    #mb.run.mode := 0;
 	    CASE #fc OF
-	        1:  // Read output bits 
-	            #mb.run.mode := 0;
+	        1:  // Read output bits             
 	            #mb.run.data_addr := 1 + #d_addr;
-	        2:  // Read input bits
-	            #mb.run.mode := 0;
+	        2:  // Read input bits            
 	            #mb.run.data_addr := 10001 + #d_addr;
-	        3:  // Read holding reg.
-	            #mb.run.mode := 0;
+	        3:  // Read holding reg.            
 	            #mb.run.data_addr := 400001 + #d_addr;
-	        4:  // Read input word
-	            #mb.run.mode := 0;
+	        4:  // Read input word            
 	            #mb.run.data_addr := 30001 + #d_addr;
 	        5:  // Writing a single output bit
 	            #mb.run.mode := 1;
@@ -214,6 +211,10 @@ BEGIN
 	#mb.ath.d_cnt := #mb.ath.d_cnt + 1;
 	#device.intern.tmp_exec_cnt := #mb.run.exec_cnt;
 	
+	IF #mb.q.qid = 16#ffff THEN
+	    #mb.q.qid := #mb.run.qid_cnt + 1;
+	END_IF;
+	
 	IF #mb.q.qid >= #device.intern.range_start_qid
 	    AND #mb.q.qid <= #device.intern.range_end_qid
 	THEN
@@ -278,12 +279,12 @@ BEGIN
 	
 	IF #device.qError AND NOT #tmp_err THEN
 	    #e := RD_SYS_T(#rd_sys_t);
-	    #device.qError := #device.config.tof_qErrror <> 0
+	    #device.qError := #device.conf.time_qErrror <> 0
 	    AND #rd_sys_t < #device.intern.err_dtl
-	    + #device.config.tof_qErrror;
+	    + #device.conf.time_qErrror;
 	END_IF;
 	#device.qComError :=
-	#device.intern.err_cnt > #device.config.max_qComError;
+	#device.intern.err_cnt > #device.conf.max_qComError;
 	
 	IF #mb.q.qid = 16#ffff THEN
 	    #mb.q.qid := #mb.run.qid_cnt + 1; 

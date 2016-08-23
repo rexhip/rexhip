@@ -5,9 +5,9 @@ VERSION : 0.1
       unit : USInt;   // (not in use)
       qError : Bool;   // All types of errors including comError
       qComError : Bool;   // Communication error
-      config : Struct
+      conf : Struct
          max_qComError { S7_SetPoint := 'True'} : USInt := 3;   // Max repeating timeout errors before qComError is set
-         tof_qErrror { S7_SetPoint := 'True'} : Time := T#2s;   // Length of the qError_tof puls
+         time_qErrror { S7_SetPoint := 'True'} : Time := T#2s;   // Length of the qError_tof puls
       END_STRUCT;
       log : Struct
          done_cnt : UDInt;

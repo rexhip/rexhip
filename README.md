@@ -9,7 +9,7 @@ Web:      http://mb.sn7.no
           http://github.com/olab84/sn7mb
 ```
 
-All though the new plc-series from Siemens has built in support for modbus. The opinion of the author is that modbus can be done slightly easier with an abstraction layer on top of mb_master or mb_client. This apply especially if there is a lot of modbus devices connected to one bus.
+All though the new PLC's series from Siemens has built in support for modbus. The opinion of the author is that modbus can be done slightly easier with an abstraction layer on top of mb_master or mb_client. This apply especially if there is a lot of modbus devices connected to one bus.
 
 ```
 // A modbus RTU example that illustrate the library. Support for modbus tcp is also included.
@@ -35,13 +35,12 @@ All though the new plc-series from Siemens has built in support for modbus. The 
 // | unit  |  fc   |   d_addr    |    d_len    |     data    |     CRC     |
 // '-------'-------'-------------'-------------'--- . . . . -'-------------'		   
 //
-// - Parameters of the FC above correlate to the fields in the telegram.  
-// - "data" is a inOut variant parameter where the query result will be stored. 
-//   The parameter can be any kind of data type, including arrays and complex
-//   structures. The datatype should match the datatype of the registers being 
-//   queried.   
+// - Parameters of the query above correlate to the fields in the telegram.  
+// - The result of the query will be stored inside the variable connected to 
+//   "data". Because "data" is variant it can store any kind of data type, 
+//   including arrays and complex structures. 
 // - "d_addr" is the value that will be sent in the modbus telegram. To access 
-//   holding register number 55 as in the example, just put 55, and not 40056. 
+//   holding register number 55 as in the example, input 55, and not 40056. 
 
 // Query 2 - Read input registers.
 "mb_query"(unit := 4,                   // device address
@@ -55,9 +54,12 @@ All though the new plc-series from Siemens has built in support for modbus. The 
 Key features.
  - Take care of executing the queries one by one.
  - Logging capabilities for development and debugging.
- - Avoid global states, to make reusable code.
+ - Avoid global states, which make it possible to create reusable 
+   device blocks, similar to proibus gsd-files. 
  - Clean and readable user API.
- - Good timeout handling to avoiding delay on the bus for other queries.
+ - Advanced timeout handler, that will reduce queries to devices
+   where timeout has accrued before.
+
 
 Requirements:
  - TIA-portal: v13, sp1, upd8 (or greater)

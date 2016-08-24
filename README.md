@@ -17,7 +17,7 @@ and to create a common clean API for "device blocks".
 ```
 // A modbus RTU example that illustrate the library. Support for modbus tcp is also included.
 
-#mb_rtu_controller(
+#mb_master_controller(
     hardware_id := "Local~CB_1241_(RS485)", 
     baud := 9600, // bps
     parity := true, // Enable even parity.

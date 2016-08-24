@@ -58,7 +58,7 @@ Key features.
  - Take care of executing the queries, one by one.
  - Logging capabilities for development and debugging.
  - Avoid global states, which make it possible to create reusable 
-   device blocks, equivalent to proibus gsd-files. 
+   device blocks, similar to proibus gsd-files. 
  - Clean and readable API.  
  - Readable code still for application with hundreds of devices.
  - Advanced timeout handler that reduce idle time.  

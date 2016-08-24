@@ -336,7 +336,7 @@ FUNCTION_BLOCK "modbus_rtu_start_example"
 VERSION : 0.1
    VAR 
       mb : "udt_mb";
-      mb_rtu_controller : "mb_rtu_controller";
+      mb_rtu_controller : "mb_master_controller";
       device_start_example_device1 : "modbus_device_start_example";
       device_start_example_device2 : "modbus_device_start_example";
       device_start_example_device3 : "modbus_device_start_example";
@@ -344,14 +344,15 @@ VERSION : 0.1
       example_novus_tht_device2 : "example_novus_tht";
       example_abb_aquaMaster_3_device1 : "example_abb_aquaMaster_3";
       example_abb_aquaMaster_3_device2 : "example_abb_aquaMaster_3";
+      resault_data_1 : Word;
    END_VAR
 
 
 BEGIN
 	#mb_rtu_controller(
-	    hardware_id := "Local~CB_1241_(RS485)", 
+	    hardware_id := "Local~CB_1241_(RS485)", // Setup the rtu-line in the hardware configurator
 	    baud := 9600, // bps
-	    parity := true, // Enable even parity.
+	    parity := true, // Enable even parity. (Odd parity is not available)
 	    timeout := T#500ms,   
 	    buffer_db_any := "modbus_rtu_buffer",  
 	    buffer_variant := "modbus_rtu_buffer",  
@@ -359,9 +360,8 @@ BEGIN
 	
 	// In this rtu example there are 7 devices (units) connected to the
 	// modbus rtu bus. Each instance of the blocks bellow represent 
-	// one unit on the line. In this way is very easy to reuse 
-	// code once there has been created a "device block" for one 
-	// device.
+	// one unit on the line. In this way is very easy to reuse code once
+	// there has been created a "device block" for one device.
 	
 	// Open the start example to see how a device block is created.
 	// ( unit => device-address ) 
@@ -382,6 +382,19 @@ BEGIN
 	// The same program could be used, just swap the rtu controller, with
 	// the tcp controller.
 	
+	
+	// Read holding register 456 from device with unit address 123.
+	// This is an example of that a query does not necessarily need
+	// to be inside a device block as obove, however making reusable
+	// device blocks is good practice.
+	"mb_query"(unit := 123,
+	           fc := #mb.fc.read_holding_reg,
+	           d_addr := 456,
+	           d_len := #mb.c.auto_len,
+	           data := #resault_data_1,
+	           mb := #mb);
+	
+	
 END_FUNCTION_BLOCK
 
 FUNCTION_BLOCK "modbus_tcp_start_example"
@@ -389,20 +402,23 @@ FUNCTION_BLOCK "modbus_tcp_start_example"
 VERSION : 0.1
    VAR 
       mb : "udt_mb";
-      mb_tcp_controller : "mb_tcp_controller";
+      mb_tcp_controller : "mb_client_controller";
       device_start_example : "modbus_device_start_example";
+      resault_data_1 : Word;
    END_VAR
 
 
 BEGIN
+	// The ip-address of the server, the client will communicate with.
 	#mb_tcp_controller.ip_addr[1] := 192;
 	#mb_tcp_controller.ip_addr[2] := 168;
 	#mb_tcp_controller.ip_addr[3] := 1;
 	#mb_tcp_controller.ip_addr[4] := 2;
+	
 	#mb_tcp_controller(
 	    interface := "Local~PROFINET_interface_1",
 	    conn_id := 123, 
-	    tcp_port := 502,  
+	    "port" := 502,
 	    timeout := T#2s,
 	    buffer_db_any := "modbus_tcp_buffer",  
 	    buffer_variant := "modbus_tcp_buffer", 
@@ -422,13 +438,23 @@ BEGIN
 	    unit := 1, // device address. For tcp devices unit can usually be set to "1".                                  
 	    mb := #mb);
 	
-	// Note that a device block cen be used for both tcp and rtu. This of
+	// Note that a device block can be used for both tcp and rtu. This of
 	// course require that the device has interface or a interface extension,
 	// for both for Ethernet and RS-485. (Or a RS-485 alternativ)
 	
 	// If a tcp-rtu-gateway is used, then more device blocks can be placed here
 	// as in the rtu example.
 	
+	
+	// Read holding register 456 from device with unit address 123.
+	"mb_query"(unit := 123,
+	           fc := #mb.fc.read_holding_reg,
+	           d_addr := 456,
+	           d_len := #mb.c.auto_len,
+	           data := #resault_data_1,
+	           mb := #mb);
+	// A query does not necessarily need to be inside a device block,
+	// however making reusable device blocks is good practice.
 	
 END_FUNCTION_BLOCK
 
@@ -470,22 +496,18 @@ VERSION : 0.1
 
 BEGIN
 	(*
-	Readme.
-	------------
+	The software is written for both S7-1200 and S7-1500 series, 
+	but unfortunately not for S7-300 and S7-400 series. 
 	
-	The software is written for both S7-1200 and S7-1500 series, but unfortunately not 
-	for S7-300 and S7-400 series. 
+	If the library is only used for rtu then all blocks related 
+	to tcp should be removed to save memory. Equally all rtu 
+	blocks should be removed if the libraryis only used for tcp.
 	
-	Requirements:
-	 - TIA-portal: v13, sp1, upd8 (or greater)
-	 - S7-1200: firmware version >= 4.1.3
-	
-	If the library is only used for rtu then all blocks related to tcp should be removed 
-	to save memory in the PLC. Equally all rtu blocks should be removed if the library
-	is only used for tcp. Also all the example device blocks can be removed to save 
-	memory.
-	
-	
+	The library extand on MB_MASTER and MB_CLIENT that comes 
+	along with TIA portal. The library doesn't includes any 
+	functinaly for modbus slave or modbus server. Take a look at 
+	MB_SLAVE or MB_SERVER, which is also included in TIA-portal, 
+	for those functionalities.
 	
 	
 END_FUNCTION

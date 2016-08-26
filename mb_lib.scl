@@ -1,101 +1,4 @@
-﻿TYPE "udt_mb_device"
-VERSION : 0.1
-   STRUCT
-      enable : Bool := true;
-      unit : USInt;   // (not in use)
-      qError : Bool;   // All types of errors including comError
-      qComError : Bool;   // Communication error
-      conf : Struct
-         max_qComError { S7_SetPoint := 'True'} : USInt := 3;   // Max repeating timeout errors before qComError is set
-         time_qErrror { S7_SetPoint := 'True'} : Time := T#2s;   // Length of the qError_tof puls
-      END_STRUCT;
-      log : Struct
-         done_cnt : UDInt;
-         done_dtl {OriginalPartName := 'DTL'; LibVersion := '1.0'} : DTL;
-         err_cnt : UDInt;
-         err_dtl {OriginalPartName := 'DTL'; LibVersion := '1.0'} : DTL;
-         err_status : Word;
-         err_timeout : Bool;
-         err_d_addr : UDInt;
-      END_STRUCT;
-      intern : Struct
-         range_start_qid : UInt;
-         range_end_qid : UInt;
-         err_cnt : USInt;   // repeating errors
-         tmp_exec_cnt : UDInt;
-         err_dtl {OriginalPartName := 'DTL'; LibVersion := '1.0'} : DTL;
-      END_STRUCT;
-   END_STRUCT;
-
-END_TYPE
-
-TYPE "udt_mb"
-VERSION : 0.1
-   STRUCT
-      q : Struct   // query
-         unit : USInt := 1;
-         "fc" : UInt := 3;   // function code
-         d_addr : UDInt;
-         d_len : UInt := 1;
-         qid : UInt := 1;   // query id
-         next : UInt := 1;   // id of next query to be exec.
-         priority : UInt;
-      END_STRUCT;
-      run : Struct
-         mode : USInt;
-         data_addr : UDInt;
-         qid_cnt : UInt;   // query id cnt, one cycle each plc-scan.
-         insert : Bool := true;   // insert query param
-         exec_cnt : UDInt;   // Execute cnt.
-         exec_d_addr : UDInt;
-      END_STRUCT;
-      fix : Struct   // Static varables.
-         buffer_db : DB_ANY;
-         app : SInt;
-         queries : UInt;   // Number of queries
-      END_STRUCT;
-      ath : Struct   // Advanced timeout handler
-         timeout : Bool;
-         d_cnt : UInt;   // device cnt, simular to qid_cnt
-         last : UInt := 1;
-      END_STRUCT;
-      status : Struct
-         done : Bool;
-         error : Bool;
-         timeout : Bool;
-         status : Word;
-      END_STRUCT;
-      query_above : Struct
-         done : Bool;
-         error : Bool;
-         insert : Bool;
-      END_STRUCT;
-      options : Struct
-         buffer_handler : Bool := true;
-         en_ath { S7_SetPoint := 'True'} : Bool := true;   // Enable advanced timeout handler
-      END_STRUCT;
-      "fc" : Struct   // Function codes
-         skip_query { S7_HMI_Accessible := 'False'; S7_HMI_Visible := 'False'} : USInt := 0;   // 0
-         read_output_bits { S7_HMI_Accessible := 'False'; S7_HMI_Visible := 'False'} : USInt := 1;   // 1 - (coils)
-         read_input_bits { S7_HMI_Accessible := 'False'; S7_HMI_Visible := 'False'} : USInt := 2;   // 2 - (discrete inputs)
-         read_holding_reg { S7_HMI_Accessible := 'False'; S7_HMI_Visible := 'False'} : USInt := 3;   // 3
-         read_input_reg { S7_HMI_Accessible := 'False'; S7_HMI_Visible := 'False'} : USInt := 4;   // 4
-         write_single_output_bit { S7_HMI_Accessible := 'False'; S7_HMI_Visible := 'False'} : USInt := 5;   // 5 - (coil)
-         write_single_holding_reg { S7_HMI_Accessible := 'False'; S7_HMI_Visible := 'False'} : USInt := 6;   // 6
-         write_output_bits { S7_HMI_Accessible := 'False'; S7_HMI_Visible := 'False'} : USInt := 15;   // 15 - (coils)
-         write_holding_reg { S7_HMI_Accessible := 'False'; S7_HMI_Visible := 'False'} : USInt := 16;   // 16
-         mode_read { S7_HMI_Accessible := 'False'; S7_HMI_Visible := 'False'} : USInt := 200;   // 200
-         mode_write_single { S7_HMI_Accessible := 'False'; S7_HMI_Visible := 'False'} : USInt := 201;   // 201
-         mode_write { S7_HMI_Accessible := 'False'; S7_HMI_Visible := 'False'} : USInt := 202;   // 202
-      END_STRUCT;
-      c : Struct   // Other constants
-         auto_len : UInt := 0;   // 0
-      END_STRUCT;
-   END_STRUCT;
-
-END_TYPE
-
-FUNCTION "mb_buffer_handler" : Void
+﻿FUNCTION "mb_buffer_handler" : Void
 { S7_Optimized_Access := 'FALSE' }
 VERSION : 1.0
    VAR_INPUT 
@@ -177,7 +80,7 @@ VERSION : 1.0
 BEGIN
 	// Lightweight Modbus Abstraction Layer Library. 
 	// Author:   Ola Bjørnli
-	// Version:  0.2_beta22
+	// Version:  0.2_beta23
 	// License:  MIT-license
 	// Web:      http://mb.sn7.no
 	//           http://github.com/olab84/sn7mb
@@ -467,7 +370,7 @@ VERSION : 1.0
       interface : HW_ANY;   // Profinet interface id
       conn_id : CONN_OUC := 123;   // connection_id
       ip_addr : Array[1..4] of Byte := 192, 168, 1, 0;
-      tcp_port : UInt := 502;   // enable even parity
+      port_number : UInt := 502;   // enable even parity
       timeout : Time := T#2s;   // sec
       buffer_db_any : DB_ANY;
    END_VAR
@@ -500,7 +403,7 @@ BEGIN
 	#tcon_ip_v4.InterfaceId := #interface;
 	#tcon_ip_v4.ID := #conn_id;
 	#tcon_ip_v4.RemoteAddress.ADDR := #ip_addr;
-	#tcon_ip_v4.RemotePort := #tcp_port;
+	#tcon_ip_v4.RemotePort := #port_number;
 	
 	#tdiscon(REQ := #client.ERROR AND #client.STATUS = 16#80A3, ID := #conn_id);
 	IF #tdiscon.BUSY THEN #client.DISCONNECT := true;
@@ -548,4 +451,36 @@ BEGIN
 	#mb.run.qid_cnt := 0;
 	#mb.ath.d_cnt := 0;
 END_FUNCTION_BLOCK
+
+FUNCTION "mb_log_words" : Void
+{ S7_Optimized_Access := 'TRUE' }
+VERSION : 0.1
+   VAR_INPUT 
+      in : Word;
+   END_VAR
+
+   VAR_IN_OUT 
+      log : Variant;
+   END_VAR
+
+   VAR_TEMP 
+      c : Int;
+      w : Word;
+      e : Int;
+   END_VAR
+
+
+BEGIN
+	FOR #c := 0 TO UDINT_TO_INT(CountOfElements(#log)) - 1 DO
+	    #e := MOVE_BLK_VARIANT(SRC := #log, COUNT := 1,SRC_INDEX := #c,
+	                           DEST_INDEX := 0, DEST => #w);
+	    IF #w = #in THEN
+	        EXIT;
+	    ELSIF #w = 16#0000 THEN
+	        #e := MOVE_BLK_VARIANT(SRC := #in, COUNT := 1, SRC_INDEX := 0,
+	                               DEST_INDEX := #c, DEST => #log);
+	        EXIT;
+	    END_IF;
+	END_FOR;
+END_FUNCTION
 

@@ -145,25 +145,25 @@ BEGIN
 	// take care of executing them, one by one.
 	"mb_query"(unit := #unit,
 	           fc := #mb.fc.write_output_bits,
-	           d_addr := 0,
+	           d_addr := 1234,
 	           d_len := #mb.c.auto_len,
 	           data := #data_query_3,
 	           mb := #mb);
 	
 	
-	// keep in mind that the data-parameter is not limited to words, but
-	// can contain any complex data structure with all kind of dattypes.
-	// Likes reals, bool, bytes, arrays, etc. The only rule that need to
-	// be followedis, is that the structure has add up the whole words
-	// (16 bits). Also the modbus protocol limit each query to maximum
-	// of 123 words. (Sometimes up to 125 words)
+	// keep in mind that the data-parameter is not limited to words, but can
+	// contain any complex data structure with all kind of dattypes. Likes
+	// reals, bool, bytes, arrays, etc. The only rule that need to be
+	// followedis, is that the structure has add up the whole words (16 bits).
+	// Also the modbus protocol limit each query to maximum OF 123 words.
+	// (Sometimes up to 125 words)
 	
 	
 	// A query that has a condition for execution.
 	IF #conditon_of_exec_query_4 THEN
 	    "mb_query"(unit := #unit,
 	               fc := #mb.fc.write_holding_reg,
-	               d_addr := 0,
+	               d_addr := 12345,
 	               d_len := #mb.c.auto_len,
 	               data := #data_query_4,
 	               mb := #mb);
@@ -177,7 +177,7 @@ BEGIN
 	           fc := SEL(G := #conditon_of_exec_query_4,
 	                     IN0 := #mb.fc.skip_query,
 	                     IN1 := #mb.fc.write_holding_reg),
-	           d_addr := 0,
+	           d_addr := 12345,
 	           d_len := #mb.c.auto_len,
 	           data := #data_query_4,
 	           mb := #mb);
@@ -191,7 +191,7 @@ BEGIN
 	// If the siemens modes are preferred, they are still available.
 	"mb_query"(unit := #unit,
 	           fc := #mb.fc.mode_read,
-	           d_addr := 0,
+	           d_addr := 40005,
 	           d_len := #mb.c.auto_len,
 	           data := #data_query_4,
 	           mb := #mb);
@@ -230,7 +230,7 @@ BEGIN
 	//    be done after all other queries has been executed once. This
 	//    speed up the bus significantly if one or more devices are
 	//    disconnected.
-	//    If a number of timeouts occure, so the "#device_udt.qComError" flag
+	//    If a number of timeouts occure, and the "#device_udt.qComError" flag
 	//    is set, then a new atemptes will be delayed even longer, based on
 	//    timeouts from other devices.
 	
@@ -418,7 +418,7 @@ BEGIN
 	#mb_tcp_controller(
 	    interface := "Local~PROFINET_interface_1",
 	    conn_id := 123, 
-	    "port" := 502,
+	    port_number := 502,
 	    timeout := T#2s,
 	    buffer_db_any := "modbus_tcp_buffer",  
 	    buffer_variant := "modbus_tcp_buffer", 
@@ -426,7 +426,7 @@ BEGIN
 	
 	// - interface:      Ethernet port to be used The const. is found
 	//                   inside the "hardware configuration".              
-	// - conn_id:        A unique id for each tcp connectin in the plc.
+	// - conn_id:        A unique id for each tcp connectin in the plc-program.
 	// - tcp_port:       502 is the standard modbus tcp port.
 	// - timeout:
 	// - buffer_db_any:  A db with standard access consisting a array of 125 words.
@@ -446,15 +446,15 @@ BEGIN
 	// as in the rtu example.
 	
 	
-	// Read holding register 456 from device with unit address 123.
+	// Read holding register 456 from device with unit address 123. This is an
+	// example of that a query does not necessarily need to be inside a device
+	// block as obove, however making reusable device blocks is good practice.
 	"mb_query"(unit := 123,
 	           fc := #mb.fc.read_holding_reg,
 	           d_addr := 456,
 	           d_len := #mb.c.auto_len,
 	           data := #resault_data_1,
 	           mb := #mb);
-	// A query does not necessarily need to be inside a device block,
-	// however making reusable device blocks is good practice.
 	
 END_FUNCTION_BLOCK
 
@@ -579,7 +579,7 @@ BEGIN
 	                   d_len := #mb.c.auto_len,
 	                   data := #query_3,
 	                   mb := #mb);
-	        #state := #state + BOOL_TO_SINT(#mb.query_above.done);
+	        #state := SEL(G := #mb.query_above.done, IN0 := #state, IN1 := 0);
 	END_CASE;
 	
 END_FUNCTION_BLOCK

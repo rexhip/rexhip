@@ -54,7 +54,7 @@ and to create a common clean API for "device blocks".
            mb := #mb); // same udt as above		  
 ```
 
-Key features.
+Key features:
  - Take care of executing the queries, one by one.
  - Logging capabilities for development and debugging.
  - Avoid global states, which make it possible to create reusable 

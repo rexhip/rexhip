@@ -501,13 +501,18 @@ BEGIN
 	
 	If the library is only used for rtu then all blocks related 
 	to tcp should be removed to save memory. Equally all rtu 
-	blocks should be removed if the libraryis only used for tcp.
+	blocks should be removed if the library's only used for tcp.
 	
-	The library extand on MB_MASTER and MB_CLIENT that comes 
+	If there is a lot of errors during compilation, make sure to
+	import the udt's as well. There should be one error until a 
+	modbus rtu hardware is configured, or the rtu example is 
+	deleted.
+	
+	The library extend on MB_MASTER and MB_CLIENT that comes 
 	along with TIA portal. The library doesn't includes any 
-	functinaly for modbus slave or modbus server. Take a look at 
-	MB_SLAVE or MB_SERVER, which is also included in TIA-portal, 
-	for those functionalities.
+	functionality for modbus slave or modbus server. Take a look 
+	at MB_SLAVE or MB_SERVER, which is also included in 
+	TIA-portal, for those functionalities.
 	
 	
 END_FUNCTION

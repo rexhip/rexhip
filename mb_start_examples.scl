@@ -336,7 +336,7 @@ FUNCTION_BLOCK "modbus_rtu_start_example"
 VERSION : 0.1
    VAR 
       mb : "udt_mb";
-      mb_rtu_controller : "mb_master_controller";
+      mb_master_controller : "mb_master_controller";
       device_start_example_device1 : "modbus_device_start_example";
       device_start_example_device2 : "modbus_device_start_example";
       device_start_example_device3 : "modbus_device_start_example";
@@ -349,7 +349,7 @@ VERSION : 0.1
 
 
 BEGIN
-	#mb_rtu_controller(
+	#mb_master_controller(
 	    hardware_id := "Local~CB_1241_(RS485)", // Setup the rtu-line in the hardware configurator
 	    baud := 9600, // bps
 	    parity := true, // Enable even parity. (Odd parity is not available)
@@ -359,17 +359,21 @@ BEGIN
 	    mb := #mb );
 	
 	// In this rtu example there are 7 devices (units) connected to the
-	// modbus rtu bus. Each instance of the blocks bellow represent 
-	// one unit on the line. In this way is very easy to reuse code once
-	// there has been created a "device block" for one device.
+	// modbus rtu bus. Each instance of the blocks bellow represent  one
+	// device on the bus. A "device block" has to be created for each
+	// spesific device. Becouse the library makes it possible to avoid
+	// global states, device bloks can be reused for all simular devices.
+	// 
+	// In this way is very easy to reuse
+	// code, once there has been created a "device block" for one device.
 	
-	// Open the start example to see how a device block is created.
+	// Open the start example to see how a device block works.
 	// ( unit => device-address ) 
 	#device_start_example_device1(unit := 1, mb := #mb);
 	#device_start_example_device2(unit := 2, mb := #mb);
 	#device_start_example_device3(unit := 3, mb := #mb);
 	
-	// Two novus tht temperatur transmitters.
+	// Two "novus THT" temperatur transmitters.
 	#example_novus_tht_device1(unit := 4, mb := #mb);
 	#example_novus_tht_device2(unit := 5, mb := #mb);
 	
@@ -383,10 +387,10 @@ BEGIN
 	// the tcp controller.
 	
 	
-	// Read holding register 456 from device with unit address 123.
-	// This is an example of that a query does not necessarily need
-	// to be inside a device block as obove, however making reusable
-	// device blocks is good practice.
+	// Read holding register 456 from device with unit address 123. This
+	// is an example showing that a query does not necessarily need to be
+	// inside a device block as obove, however making reusable device
+	// blocks is good practice.
 	"mb_query"(unit := 123,
 	           fc := #mb.fc.read_holding_reg,
 	           d_addr := 456,
@@ -402,7 +406,7 @@ FUNCTION_BLOCK "modbus_tcp_start_example"
 VERSION : 0.1
    VAR 
       mb : "udt_mb";
-      mb_tcp_controller : "mb_client_controller";
+      mb_client_controller : "mb_client_controller";
       device_start_example : "modbus_device_start_example";
       resault_data_1 : Word;
    END_VAR
@@ -410,12 +414,12 @@ VERSION : 0.1
 
 BEGIN
 	// The ip-address of the server, the client will communicate with.
-	#mb_tcp_controller.ip_addr[1] := 192;
-	#mb_tcp_controller.ip_addr[2] := 168;
-	#mb_tcp_controller.ip_addr[3] := 1;
-	#mb_tcp_controller.ip_addr[4] := 2;
+	#mb_client_controller.ip_addr[1] := 192;
+	#mb_client_controller.ip_addr[2] := 168;
+	#mb_client_controller.ip_addr[3] := 1;
+	#mb_client_controller.ip_addr[4] := 2;
 	
-	#mb_tcp_controller(
+	#mb_client_controller(
 	    interface := "Local~PROFINET_interface_1",
 	    conn_id := 123, 
 	    port_number := 502,
@@ -424,14 +428,15 @@ BEGIN
 	    buffer_variant := "modbus_tcp_buffer", 
 	    mb := #mb);
 	
-	// - interface:      Ethernet port to be used The const. is found
+	// - interface:      Ethernet port to be used, the const. can be found
 	//                   inside the "hardware configuration".              
 	// - conn_id:        A unique id for each tcp connectin in the plc-program.
 	// - tcp_port:       502 is the standard modbus tcp port.
 	// - timeout:
 	// - buffer_db_any:  A db with standard access consisting a array of 125 words.
-	// - buffer_variant: Input the same variable as above.
-	// - udt_mb:         The udt is the link the controller to its belonging queries.
+	// - buffer_variant: Input the same variable as to "buffer_db_any".
+	// - mb:             A udt that is the link between the controller and it's
+	//                   belonging queries inside the device block bellow.
 	
 	
 	#device_start_example(
@@ -446,9 +451,10 @@ BEGIN
 	// as in the rtu example.
 	
 	
-	// Read holding register 456 from device with unit address 123. This is an
-	// example of that a query does not necessarily need to be inside a device
-	// block as obove, however making reusable device blocks is good practice.
+	// Read holding register 456 from device with unit address 123. This
+	// is an example showing that a query does not necessarily need to be
+	// inside a device block as obove, however making reusable device
+	// blocks is good practice.
 	"mb_query"(unit := 123,
 	           fc := #mb.fc.read_holding_reg,
 	           d_addr := 456,
@@ -490,30 +496,29 @@ BEGIN
 	
 END_ORGANIZATION_BLOCK
 
-FUNCTION "readme" : Void
+FUNCTION "README" : Void
 { S7_Optimized_Access := 'TRUE' }
 VERSION : 0.1
 
 BEGIN
 	(*
 	The software is written for both S7-1200 and S7-1500 series, 
-	but unfortunately not for S7-300 and S7-400 series. 
+	but is unfortunately not supported for S7-300 and S7-400 series. 
 	
 	If the library is only used for rtu then all blocks related 
-	to tcp should be removed to save memory. Equally all rtu 
-	blocks should be removed if the library's only used for tcp.
+	to tcp can be removed to save memory. Equally all rtu 
+	blocks can be removed if the library is only used for tcp.
 	
-	If there is a lot of errors during compilation, make sure to
-	import the udt's as well. There should be one error until a 
-	modbus rtu hardware is configured, or the rtu example is 
-	deleted.
+	If there is a lot of errors during import, then make sure to
+	import the udt's, and compile again. There should be one error 
+	if the import is successfully. This is due to the missing rtu 
+	hardware configuration.
 	
 	The library extend on MB_MASTER and MB_CLIENT that comes 
 	along with TIA portal. The library doesn't includes any 
 	functionality for modbus slave or modbus server. Take a look 
-	at MB_SLAVE or MB_SERVER, which is also included in 
-	TIA-portal, for those functionalities.
-	
+	at MB_SLAVE or MB_SERVER, which is included in TIA-portal, 
+	for those functionalities.
 	
 END_FUNCTION
 

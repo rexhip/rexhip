@@ -95,13 +95,13 @@ BEGIN
 	"mb_device_header"(device := #device_udt, mb := #mb);
 	
 	
-	// The query bellow read data from a device with the device address
-	// "#unit" staring at holding register with address 123. Two words
-	// are read becouse the #query_1 structure contains two words. The
-	// length of the querie is automatically calculated from the number of
-	// bytes in the data parameter. The structure of the #query_1 has to be
-	// customized for each querie, to match the data of the register in the
-	// device. And of course the d_addr param has to be set.
+	// The query bellow read data from a device with the device address "#unit"
+	// staring at holding register with address 123. Two words are read becouse
+	// the #query_1 structure contains two words. The length of the querie is
+	// automatically calculated from the number of bytes in the data parameter.
+	// 4 bytes eq. 2 words. The structure of data-param. has to be customized
+	// for each querie, to match the data of the register in the device. And of
+	// course the d_addr param has to be adjusted.
 	"mb_query"(unit := #unit,
 	           fc := #mb.fc.read_holding_reg,
 	           d_addr := 123,
@@ -114,21 +114,22 @@ BEGIN
 	// | unit |  fc  |   d_addr   |   d_len    |      data       |    CRC     |
 	// '------'------'------------'------------'-- --  ..  ..  --'------------'
 	// 
-	// Keep in mind that the value of "d_addr" will be the acctual value inside
-	// the modbus telegram. Eg. to read holding address 123 in the device, you
-	// simply pass 123 to d_addr and 3 [read_holding_reg] to the fc-param.
-	// Don't add 40001 to 123 as with the tia-portal mb_master or mb_client
-	// block.
-	// 
+	// "d_addr" will be the direct value inside the modbus telegram. Eg. to
+	// read holding address 123, you simply pass 123 to d_addr without adding
+	// 40001, this is equivalent of JBus addressing. Also pass
+	// "#mb.fc.read_holding_reg" (3) to the fc-param. The reason behind
+	// reverse engineering modbus register addressing to JBus, is becouse many
+	// engineers get confused about adding the 40001.
+	//
 	// When the read query is sucssefully executed the content of the  modbus
 	// telegram will be written in to the varable connected to data-param.
 	// Equally the conntent of the varable will be sent to a modbus device when
 	// a write query is executed.
 	//
-	// Regards the d_len parameter, it's easiest to just type #mb.c.auto_len,
-	// and the library will calculate the length automatacally based on how
-	// many words the data-parameter consist of. The library, will run a little
-	// faster if the d_len parameter is typed manually.
+	// Regards the d_len parameter (data length), it's easiest to just type
+	// #mb.c.auto_len, and the library will calculate the length automatacally
+	// based on how many words the data-parameter consist of. The library,
+	// will run a little faster if the d_len parameter is typed manually.
 	
 	
 	// Simular querie as above, except two input register are read. By start

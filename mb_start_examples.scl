@@ -349,15 +349,24 @@ VERSION : 0.1
 
 
 BEGIN
+	// hardware_id:     Setup the rtu-line in the hardware configurator
+	// baud:            bps
+	// parity:          Enable even parity. (Odd parity is not available)
+	// timeout: 
+	// buffer_db_any:   A db with standard access consisting a array of 125 words.
+	// buffer_variant:  Input the same variable as to "buffer_db_any".
+	// mb:              A udt that is the link between the controller and it's
+	//                  belonging queries inside the device block bellow.                 
 	#mb_master_controller(
-	    hardware_id := "Local~CB_1241_(RS485)", // Setup the rtu-line in the hardware configurator
-	    baud := 9600, // bps
-	    parity := true, // Enable even parity. (Odd parity is not available)
+	    hardware_id := "Local~CB_1241_(RS485)", 
+	    baud := 9600, 
+	    parity := true, 
 	    timeout := T#500ms,   
-	    buffer_db_any := "modbus_rtu_buffer",  
-	    buffer_variant := "modbus_rtu_buffer",  
+	    buffer_db_any := "modbus_rtu_buffer", 
+	    buffer_variant := "modbus_rtu_buffer", 
 	    mb := #mb );
 	
+	                 
 	// In this rtu example there are 7 devices (units) connected to the
 	// modbus rtu bus. Each instance of the blocks bellow represent  one
 	// device on the bus. A "device block" has to be created for each
@@ -409,16 +418,27 @@ VERSION : 0.1
       mb_client_controller : "mb_client_controller";
       device_start_example : "modbus_device_start_example";
       resault_data_1 : Word;
+      log : Array[1..20] of Word;
    END_VAR
 
 
 BEGIN
-	// The ip-address of the server, the client will communicate with.
+	// interface:       Ethernet port to be used, the const. can be found inside
+	//                  the "hardware configuration".
+	// conn_id:         A unique id for each tcp connectin in the plc-program.
+	// ip_addr:         The ip-address of the server, the client will communicate
+	//                  with.
+	// port_number:     TCP-port, 502 is the standard modbus tcp port. UDP isn't
+	//                  available.
+	// timeout:         Default: 2 seconds.
+	// buffer_db_any:   A db with standard access consisting a array of 125 words.
+	// buffer_variant:  Input the same variable as to "buffer_db_any".
+	// mb:              A udt that is the link between the controller and it's
+	//                  belonging queries inside the device block bellow.
 	#mb_client_controller.ip_addr[1] := 192;
 	#mb_client_controller.ip_addr[2] := 168;
 	#mb_client_controller.ip_addr[3] := 1;
 	#mb_client_controller.ip_addr[4] := 2;
-	
 	#mb_client_controller(
 	    interface := "Local~PROFINET_interface_1",
 	    conn_id := 123, 
@@ -428,39 +448,34 @@ BEGIN
 	    buffer_variant := "modbus_tcp_buffer", 
 	    mb := #mb);
 	
-	// - interface:      Ethernet port to be used, the const. can be found
-	//                   inside the "hardware configuration".              
-	// - conn_id:        A unique id for each tcp connectin in the plc-program.
-	// - tcp_port:       502 is the standard modbus tcp port.
-	// - timeout:
-	// - buffer_db_any:  A db with standard access consisting a array of 125 words.
-	// - buffer_variant: Input the same variable as to "buffer_db_any".
-	// - mb:             A udt that is the link between the controller and it's
-	//                   belonging queries inside the device block bellow.
-	
 	
 	#device_start_example(
-	    unit := 1, // device address. For tcp devices unit can usually be set to "1".                                  
-	    mb := #mb);
+	    unit := 1,   // Device address. For tcp devices
+	                 // unit can usually be set to "1".
+	    mb := #mb);  // Same udt as above.
 	
-	// Note that a device block can be used for both tcp and rtu. This of
-	// course require that the device has interface or a interface extension,
-	// for both for Ethernet and RS-485. (Or a RS-485 alternativ)
-	
-	// If a tcp-rtu-gateway is used, then more device blocks can be placed here
-	// as in the rtu example.
+	// Note that a device block can be used for both tcp and rtu. This of course
+	// require that the device has the hardware for both for TCP (Ethernet) and
+	// for RTU (RS-485).
 	
 	
-	// Read holding register 456 from device with unit address 123. This
-	// is an example showing that a query does not necessarily need to be
-	// inside a device block as obove, however making reusable device
-	// blocks is good practice.
+	// Read holding register 1234 from device with unit address 123. This is an
+	// example showing that a query does not necessarily need to be inside a
+	// device block as obove, however making reusable device blocks is good
+	// practice. Also the logging capacities and timeout handeling will not be
+	// utilized when done as bellow.
 	"mb_query"(unit := 123,
 	           fc := #mb.fc.read_holding_reg,
-	           d_addr := 456,
+	           d_addr := 1234,
 	           d_len := #mb.c.auto_len,
 	           data := #resault_data_1,
 	           mb := #mb);
+	
+	
+	"mb_log_words"(in := #mb.status.status, log := #log);
+	// This is only for debugging. If a strange error occurred then look in to the
+	// log. The status coodes is decribed in tia-portal help journal. Look at up
+	// MB_CLIENT, TCON, TSEND and TDISCON.
 	
 END_FUNCTION_BLOCK
 
@@ -646,5 +661,6 @@ BEGIN
 	           mb := #mb);
 	
 	"mb_device_footer"(device := #device_udt, mb := #mb);
+	
 END_FUNCTION_BLOCK
 

@@ -80,7 +80,7 @@ VERSION : 1.0
 BEGIN
 	// Lightweight Modbus Abstraction Layer Library. 
 	// Author:   Ola Bjørnli
-	// Version:  0.2_beta24
+	// Version:  0.2_beta25
 	// License:  MIT-license
 	// Web:      http://mb.sn7.no
 	//           http://github.com/olab84/sn7mb
@@ -277,9 +277,9 @@ BEGIN
 	    END_IF;
 	END_IF;
 	
-	IF #device.qError AND NOT #tmp_err THEN
+	IF #device.qError THEN
 	    #e := RD_SYS_T(#rd_sys_t);
-	    #device.qError := #device.conf.time_qErrror <> 0
+	    #device.qError := #tmp_err OR #device.conf.time_qErrror <> 0
 	    AND #rd_sys_t < #device.intern.err_dtl
 	    + #device.conf.time_qErrror;
 	END_IF;

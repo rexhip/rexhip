@@ -1,35 +1,4 @@
-﻿TYPE "udt_mb_device"
-VERSION : 0.1
-   STRUCT
-      enable : Bool := true;
-      unit : USInt;   // (not in use)
-      qError : Bool;   // All types of errors including comError
-      qComError : Bool;   // Communication error
-      conf : Struct
-         max_qComError { S7_SetPoint := 'True'} : USInt := 3;   // Max repeating timeout errors before qComError is set
-         time_qErrror { S7_SetPoint := 'True'} : Time := T#2s;   // Length of the qError_tof puls
-      END_STRUCT;
-      log : Struct
-         done_cnt : UDInt;
-         done_dtl {OriginalPartName := 'DTL'; LibVersion := '1.0'} : DTL;
-         err_cnt : UDInt;
-         err_dtl {OriginalPartName := 'DTL'; LibVersion := '1.0'} : DTL;
-         err_status : Word;
-         err_timeout : Bool;
-         err_d_addr : UDInt;
-      END_STRUCT;
-      intern : Struct
-         range_start_qid : UInt;
-         range_end_qid : UInt;
-         err_cnt : USInt;   // repeating errors
-         tmp_exec_cnt : UDInt;
-         err_dtl {OriginalPartName := 'DTL'; LibVersion := '1.0'} : DTL;
-      END_STRUCT;
-   END_STRUCT;
-
-END_TYPE
-
-TYPE "udt_mb"
+﻿TYPE "udt_mb"
 VERSION : 0.1
    STRUCT
       q : Struct   // query
@@ -90,6 +59,37 @@ VERSION : 0.1
       END_STRUCT;
       c : Struct   // Other constants
          auto_len : UInt := 0;   // 0
+      END_STRUCT;
+   END_STRUCT;
+
+END_TYPE
+
+TYPE "udt_mb_device"
+VERSION : 0.1
+   STRUCT
+      enable : Bool := true;
+      unit : USInt;   // (not in use)
+      qError : Bool;   // All types of errors including comError
+      qComError : Bool;   // Communication error
+      conf : Struct
+         max_qComError { S7_SetPoint := 'True'} : USInt := 3;   // Max repeating timeout errors before qComError is set
+         time_qErrror { S7_SetPoint := 'True'} : Time := T#2s;   // Length of the qError_tof puls
+      END_STRUCT;
+      log : Struct
+         done_cnt : UDInt;
+         done_dtl {OriginalPartName := 'DTL'; LibVersion := '1.0'} : DTL;
+         err_cnt : UDInt;
+         err_dtl {OriginalPartName := 'DTL'; LibVersion := '1.0'} : DTL;
+         err_status : Word;
+         err_timeout : Bool;
+         err_d_addr : UDInt;
+      END_STRUCT;
+      intern : Struct
+         range_start_qid : UInt;
+         range_end_qid : UInt;
+         err_cnt : USInt;   // repeating errors
+         tmp_exec_cnt : UDInt;
+         err_dtl {OriginalPartName := 'DTL'; LibVersion := '1.0'} : DTL;
       END_STRUCT;
    END_STRUCT;
 

@@ -11,8 +11,8 @@ Web:      http://mb.sn7.no
 
 The library extend on MB_MASTER and MB_CLIENT, the modbus blocks that comes along with 
 TIA-portal. The library is not an attempt to reinvent the wheel, by doing what those 
-blocks already do extraordinary. Rather it's an attempt to expand the existing blocks,
-and to create a common clean API for "device blocks".
+blocks already do. Rather it's an attempt to expand the existing blocks,and to create 
+a common clean API for what the library call "device blocks". (interface blocks)
 
 ```
 // A modbus RTU example that illustrate the library. Support for modbus tcp is also included.
@@ -24,50 +24,39 @@ and to create a common clean API for "device blocks".
     timeout := T#500ms,   
     buffer_db_any := "modbus_rtu_buffer",  
     buffer_variant := "modbus_rtu_buffer",  
-    mb := #mb ); // a udt that comes with the library
+    mb := #mb ); // a udt that comes along with the library
 
 // Query 1: Read holding registers.
-"mb_query"(unit := 2,                     // device address
-           fc := #mb.fc.read_holding_reg, // function code
-           d_addr := 55,                  // data address
-           d_len := 10,                   // data length
+"mb_query"(unit := 2,                 // Station address
+           fc := #mb.fc.mode_read,    // Mode or function code.    
+           d_addr := 40005,           // Register address
+           d_len := 4,                // Length
            data := #resualt_data_1,
            mb := #mb); // same udt as on the controller
             
-// .-------.-------.-------------.-------------.- . . . . ---.-------------.		   
-// | unit  |  fc   |   d_addr    |    d_len    |     data    |     CRC     |
-// '-------'-------'-------------'-------------'--- . . . . -'-------------'		   
-//
-// - Parameters of the query above correlate to the fields in the telegram.  
-// - The result of the query will be stored inside the variable connected to 
-//   "data". Because "data" is variant it can store any kind of data type, 
-//   including arrays and complex structures. 
-// - "d_addr" is the value that will be sent in the modbus telegram. To access 
-//   holding register number 55 as in the example, input 55, and not 40056. 
-
 // Query 2 - Read input registers.
-"mb_query"(unit := 4,                   // device address
-           fc := #mb.fc.read_input_reg, // function code
-           d_addr := 123,               // data address
-           d_len := #mb.c.auto_len,     // data length
+"mb_query"(unit := 4,                   
+           fc := #mb.fc.read_input_reg, 
+           d_addr := 123,               
+           d_len := #mb.c.auto_len,     
            data := #resualt_data_2,
-           mb := #mb); // same udt as above		  
+           mb := #mb); 
 ```
 
 Key features:
- - Take care of executing the queries, one by one.
- - Logging capabilities for development and debugging.
  - Avoid global states, which make it possible to create reusable 
    device blocks, similar to proibus gsd-files. 
+ - Advanced timeout handler that reduce idle time.  
+ - Take care of executing the queries, one by one.
+ - Logging capabilities for development and debugging.
  - Clean and readable API.  
  - Readable code still for application with hundreds of devices.
- - Advanced timeout handler that reduce idle time.  
  - Store results inside optimized memory areas.
    
 Requirements:
  - TIA-portal: v13, sp1, upd8 (or greater)
  - S7-1200: firmware version >= 4.1.3
- - S7-1500: not tested
+ - S7-1500: not tested, but should work fine.
  
 ```
 The software is not affiliated with Siemens AG

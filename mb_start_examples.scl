@@ -86,110 +86,114 @@ VERSION : 0.1
 
 BEGIN
 	// Start example for a device blocks. A device block is a FB  that is
-	// written for one spesific modbus device. It maps registers of the
-	// device to variables inside the FB. Simular to a gsd-file for profibus.
+	// written for one specific modbus device. It maps registers of the
+	// device to variables inside the FB. Similar to a gsd-file for profibus.
 	
 	// Just ignore mb_device_header for now. It isn't a hundred percent
-	// necessary, but give advantageses.
-	"mb_device_header"(device := #device_udt, mb := #mb);
+	// necessary, but give many advantages.
+	"mb_device_header"(device := #device_udt,
+	                   mb := #mb);
 	
 	
 	// According to the Modicon convention, modbus address 40001 is holding
 	// register #1. Register #1 is data address zero, (offset zero).
 	//
-	// This design has led to confusion over the years, and modbus documenation
+	// This design has led to confusion over the years, and modbus documentation
 	// has unfortunately not been standardized. Regardless it's anyway the data
-	// addresses that will be transfered in the modbus telegram. 
-	//   - JBUS "convention":
+	// addresses that will be transferred in the modbus telegram. 
+	// 
+	//   - The Modicon convention:
+	//     The documentation give a address that "embedded" register type.
+	//     Example: 40005 is holding register with address 4. 30008 is
+	//     input register with address 7. This is how mb_client and
+	//     mb_master in TIA-portal is implemented.
+	//     
+	//   - JBUS 
 	//     The documentation give the data addr. that corresponds directly to
-	//     the value transfered inside the modbus telegram. The function code
+	//     the value transferred inside the modbus telegram. The function code
 	//     determine what kind of register that should be accessed. Eg. "3"
 	//     (read) holding register.
 	//     
-	//   - The Modicon convention:
-	//     The documentation give a address that embedded register type.
-	//     Example: 40005 is holding register with address 4. 30007 is
-	//     input register with address 6. This is how mb_client and
-	//     mb_master is implemented.
-	//     
-	//  -  Offset of 1:
+	//  -  Register address (Offset of one):
 	//     The register address is given in the documentation. This means that
-	//     there is a offset of one.
-	//     
-	// The library suport JBUS and Modicon convention. The first example 
+	//     there is a offset of one. (Data_addr = Reg_addr - 1)
+	//
+	// The library support the Modicon convention and JBUS. The first example 
 	// describe JBUS while there is a Modicon convention example further down.
 	
 	
-	// "mb_query" bellow has one parameter for each feild in the modbus telegram. 
-	// .------.------.------------.------------.--  ..  ..  -- --.------------.
-	// | unit |  fc  |   d_addr   |   d_len    |      data       |    CRC     |
-	// '------'------'------------'------------'-- --  ..  ..  --'------------'
+	// JBUS addressing.
 	"mb_query"(unit := #unit,
 	           fc := #mb.fc.read_holding_reg,
 	           d_addr := 123,
 	           d_len := #mb.c.auto_len,
 	           data := #resault_data_query_1,
 	           mb := #mb);
-	
+	//
+	// A modbus telegram
+	// .------.------.------------.------------.--  ..  ..  -- --.------------.
+	// | unit |  fc  |   d_addr   |   d_len    |      data       |    CRC     |
+	// '------'------'------------'------------'-- --  ..  ..  --'------------'
+	//
 	// --- unit:
 	// Device address. 1-247 (RTU station address)
 	//
 	// --- fc:
-	// Modbus function code, suppored codes: 1, 2, 3, 4, 5, 6, 15 and 16. Start
-	// typing "#mb.fc." and the autocomple list will show all avable function
+	// Modbus function code, supported codes: 1, 2, 3, 4, 5, 6, 15 and 16. Start
+	// typing "#mb.fc." and the auto complete list will show all available function
 	// codes. 
 	//
 	// --- d_addr:
-	// Data addr, the acctual value inside the modbus telegram, (the offset). Eg.
-	// to read holding address 123, you simply pass 123 to d_addr and 
+	// Data addr, the actual value inside the modbus telegram, (the offset).
+	// Eg. to read holding address 123, you simply pass 123 to d_addr and 
 	// "#mb.fc.read_holding_reg" (3) to fc. 40001 should NOT be added to 123.
 	//
 	// --- d_len:
 	// Data length. By passing zero (#mb.c.auto_len) to the parameter the
-	// library will calculate this parameter automaticaly. In the example above
+	// library will calculate this parameter automatically. In the example above
 	// "data" consist of two words, so the value of d_len inside the telegram
-	// will also be two. By entering d_len maually the library will run a bit 
+	// will also be two. By entering d_len manually the library will run a bit 
 	// faster.
 	//
 	// --- data:
 	// Data ptr. In the case of a read query the content of the modbus telegram
-	// will be written in to the varable connected to data-param. Equally the
-	// conntent will be sent to a modbus device in the case of a write query.
+	// will be written in to the variable connected to data-param. Equally the
+	// content will be sent to a modbus device in the case of a write query.
 	// The parameter is not limited to words, but can contain any complex data
-	// structure with all kind of dattypes. Likes real, bool, bytes, arrays, etc.
+	// structure with all kind of data types. Likes real, bool, bytes, arrays, etc.
 	// Three criterion has to be followed:
 	// 1. The datatype should match the datatype of the registers in the device.
-	//    For some devices the recived data needs a word-swap or byte-swap.    
+	//    For some devices the received data needs a "swap" or a "swap_word" after.    
 	// 2. Only whole registers. (Bytes and bools should add up to 16 bits)
-	// 3. The modbus protocol limit each query to maximum of 123 words.
+	// 3. The modbus protocol limit each query to a maximum of 123 words.
 	//    (Sometimes up to 125 words)
 	//
 	// --- mb:
 	// The udt that bind everything together.
 	
 	
-	// The modicon convention addressing:
+	// The Modicon convention addressing:
 	"mb_query"(unit := #unit,
-	           fc := #mb.fc.mode_read,
+	           fc := #mb.fc.modicon_read,
 	           d_addr := 40005,
 	           d_len := #mb.c.auto_len,
 	           data := #data_query_4,
 	           mb := #mb);
 	// The parameters: unit, d_len, data and mb, work the same way as in the
-	// example above. To use the modicon convention one of the fc-constants
+	// example above. To use the Modicon convention one of the fc-constants
 	// bellow should be used:
-	//   - #mb.fc.mode_read           -> mb function code: 1, 2, 3 and 4  
-	//   - #mb.fc.mode_write          -> mb function code: 15 and 16      
-	//   - #mb.fc.mode_write_single   -> mb function code: 5 and 6        
+	//   - #mb.fc.modicon_read           -> mb function code: 1, 2, 3 and 4  
+	//   - #mb.fc.modicon_write          -> mb function code: 15 and 16      
+	//   - #mb.fc.modicon_write_single   -> mb function code: 5 and 6        
 	// 
 	// When the modicon convention is used, the function code is "embedded" in
-	// to d_addr. Eg. query 40005 will acctually query holding register with
-	// address 4. Keep in mind that modes for mb_master and mb_cleint are
-	// shifted, eg 200 corresponds to mode 0.
+	// to d_addr. Eg. query 40005 will actually query holding register with
+	// data address (offset) 4. Keep in mind that modes for mb_master and
+	// mb_cleint are shifted, e.g. 200 corresponds to mode 0.
 	
 	
-	// Simular querie as above, except two input register are read.  Any number
-	// (65000) of queries can be added, the library will take care of executing
+	// Similar query as above, except two input register are read.  Any number
+	// of queries can be added, the library will take care of executing
 	// them, one by one.
 	"mb_query"(unit := #unit,
 	           fc := #mb.fc.write_output_bits,
@@ -197,6 +201,19 @@ BEGIN
 	           d_len := #mb.c.auto_len,
 	           data := #data_query_3,
 	           mb := #mb);
+	
+	
+	// A write query executed with function code "6" (write_single_holding_reg)
+	"mb_query"(unit := #unit,
+	           fc := #mb.fc.write_single_holding_reg,
+	           d_addr := 42,
+	           d_len := 1,
+	           data := #data_query_5,
+	           mb := #mb);
+	// Some (old) modbus devices doesn't support modbus function code "16"
+	// "write_holding_reg". In that case function code number "6" need to
+	// be used ("write_single_holding_reg"). Look up supported function
+	// codes in the manual for the modbus device.
 	
 	
 	// A query that has a condition for execution.
@@ -208,11 +225,11 @@ BEGIN
 	               data := #data_query_4,
 	               mb := #mb);
 	END_IF;
-	// The condition for the querie above will work. However is recommaned that
-	// the example bellow is followed if a condition for a querie is needed.
-	// Every time the number of queries is changed, the library is getting a
-	// little "hiccup". That can be avoided by doing as showen bellow. Though,
-	// the example above will mostly work perfectly fine.
+	// The condition for the queries above will work. However is recommended 
+	// that the example bellow is followed if a condition for a queries is 
+	// needed. Every time the number of queries is changed, the library is 
+	// gets a little "hiccup". That can be avoided by doing as shown bellow. 
+	// Though, the example above will mostly work perfectly fine.
 	"mb_query"(unit := #unit,
 	           fc := SEL(G := #conditon_of_exec_query_4,
 	                     IN0 := #mb.fc.skip_query,
@@ -221,59 +238,42 @@ BEGIN
 	           d_len := #mb.c.auto_len,
 	           data := #data_query_4,
 	           mb := #mb);
-	// The "hiccup": If a reasult is waiting while the number of queries
+	// The "hiccup": If a result is waiting while the number of queries
 	// is changing, then it may not be picked up, and the query has to
 	// wait until all the other queries has been executed once more. If
-	// the condition change rappedly on and off, then the first example
-	// will not work and the secound example need to be followed.
+	// the condition change rapidly on and off, then the first example
+	// will not work and the second example need to be followed.
 	
 	
-	// A write query executed with function code "6" (write_single_holding_reg)
-	"mb_query"(unit := #unit,
-	           fc := #mb.fc.write_single_holding_reg,
-	           d_addr := 42,
-	           d_len := 1,
-	           data := #data_query_5,
-	           mb := #mb);
-	// Some old modbus devices dosen't support modbus function code "16"
-	// "read_holding_reg". Function code number "6" has then to be used. Look
-	// up supported function codes in the manual of the device.
-	
-	
-	// As mession at the top the mb_device_header is not a hundred percent
-	// necessary. Hovever, if the mb_device_header is implemented then the
-	// mb_device_footer has to be implement as well. Else the library will
-	// not work. No query should go before mb_device_header or after
-	// mb_device_footer.
-	"mb_device_footer"(
-	    device := #device_udt, // device_udt
-	    mb := #mb); // mb_udt
-	
-	// This are the bennefits of using the device header and the footer FC's:
+	// As mention at the top the mb_device_header is not a hundred percent
+	// necessary, so isn't the mb_device_footer. However if the
+	// "footer" is implemented then the "header" has to be implement. Else
+	// the library will not work. No query should go before the "header"
+	// or after the "footer".
+	"mb_device_footer"(device := #device_udt,
+	                   mb := #mb);
+	// This are the benefits of using the device header and the footer FC's:
 	//  - The logging capacities: Inside the device-udt there is logging of
-	//    sucessfull and failed queries, which is helpfull
+	//    successfully and failed queries, which is helpful
 	//    for debugging. Look at "#device_udt.log. ..."
 	//  - "#device_udt.qError" a common error flag that is set if any of the
 	//    intermediate queries between mb_device_footer and mb_device_header
 	//    gives a error. This flag is intended for use with HMI. The puls
-	//    lenght of the flag can be configured with
+	//    length of the flag can be configured with
 	//    "#device_udt.config.time_qErrror".
 	//  - "#device_udt.qComError" a error flag that will be set after number
 	//    of repeating timeout of the intermediate queries. Intended to reset
-	//    values when communication problems occure. The number of repeating
+	//    values when communication problems occur. The number of repeating
 	//    timeout before the flag is set can be configured with
 	//    "#device_udt.config.max_qComError".
-	//  - Advaced timeout handler: All intermediate queries will be skipped
-	//    if a timeout occured at one intermediate query. A new atempted will
-	//    be done after all other queries has been executed once. This
-	//    speed up the bus significantly if one or more devices are
-	//    disconnected.
-	//    If a number of timeouts occure, and the "#device_udt.qComError" flag
-	//    is set, then a new atemptes will be delayed even longer, based on
-	//    timeouts from other devices.
+	//  - Only one query for each device is allowed to be executed for
+	//    each loop. This is avoid devices with many queries to occupy
+	//    the bus for long periods of time.
+	//  - Prevent the impact of setting if-condition around queries. The
+	//    "hiccup" effect mentioned above.
 	
 	
-	// For this example values are set to zero if communcation problems accure.
+	// For this example values are set to zero if communication problems accrue.
 	IF #device_udt.qComError THEN
 	    #resault_data_query_1.word_1 := 0;
 	    #resault_data_query_1.word_2 := 0;
@@ -474,25 +474,23 @@ BEGIN
 	// buffer_variant:  Input the same variable as to "buffer_db_any".
 	// mb:              A udt that is the link between the controller and it's
 	//                  belonging queries inside the device block bellow.
-	#mb_client_controller.ip_addr[1] := 192;
-	#mb_client_controller.ip_addr[2] := 168;
-	#mb_client_controller.ip_addr[3] := 1;
-	#mb_client_controller.ip_addr[4] := 2;
+	#mb_client_controller.remote_ip[1] := 192;
+	#mb_client_controller.remote_ip[2] := 168;
+	#mb_client_controller.remote_ip[3] := 1;
+	#mb_client_controller.remote_ip[4] := 2;
 	#mb_client_controller(
 	    interface := "Local~PROFINET_interface_1",
 	    conn_id := 123, 
-	    port_number := 502,
+	    remote_port := 502,
 	    timeout := T#2s,
 	    buffer_db_any := "modbus_tcp_buffer",  
 	    buffer_variant := "modbus_tcp_buffer", 
 	    mb := #mb);
 	
 	
-	#device_start_example(
-	    unit := 1,   // Device address. For tcp devices
-	                 // unit can usually be set to "1".
-	    mb := #mb);  // Same udt as above.
-	
+	#device_start_example(unit := 1,   // Device address. For tcp devices
+	                                   // unit can usually be set to "1".
+	                      mb := #mb);  // Same udt as above.
 	// Note that a device block can be used for both tcp and rtu. This of course
 	// require that the device has the hardware for both for TCP (Ethernet) and
 	// for RTU (RS-485).
@@ -562,6 +560,8 @@ BEGIN
 	If the library is only used for rtu then all blocks related 
 	to tcp can be removed to save memory. Equally all rtu 
 	blocks can be removed if the library is only used for tcp.
+	Alternatively can blocks that are not used, be moved to the
+	library.
 	
 	If there is a lot of errors during import, then make sure to
 	import the udt's, and compile again. There should be one error 

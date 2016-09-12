@@ -15,7 +15,8 @@ blocks already do. Rather it's an attempt to expand the existing blocks, and to 
 a common clean API for what the library call "device blocks". (interface blocks)
 
 ```
-// A modbus RTU example that illustrate the library. Support for modbus tcp is also included.
+// A modbus RTU example that illustrate the library. 
+// (Support for modbus tcp is also included).
 
 #mb_master_controller(
     hardware_id := "Local~CB_1241_(RS485)", 
@@ -26,31 +27,71 @@ a common clean API for what the library call "device blocks". (interface blocks)
     buffer_variant := "modbus_rtu_buffer",  
     mb := #mb ); // a udt that comes along with the library
 
-// Query 1: Read holding registers.
-"mb_query"(unit := 2,                 // Station address
-           fc := #mb.fc.mode_read,    // Mode or function code.    
-           d_addr := 40005,           // Register address
-           d_len := 4,                // Length
-           data := #resualt_data_1,
-           mb := #mb); // same udt as on the controller
-            
-// Query 2 - Read input registers.
-"mb_query"(unit := 4,                   
-           fc := #mb.fc.read_input_reg, 
-           d_addr := 123,               
-           d_len := #mb.c.auto_len,     
-           data := #resualt_data_2,
-           mb := #mb); 
+	
+#abb_aquaMaster_3_instance_1(unit := 1, mb := #mb);
+#abb_aquaMaster_3_instance_2(unit := 2, mb := #mb);
+	
+#siemens_PAC3200_instance_1(unit := 3, mb := #mb);
+#siemens_PAC3200_instance_2(unit := 4, mb := #mb);
+
+
+
+// -----------------------------------------------------------------------
+// Device block for: ABB - AquaMaster 3 - Electromagnetic flowmeter
+
+"mb_device_header"(device := #device_udt, mb := #mb);
+
+"mb_query"(unit := #unit,                // Station address
+           fc := #mb.fc.read_input_reg,  // Function code  
+           d_addr := 5017,               // Data address
+           d_len := 2,                   // Data length
+           data := #flow,                
+           mb := #mb);                   // Same udt as on the controller
+
+"mb_query"(unit := #unit,
+           fc := #mb.fc.read_input_reg,
+           d_addr := 5025,
+           d_len := 2,
+           data := #pressure,
+           mb := #mb);
+
+"mb_device_footer"(device := #device_udt, mb := #mb);
+// -----------------------------------------------------------------------
+
+
+
+// -----------------------------------------------------------------------
+// Device block for: Siemens - PAC3200
+
+"mb_device_header"(device := #device_udt, mb := #mb);
+
+"mb_query"(unit := #unit,
+           fc := #mb.fc.read_holding_reg,
+           d_addr := 13,
+           d_len := #mb.c.auto_len,
+           data := #current,
+           mb := #mb);
+
+"mb_query"(unit := #unit,
+           fc := #mb.fc.read_holding_reg,
+           d_addr := 55,
+           d_len := #mb.c.auto_len,
+           data := #common,
+           mb := #mb);
+
+"mb_device_footer"(device := #device_udt, mb := #mb);
+// -----------------------------------------------------------------------
 ```
 
 Key features:
  - Avoid global states, which make it possible to create reusable 
-   device blocks, similar to proibus gsd-files. 
+   device blocks. (Similar to proibus gsd-files)
+ - Clean and readable API.  
  - Advanced timeout handler that reduce idle time.  
  - Take care of executing the queries, one by one.
  - Logging capabilities for development and debugging.
- - Clean and readable API.  
- - Readable code still for application with hundreds of devices.
+ - Possible to create readable code still for application with 
+   hundreds of modbus devices.
  - Store results inside optimized memory areas.
    
 Requirements:

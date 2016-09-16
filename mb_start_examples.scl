@@ -90,9 +90,8 @@ BEGIN
 	// device to variables inside the FB. Similar to a gsd-file for profibus.
 	
 	// Just ignore mb_device_header for now. It isn't a hundred percent
-	// necessary, but give many advantages.
-	"mb_device_header"(device := #device_udt,
-	                   mb := #mb);
+	// necessary, but give many advantages to implement it.
+	"mb_device_header"(device := #device_udt, mb := #mb);
 	
 	
 	// According to the Modicon convention, modbus address 40001 is holding
@@ -169,7 +168,7 @@ BEGIN
 	//    (Sometimes up to 125 words)
 	//
 	// --- mb:
-	// The udt that bind everything together.
+	// The udt that bind everything together. 
 	
 	
 	// The Modicon convention addressing:
@@ -487,14 +486,12 @@ BEGIN
 	    buffer_variant := "modbus_tcp_buffer", 
 	    mb := #mb);
 	
-	
 	#device_start_example(unit := 1,   // Device address. For tcp devices
 	                                   // unit can usually be set to "1".
 	                      mb := #mb);  // Same udt as above.
 	// Note that a device block can be used for both tcp and rtu. This of course
 	// require that the device has the hardware for both for TCP (Ethernet) and
 	// for RTU (RS-485).
-	
 	
 	// Read holding register 1234 from device with unit address 123. This is an
 	// example showing that a query does not necessarily need to be inside a
@@ -508,10 +505,9 @@ BEGIN
 	           data := #resault_data_1,
 	           mb := #mb);
 	
-	
 	"mb_log_words"(in := #mb.status.status, log := #log);
 	// This is only for debugging. If a strange error occurred then look in to the
-	// log. The status coodes is decribed in tia-portal help journal. Look at up
+	// log. The status coodes is decribed in tia-portal help journal. Look up
 	// MB_CLIENT, TCON, TSEND and TDISCON.
 	
 END_FUNCTION_BLOCK
@@ -542,6 +538,7 @@ TITLE = "Main Program Sweep (Cycle)"
 VERSION : 0.1
 
 BEGIN
+	// Program cycle OB
 	
 	// Open the block to see the example.
 	"modbus_rtu_start_example_DB"();
@@ -568,6 +565,14 @@ BEGIN
 	if the import is successfully. This is due to the missing rtu 
 	hardware configuration.
 	
+	OB-call:
+	The function blocks should be called from a Program cycle OB.
+	Advaced user may use Interval interupt OB, but doing so can 
+	cause serious problems if the cycle time is to short. All 
+	query blocks connected to a controller has to be called in the 
+	same order for each scan, meaning they have to be called from 
+	the same OB.
+	
 	The library extend on MB_MASTER and MB_CLIENT that comes 
 	along with TIA portal. The library doesn't includes any 
 	functionality for modbus slave or modbus server. Take a look 
@@ -579,6 +584,25 @@ BEGIN
 	 - http://www.csimn.com/CSI_pages/Modbus101.html
 	 - http://www.simplymodbus.ca/FAQ.htm
 	 - http://www.modbus.org/specs.php
+	 
+	Resurs requirements:
+	--------------------------                    
+	SYSTEM BLOCKS USED:     Load memory     Work memory                    
+	serialize:                   3,2 kB         0,71 kB                          
+	deserialize:                 3,2 kB         0,71 kB            
+	mb_comm_load:                4,5 kB         1,10 kB (mb rtu)
+	mb_master:                   7,1 kB         3,57 kB (mb rtu)
+	mb_client:                  33,0 kB         17,0 kB (mb tcp)
+	
+	The library itself:         86,2 kB          3,0 kB 
+	
+	The total memory requirements will strongly dependent on the number 
+	of queries and the number for devices. For a typical rtu application 
+	with four devices it most be expected that 15 kB of work memory will 
+	be used. 
+	
+	Total mem. for a 1212C:      1,0 MB         75,0 kB 
+	                 1214C:      ?,? MB        100,0 kB
 	
 END_FUNCTION
 
@@ -588,6 +612,7 @@ TITLE = "Main Program Sweep (Cycle)"
 VERSION : 0.1
 
 BEGIN
+	// Program cycle OB
 	
 	// Open the block to see the example.
 	"modbus_tcp_start_example_DB"();

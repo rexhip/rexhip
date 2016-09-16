@@ -98,7 +98,8 @@ Requirements:
  - TIA-portal: v13, sp1, upd8 (or greater)
  - S7-1200: firmware version >= 4.1.3
  - S7-1500: not tested, but should work fine.
- 
+ - S7-300 and S7-400: Not supported.
+
 ```
 The software is not affiliated with Siemens AG
 ```  

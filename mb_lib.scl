@@ -80,7 +80,7 @@ VERSION : 1.0
 BEGIN
 	// Lightweight Modbus Abstraction Layer Library. 
 	// Author:   Ola Bjørnli
-	// Version:  0.3_beta27
+	// Version:  0.3_beta28
 	// License:  MIT-license
 	// Web:      http://mb.sn7.no
 	//           http://github.com/olab84/sn7mb
@@ -88,19 +88,26 @@ BEGIN
 	#mb.query_above.done := false;
 	#mb.query_above.error := false;
 	#mb.run.qid_cnt := #mb.run.qid_cnt + 1;
+	
+	// qid_cnt is increased for every query (above) and reset back
+	// to zero at the controller. qid is only increased when a query
+	// finnish. This two varables create a token together, telling
+	// witch query that should execute.
 	IF #mb.run.qid_cnt <> #mb.q.qid THEN
 	    RETURN;
-	ELSIF #fc = 0 THEN
+	ELSIF #fc = 0 THEN // 0 => skip query
 	    #mb.run.insert := true;
 	    #mb.q.qid := #mb.q.qid + 1;
 	    #mb.conf.buffer_handler := true;
 	    RETURN;
 	END_IF;
 	
-	IF #d_len = 0 AND #mb.conf.buffer_handler AND // auto  
+	// d_len=0 => Automatically calculate the length based on the
+	// size of data.
+	IF #d_len = 0 AND #mb.conf.buffer_handler AND 
 	    (#mb.run.insert OR #mb.status.done OR #mb.status.error)
-	THEN   
-	    "mb_buffer_handler"(action := 1, // count
+	THEN
+	    "mb_buffer_handler"(action := 1, // Count bytes.
 	                        buffer_db := 0,
 	                        data := #data,
 	                        bytes := #bytes);
@@ -120,8 +127,10 @@ BEGIN
 	    #bytes := #d_len * 2;
 	END_IF;
 	
-	IF #mb.run.insert THEN
-	    #mb.run.mode := 0;
+	IF #mb.run.insert THEN // Insert this query.
+	    #mb.run.mode := 0; // 0 => read (default)
+	    
+	    // mb_client and mb_master use modicon convention address.
 	    CASE #fc OF
 	        1:  // Read output bits             
 	            #mb.run.data_addr := 1 + #d_addr;
@@ -143,7 +152,7 @@ BEGIN
 	        16: // Writing multiple holding registers
 	            #mb.run.mode := 2;
 	            #mb.run.data_addr := 400001 + #d_addr;
-	        200..202: // Siemens mode 0-2 replaced by 200-202  
+	        200..202: // Siemens mode 0-2 replaced by 200-202
 	            #mb.run.mode := #fc - 200;
 	            #mb.run.data_addr := #d_addr;
 	        ELSE
@@ -154,9 +163,10 @@ BEGIN
 	    #mb.q.fc := #fc;
 	    #mb.q.d_addr := #d_addr;
 	    #mb.q.d_len := #tmp_len;
-	    IF (#mb.run.mode = 1 OR #mb.run.mode = 2)
+	    IF (#mb.run.mode = 1 OR #mb.run.mode = 2) // If it's a write query
 	        AND #mb.conf.buffer_handler
 	    THEN
+	        // Copy the content from #data to the buffer.
 	        "mb_buffer_handler"(
 	            action := 2, // write
 	            buffer_db := #mb.fix.buffer_db,
@@ -166,16 +176,20 @@ BEGIN
 	    #mb.run.insert := false;
 	    #mb.device.insert_id := #mb.device.insert_id + 1;
 	    
+	// if the query is finnished.    
 	ELSIF #mb.status.done OR #mb.status.error THEN
+	    
+	    // Make sure that the query resault really belong to this query.   
 	    IF #mb.q.unit = #unit
 	        AND #mb.q.fc = #fc
 	        AND #mb.q.d_addr = #d_addr
 	        AND #mb.q.d_len = #tmp_len
 	    THEN
-	        IF #mb.status.done THEN
-	            IF #mb.run.mode = 0
+	        IF #mb.status.done THEN // Successfully            
+	            IF #mb.run.mode = 0 // If it's a read query 
 	                AND #mb.conf.buffer_handler
 	            THEN
+	                // Copy the content from the buffer to #data
 	                "mb_buffer_handler"(
 	                    action := 3, // read
 	                    buffer_db := #mb.fix.buffer_db,
@@ -183,15 +197,24 @@ BEGIN
 	                    bytes := #bytes );
 	            END_IF;
 	            #mb.query_above.done := true;
-	        ELSIF #mb.status.error THEN
+	        ELSIF #mb.status.error THEN  // failed
 	            #mb.query_above.error := true;
 	        END_IF;
+	        
+	        // Temperary store the d_addr for debugging. Picked up
+	        // inside mb_device_footer.
 	        #mb.device.recived_d_addr := #d_addr;
+	        
+	        // recive_id is used inside device_header and device_footer.
+	        // if change between them, then it can be determined that the
+	        // device has receved an answeer from a query.        
 	        #mb.device.recive_id := #mb.device.recive_id + 1;
 	    ELSE
-	        #mb.log.unsync := #mb.log.unsync + 1;
+	        #mb.log.unsync := #mb.log.unsync + 1; // only for logging 
 	    END_IF;
-	    #mb.run.insert := true;
+	    
+	    // Prepare for the next query.
+	    #mb.run.insert := true; 
 	    #mb.q.qid := #mb.q.qid + 1;
 	END_IF;
 	
@@ -242,58 +265,81 @@ VERSION : 1.0
 
 
 BEGIN
-	IF NOT #device.enable THEN
-	    #device.qError := false;
-	    #device.intern.err_cnt := 0;
+	// If device is disabled, then reset error flags.
+	IF #device.skip_all_queries THEN   
+	    #device.qError := false;       
+	    #device.intern.timeout_cnt := 0;
 	ELSIF #mb.device.recive_id <> #device.intern.recive_id THEN
-	    IF #mb.status.done THEN
+	    // If there is a query that bellong to this device that has
+	    // recvied a resault. (with or withour error)
+	    IF #mb.status.done THEN // Successfully
 	        #device.log.done_cnt := #device.log.done_cnt + 1;
 	        #e := RD_LOC_T(#device.log.done_dtl);
-	        #device.intern.err_cnt := 0;
-	        #device.log.err_timeout := false;
+	        #device.intern.timeout_cnt := 0;
 	    ELSIF #mb.status.error THEN
 	        #device.log.err_cnt := #device.log.err_cnt + 1;
 	        #e := RD_LOC_T(#device.log.err_dtl);
 	        #device.log.err_status := #mb.status.status;
 	        #device.log.err_d_addr := #mb.device.recived_d_addr;
-	        #device.intern.err_cnt := SEL(G := #mb.status.timeout,
+	        // Increase timeout cnt. if it's a timeout error.
+	        // if it's not timeout error then reset the cnt.
+	        #device.intern.timeout_cnt := SEL(G := #mb.status.timeout,
 	              IN0 := 0,
-	              IN1 := MIN(IN1 := #device.intern.err_cnt + 1,
-	                         IN2 := 250));
+	              IN1 := MIN(IN1 := #device.intern.timeout_cnt + 1,
+	                         IN2 := 254));
 	        #device.log.err_timeout := #mb.status.timeout;
 	        #device.qError := true;
 	        #e := RD_SYS_T(#device.intern.err_dtl);
 	        #tmp_err := true;
 	    END_IF;
 	    
+	    // ... hard to explain, look at the expression in the bottom ...
 	    #mb.device.retry_done := #mb.device.id_retry = #mb.device.id_cnt;
 	    
+	    // Only one query for each device for each loop is allowed to be executed.
+	    // offset_qid which one. offset_qid is incread by one a query has executed
+	    // given no communication problems.
 	    #device.intern.offset_qid := #device.intern.offset_qid
 	    + BOOL_TO_INT(NOT #mb.status.timeout);
 	END_IF;
 	
+	// If all queries for this device has been executed, then reset offset_qid.
 	IF #device.intern.offset_qid >=
 	    #mb.run.qid_cnt - #device.intern.header_qid
 	THEN
 	    #device.intern.offset_qid := 0;
 	END_IF;
 	
+	// Error flags handeling. If qError has been set, then there is a tof-timer that keep
+	// it high for a certain time. The time can be configured with "device.conf.time_qErrror".
 	IF #device.qError THEN
 	    #e := RD_SYS_T(#rd_sys_t);
 	    #device.qError := #tmp_err OR #device.conf.time_qErrror <> 0
 	    AND #rd_sys_t < #device.intern.err_dtl
 	    + #device.conf.time_qErrror;
 	END_IF;
-	#device.qComError := #device.intern.err_cnt > #device.conf.max_qComError;
+	// qComError is only set if x repeating timeout errors has occurred.
+	#device.qComError := #device.intern.timeout_cnt > #device.conf.max_qComError;
 	
+	// If the retry-token is at this device, and there is no communication problems
+	// then pass on the retry-token. The retry token tell which device with
+	// communication problem that should retry establish communication. 
 	#mb.device.id_retry := #mb.device.id_retry
 	+ BOOL_TO_UINT(#mb.device.id_retry = #mb.device.id_cnt
 	               AND NOT #device.qComError);
 	
+	// Several condition that resault in passing on the query-token on to the
+	// next device. Skipping all or the rest of the queries for the device:
+	// - If this device has one query that have received a result.
+	//   (both successfully or failed query)
+	// - If qComError is set, and isn't this device turn to try again.  
+	// - If the device is not enabled.
 	IF #mb.device.recive_id <> #device.intern.recive_id
 	    OR #mb.device.insert_id <> #device.intern.insert_id
-	    AND (#device.qComError AND (#mb.device.id_retry <> #mb.device.id_cnt
-	    OR #mb.device.retry_done) OR NOT #device.enable )
+	        AND (#device.qComError
+	            AND (#mb.device.id_retry <> #mb.device.id_cnt
+	                OR #mb.device.retry_done)
+	        OR #device.skip_all_queries )
 	THEN
 	    #mb.q.qid := #mb.run.qid_cnt + 1;
 	    #mb.run.insert := true;

@@ -12,43 +12,49 @@ VERSION : 1.0
    END_VAR
 
    VAR_TEMP 
-      "array" : Array[0..300] of Byte;
+      buffer2 : Array[0..300] of Byte;
       e : Int;
       c : Int;
    END_VAR
 
 
 BEGIN
+	// The FC do 3 diffrent actions.
 	CASE #action OF
 	    1:  // Count bytes             
 	        #bytes := 0;
 	        #e := Serialize(SRC_VARIABLE := #data,
-	                        DEST_ARRAY => #array,
+	                        DEST_ARRAY => #buffer2,
 	                        POS := #bytes);
-	    2:  // Write buffer    
+	    2:  // Write to buffer    
 	        #bytes := 0;
 	        #e := Serialize(SRC_VARIABLE := #data,
-	                        DEST_ARRAY => #array,
+	                        DEST_ARRAY => #buffer2,
 	                        POS := #bytes);
 	        FOR #c := 0 TO #bytes - 1 DO
+	            // Copy the content of the buffer inside this FC to the buffer db.
 	            POKE(area := 16#84,
 	                 dbNumber := #buffer_db,
 	                 byteOffset := #c,
-	                 value := #array[#c]);
+	                 value := #buffer2[#c]);
 	        END_FOR;
-	    3:  // Read buffer        
+	    3:  // Read from buffer        
 	        IF #bytes = 0 THEN
+	            // 0 => auto. Calculate have many bytes #data consist of.
 	            #e := Serialize(SRC_VARIABLE := #data,
-	                            DEST_ARRAY => #array,
+	                            DEST_ARRAY => #buffer2,
 	                            POS := #bytes);
 	        END_IF;
+	        
+	        // Copy the content from the buffer db in to the buffer inside
+	        // this FC.
 	        FOR #c := 0 TO #bytes - 1 DO
-	            #array[#c] := PEEK(area := 16#84,
-	                               dbNumber := #buffer_db,
-	                               byteOffset := #c);
+	            #buffer2[#c] := PEEK(area := 16#84,
+	                                 dbNumber := #buffer_db,
+	                                 byteOffset := #c);
 	        END_FOR;
 	        #bytes := 0;
-	        #e := Deserialize(SRC_ARRAY := #array,
+	        #e := Deserialize(SRC_ARRAY := #buffer2,
 	                          DEST_VARIABLE => #data,
 	                          POS := #bytes);
 	END_CASE;
@@ -80,7 +86,7 @@ VERSION : 1.0
 BEGIN
 	// Lightweight Modbus Abstraction Layer Library. 
 	// Author:   Ola Bjørnli
-	// Version:  0.3_beta28
+	// Version:  0.3_beta29
 	// License:  MIT-license
 	// Web:      http://mb.sn7.no
 	//           http://github.com/olab84/sn7mb
@@ -166,7 +172,7 @@ BEGIN
 	    IF (#mb.run.mode = 1 OR #mb.run.mode = 2) // If it's a write query
 	        AND #mb.conf.buffer_handler
 	    THEN
-	        // Copy the content from #data to the buffer.
+	        // Copy the content from "#data" to the buffer.
 	        "mb_buffer_handler"(
 	            action := 2, // write
 	            buffer_db := #mb.fix.buffer_db,
@@ -189,7 +195,7 @@ BEGIN
 	            IF #mb.run.mode = 0 // If it's a read query 
 	                AND #mb.conf.buffer_handler
 	            THEN
-	                // Copy the content from the buffer to #data
+	                // Copy the content from the buffer to "#data"
 	                "mb_buffer_handler"(
 	                    action := 3, // read
 	                    buffer_db := #mb.fix.buffer_db,
@@ -231,20 +237,35 @@ VERSION : 1.0
 
 
 BEGIN
-	#device.intern.recive_id := #mb.device.recive_id;
-	#device.intern.insert_id := #mb.device.insert_id;
-	#mb.device.id_cnt := #mb.device.id_cnt + 1;
+	// Device id cnt. The first device has id "1".
+	#mb.device.did_cnt := #mb.device.did_cnt + 1;
 	
+	// Take a snap shot of the recive_id and insert_id.
+	#device.intern.insert_id := #mb.device.insert_id;
+	#device.intern.recive_id := #mb.device.recive_id;
+	// The mb_query FC will change the insert_id or recive_id if a intermediate
+	// query between mb_device_header and mb_device_footer has the query-token.
+	// By compare insert_id in the mb udt and device udt at the footer, it can
+	// be determined if the query-token points at a query belonging to this
+	// device. 
+	
+	// If the query-token points at this device header, or it point to a query
+	// in the previous device, that is surrounded by a if-statement and the 
+	// statement is now false.
 	IF #mb.q.qid > #mb.run.qid_cnt
 	    AND #mb.q.qid <= #device.intern.header_qid
 	THEN
-	    #mb.q.qid := #device.intern.header_qid
-	    + #device.intern.offset_qid + 1;
+	    // At the beginning the offset_qid points at the first query of this
+	    // device. When it has executed the offset will point at the second
+	    // query. When all queries has executed the offset will be reset
+	    // back to the first query.
+	    #mb.q.qid := #device.intern.header_qid + #device.intern.offset_qid;
 	END_IF;
 	
-	#device.intern.header_qid := MAX(
-	    IN1 := #mb.run.qid_cnt + 1,
-	    IN2 := #device.intern.header_qid);
+	// The code below is reduce the impact of setting a if-statement
+	// around queries. The device header occupy one query id.
+	#device.intern.header_qid := MAX(IN1 := #mb.run.qid_cnt + 1,
+	                                 IN2 := #device.intern.header_qid);
 	#mb.run.qid_cnt := #device.intern.header_qid;
 	
 END_FUNCTION
@@ -265,6 +286,13 @@ VERSION : 1.0
 
 
 BEGIN
+	// If the retry-token point at this device, and there is no communication problems
+	// then pass on the retry-token to the next device. The retry token tell which device
+	// with communication problem that should retry establish communication. 
+	#mb.device.did_retry := #mb.device.did_retry
+	+ BOOL_TO_UINT(#mb.device.did_retry = #mb.device.did_cnt
+	               AND NOT #device.qComError);
+	
 	// If device is disabled, then reset error flags.
 	IF #device.skip_all_queries THEN   
 	    #device.qError := false;       
@@ -272,29 +300,39 @@ BEGIN
 	ELSIF #mb.device.recive_id <> #device.intern.recive_id THEN
 	    // If there is a query that bellong to this device that has
 	    // recvied a resault. (with or withour error)
-	    IF #mb.status.done THEN // Successfully
+	    
+	    IF #mb.status.done THEN // Logging successfully query        
 	        #device.log.done_cnt := #device.log.done_cnt + 1;
 	        #e := RD_LOC_T(#device.log.done_dtl);
-	        #device.intern.timeout_cnt := 0;
-	    ELSIF #mb.status.error THEN
+	        
+	        // One successfully query reset the timeout counter.
+	        #device.intern.timeout_cnt := 0;  
+	    ELSIF #mb.status.error THEN // Logging failed query        
 	        #device.log.err_cnt := #device.log.err_cnt + 1;
 	        #e := RD_LOC_T(#device.log.err_dtl);
 	        #device.log.err_status := #mb.status.status;
 	        #device.log.err_d_addr := #mb.device.recived_d_addr;
+	        #device.log.err_timeout := #mb.status.timeout;
+	        
 	        // Increase timeout cnt. if it's a timeout error.
-	        // if it's not timeout error then reset the cnt.
+	        // if it's not a timeout error then reset the cnt.
 	        #device.intern.timeout_cnt := SEL(G := #mb.status.timeout,
 	              IN0 := 0,
 	              IN1 := MIN(IN1 := #device.intern.timeout_cnt + 1,
 	                         IN2 := 254));
-	        #device.log.err_timeout := #mb.status.timeout;
+	        #tmp_err := true;
 	        #device.qError := true;
 	        #e := RD_SYS_T(#device.intern.err_dtl);
-	        #tmp_err := true;
 	    END_IF;
 	    
-	    // ... hard to explain, look at the expression in the bottom ...
-	    #mb.device.retry_done := #mb.device.id_retry = #mb.device.id_cnt;
+	    // - If it's this devices that has the retry-token, and a retry has been
+	    //   executed. Then set the retry_finished flag.
+	    // - The retry-token will be passed on to the next device with communication
+	    //   problems (qComError) when the query loop has reach the end.
+	    //   (Inside the controller)
+	    // - The purpose of the flag is make sure that a retry is only done once
+	    //   for each query loop revolution.
+	    #mb.device.retry_finished := #mb.device.did_retry = #mb.device.did_cnt;
 	    
 	    // Only one query for each device for each loop is allowed to be executed.
 	    // offset_qid which one. offset_qid is incread by one a query has executed
@@ -304,10 +342,10 @@ BEGIN
 	END_IF;
 	
 	// If all queries for this device has been executed, then reset offset_qid.
-	IF #device.intern.offset_qid >=
+	IF #device.intern.offset_qid >
 	    #mb.run.qid_cnt - #device.intern.header_qid
 	THEN
-	    #device.intern.offset_qid := 0;
+	    #device.intern.offset_qid := 1;
 	END_IF;
 	
 	// Error flags handeling. If qError has been set, then there is a tof-timer that keep
@@ -321,15 +359,8 @@ BEGIN
 	// qComError is only set if x repeating timeout errors has occurred.
 	#device.qComError := #device.intern.timeout_cnt > #device.conf.max_qComError;
 	
-	// If the retry-token is at this device, and there is no communication problems
-	// then pass on the retry-token. The retry token tell which device with
-	// communication problem that should retry establish communication. 
-	#mb.device.id_retry := #mb.device.id_retry
-	+ BOOL_TO_UINT(#mb.device.id_retry = #mb.device.id_cnt
-	               AND NOT #device.qComError);
-	
 	// Several condition that resault in passing on the query-token on to the
-	// next device. Skipping all or the rest of the queries for the device:
+	// next device. Skipping all or the rest of the queries for this device:
 	// - If this device has one query that have received a result.
 	//   (both successfully or failed query)
 	// - If qComError is set, and isn't this device turn to try again.  
@@ -337,10 +368,12 @@ BEGIN
 	IF #mb.device.recive_id <> #device.intern.recive_id
 	    OR #mb.device.insert_id <> #device.intern.insert_id
 	        AND (#device.qComError
-	            AND (#mb.device.id_retry <> #mb.device.id_cnt
-	                OR #mb.device.retry_done)
+	            AND (#mb.device.did_retry <> #mb.device.did_cnt
+	            OR #mb.device.retry_finished)
+	            // retry_finished will be reset in the controller.
 	        OR #device.skip_all_queries )
 	THEN
+	    // Reset        
 	    #mb.q.qid := #mb.run.qid_cnt + 1;
 	    #mb.run.insert := true;
 	    #mb.conf.buffer_handler := true;
@@ -371,53 +404,71 @@ VERSION : 1.0
    END_VAR
 
    VAR 
-      comm_load {OriginalPartName := 'MB_COMM_LOAD'; LibVersion := '2.1'} : MB_COMM_LOAD;
-      master {OriginalPartName := 'MB_MASTER'; LibVersion := '2.2'} : MB_MASTER;
+      mb_comm_load {OriginalPartName := 'MB_COMM_LOAD'; LibVersion := '2.1'} : MB_COMM_LOAD;
+      mb_master {OriginalPartName := 'MB_MASTER'; LibVersion := '2.2'} : MB_MASTER;
+      tof_error {OriginalPartName := 'IEC_TIMER'; LibVersion := '1.0'} : TOF_TIME;
    END_VAR
 
 
 BEGIN
-	#comm_load(REQ := NOT #comm_load.DONE AND NOT #master.BUSY,
-	           "PORT" := #hardware_id,
-	           BAUD := #baud,
-	           PARITY := SEL(G := #parity, IN0 := 0, IN1 := 2),
-	           RESP_TO := TIME_TO_UINT( #timeout ),
-	           MB_DB := #master );
+	// Init. the hardware.
+	#mb_comm_load(REQ := NOT #mb_comm_load.DONE AND NOT #mb_master.BUSY,
+	              "PORT" := #hardware_id,
+	              BAUD := #baud,
+	              PARITY := SEL(G := #parity, IN0 := 0, IN1 := 2),
+	              RESP_TO := TIME_TO_UINT(#timeout),
+	              MB_DB := #mb_master);
 	
-	#master(REQ := #comm_load.DONE AND NOT #master.BUSY
-	            AND NOT #mb.run.insert,
-	        MB_ADDR := #mb.q.unit,
-	        MODE := #mb.run.mode,
-	        DATA_ADDR := #mb.run.data_addr,
-	        DATA_LEN := #mb.q.d_len,
-	        DONE => #mb.status.done,
-	        ERROR => #mb.status.error,
-	        STATUS => #mb.status.status,
-	        DATA_PTR := #buffer_variant );
+	// The core master block.
+	#mb_master(REQ := #mb_comm_load.DONE AND NOT #mb_master.BUSY
+	           AND NOT #mb.run.insert,
+	           MB_ADDR := #mb.q.unit,
+	           MODE := #mb.run.mode,
+	           DATA_ADDR := #mb.run.data_addr,
+	           DATA_LEN := #mb.q.d_len,
+	           DONE => #mb.status.done,
+	           ERROR => #mb.status.error,
+	           STATUS => #mb.status.status,
+	           DATA_PTR := #buffer_variant);
 	
-	#mb.status.timeout := #master.ERROR
-	AND #master.STATUS = 16#80C8;
+	// Timeout errors are handled different from other errors.
+	#mb.status.timeout := #mb_master.ERROR
+	AND #mb_master.STATUS = 16#80C8;
 	
-	// -----------
-	#qError := #mb.status.error;
+	// --------------------------------------------------
+	#tof_error(IN := #mb.status.error,
+	           PT := #tof_error.PT,
+	           Q => #qError);
 	#mb.fix.buffer_db := #buffer_db_any;
+	
+	// If all queries has been executed, then start over again
+	// on the first query.
 	IF #mb.q.qid > #mb.run.qid_cnt THEN
 	    #mb.q.qid := 1;
-	    #mb.device.id_retry := #mb.device.id_retry + 1;
-	    #mb.device.retry_done := false;
-	    IF #mb.device.id_retry > #mb.device.id_cnt THEN
-	        #mb.device.id_retry := 1;
+	    
+	    // The retry-id is the device that get to have retry to restoring
+	    // communication after the qComError falg is set for the device.
+	    // When one query loop has occurred the retry id is incremented. 
+	    #mb.device.did_retry := #mb.device.did_retry + 1;
+	    
+	    // retry_finished is set after one retry has taken place. 
+	    // The device that has the retry-token only has one try to make 
+	    // successfully query.
+	    #mb.device.retry_finished := false;
+	    IF #mb.device.did_retry > #mb.device.did_cnt THEN
+	        #mb.device.did_retry := 1;
 	    END_IF;
 	END_IF;
-	#mb.run.qid_cnt := 0;
-	#mb.device.id_cnt := 0;
+	#mb.run.qid_cnt := 0; // qid_cnt is incremented in every query.
+	#mb.device.did_cnt := 0; // did_cnt is incremented in every device header.
+	
 END_FUNCTION_BLOCK
 
 FUNCTION_BLOCK "mb_client_controller"
 { S7_Optimized_Access := 'TRUE' }
 VERSION : 1.0
    VAR_INPUT 
-      interface : HW_ANY;   // Profinet interface id
+      "interface_" : HW_ANY;   // Profinet interface id
       conn_id : CONN_OUC := 123;   // connection_id
       remote_ip : Array[1..4] of Byte := 192, 168, 1, 0;
       remote_port : UInt := 502;   // enable even parity
@@ -435,13 +486,14 @@ VERSION : 1.0
    END_VAR
 
    VAR 
-      client {OriginalPartName := 'MB_CLIENT'; LibVersion := '4.0'} : MB_CLIENT;
+      mb_client {OriginalPartName := 'MB_CLIENT'; LibVersion := '4.0'} : MB_CLIENT;
       tcon_ip_v4 {OriginalPartName := 'TCON_IP_v4'; LibVersion := '1.0'} : TCON_IP_v4;
       ton_timeout {OriginalPartName := 'IEC_TIMER'; LibVersion := '1.0'} : TON_TIME;
       ton_timeout_q : Bool;
       tdiscon {OriginalPartName := 'T_DISCON'; LibVersion := '2.1'} : TDISCON;
       tdiscon_bool : Bool;
       disconnect : Bool := false;
+      tof_error {OriginalPartName := 'IEC_TIMER'; LibVersion := '1.0'} : TOF_TIME;
    END_VAR
 
    VAR_TEMP 
@@ -450,59 +502,85 @@ VERSION : 1.0
 
 
 BEGIN
-	#tcon_ip_v4.InterfaceId := #interface;
+	#tcon_ip_v4.InterfaceId := #"interface_";
 	#tcon_ip_v4.ID := #conn_id;
 	#tcon_ip_v4.RemoteAddress.ADDR := #remote_ip;
 	#tcon_ip_v4.RemotePort := #remote_port;
 	
-	#tdiscon(REQ := #client.ERROR AND #client.STATUS = 16#80A3, ID := #conn_id);
+	// If a new download has taken place, and this block is re-initialize,
+	// then the mb_client block will output the error code saying that:
+	// "Attempt being made to re-establish an existing connection." (80A3).
+	// The solution to this problem is to disconnect and then reconnect.
+	#tdiscon(REQ := #mb_client.ERROR AND #mb_client.STATUS = 16#80A3,
+	         ID := #conn_id);
 	IF #tdiscon.BUSY THEN
 	    #tdiscon_bool := true;
 	ELSIF #tdiscon.DONE THEN
 	    #tdiscon_bool := false;
 	END_IF;
 	
-	#client.MB_Unit_ID := UINT_TO_BYTE(#mb.q.unit);
-	#client.Rcv_Timeout := UINT_TO_REAL(TIME_TO_UINT(#timeout)) / 1000;
-	#client(REQ := NOT #client.BUSY AND NOT #mb.run.insert AND NOT #client.DISCONNECT,
-	        DISCONNECT := #disconnect OR #tdiscon_bool,
-	        MB_MODE := #mb.run.mode,
-	        MB_DATA_ADDR := #mb.run.data_addr,
-	        MB_DATA_LEN := #mb.q.d_len,
-	        STATUS => #mb.status.status,
-	        MB_DATA_PTR := #buffer_variant,
-	        CONNECT := #tcon_ip_v4);
+	#mb_client.MB_Unit_ID := UINT_TO_BYTE(#mb.q.unit);
+	#mb_client.Rcv_Timeout := UINT_TO_REAL(TIME_TO_UINT(#timeout)) / 1000;
+	#mb_client.Blocked_Proc_Timeout := MIN(IN1 := 3,
+	                                       IN2 := #mb_client.Rcv_Timeout + 1);
+	#mb_client(REQ := NOT #mb_client.BUSY AND NOT #mb.run.insert
+	                AND NOT #mb_client.DISCONNECT,
+	           DISCONNECT := #disconnect OR #tdiscon_bool,
+	           MB_MODE := #mb.run.mode,
+	           MB_DATA_ADDR := #mb.run.data_addr,
+	           MB_DATA_LEN := #mb.q.d_len,
+	           STATUS => #mb.status.status,
+	           MB_DATA_PTR := #buffer_variant,
+	           CONNECT := #tcon_ip_v4);
 	
+	// If mb_client is not establish a connection it will not throw
+	// timeout error. That's way timeout handled manually bellow.
 	#ton_timeout(IN := NOT #mb.run.insert
 	             AND (NOT #mb.status.done OR NOT #mb.status.error),
 	             PT := #timeout,
 	             Q => #ton_timeout_q);
+	
+	// Timeout errors are handled different from other errors.
 	IF #ton_timeout_q THEN
 	    #mb.status.done := false;
 	    #mb.status.error := true;
 	    #mb.status.timeout := true;
 	    RESET_TIMER(#ton_timeout);
 	ELSE
-	    #mb.status.done := #client.DONE;
-	    #mb.status.error := #client.ERROR;
+	    #mb.status.done := #mb_client.DONE;
+	    #mb.status.error := #mb_client.ERROR;
 	    #mb.status.timeout := #mb.status.error
 	        AND (#mb.status.status = 16#818C
 	        OR #mb.status.status = 16#80C8);
 	END_IF;
 	
-	// -----------
-	#qError := #mb.status.error;
+	// --------------------------------------------------
+	#tof_error(IN := #mb.status.error,
+	           PT := #tof_error.PT,
+	           Q => #qError);
 	#mb.fix.buffer_db := #buffer_db_any;
+	
+	// If all queries has been executed, then start over again
+	// on the first query.
 	IF #mb.q.qid > #mb.run.qid_cnt THEN
 	    #mb.q.qid := 1;
-	    #mb.device.id_retry := #mb.device.id_retry + 1;
-	    #mb.device.retry_done := false;
-	    IF #mb.device.id_retry > #mb.device.id_cnt THEN
-	        #mb.device.id_retry := 1;
+	    
+	    // The retry-id is the device that get to have retry to restoring
+	    // communication after the qComError falg is set for the device.
+	    // When one query loop has occurred the retry id is incremented. 
+	    #mb.device.did_retry := #mb.device.did_retry + 1;
+	    
+	    // retry_finished is set after one retry has taken place. 
+	    // The device that has the retry-token only has one try to make 
+	    // successfully query.
+	    #mb.device.retry_finished := false;
+	    IF #mb.device.did_retry > #mb.device.did_cnt THEN
+	        #mb.device.did_retry := 1;
 	    END_IF;
 	END_IF;
-	#mb.run.qid_cnt := 0;
-	#mb.device.id_cnt := 0;
+	#mb.run.qid_cnt := 0; // qid_cnt is incremented in every query.
+	#mb.device.did_cnt := 0; // did_cnt is incremented in every device header.
+	
 END_FUNCTION_BLOCK
 
 FUNCTION "mb_log_words" : Void
@@ -524,6 +602,9 @@ VERSION : 0.1
 
 
 BEGIN
+	// Log keep all the diffrent values of "in". If a value of "in"
+	// acceding more then once just the first event will be logged.
+	
 	FOR #c := 0 TO UDINT_TO_INT(CountOfElements(#log)) - 1 DO
 	    #e := MOVE_BLK_VARIANT(SRC := #log, COUNT := 1,SRC_INDEX := #c,
 	                           DEST_INDEX := 0, DEST => #w);

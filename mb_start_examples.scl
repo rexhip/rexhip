@@ -466,9 +466,8 @@ BEGIN
 	// conn_id:         A unique id for each tcp connectin in the plc-program.
 	// ip_addr:         The ip-address of the server, the client will communicate
 	//                  with.
-	// port_number:     TCP-port, 502 is the standard modbus tcp port. UDP isn't
-	//                  available.
-	// timeout:         Default: 2 seconds.
+	// port_number:     TCP-port, 502 is the default port. UDP isn't available.
+	// timeout:         Timeout.
 	// buffer_db_any:   A db with standard access consisting a array of 125 words.
 	// buffer_variant:  Input the same variable as to "buffer_db_any".
 	// mb:              A udt that is the link between the controller and it's
@@ -478,7 +477,7 @@ BEGIN
 	#mb_client_controller.remote_ip[3] := 1;
 	#mb_client_controller.remote_ip[4] := 2;
 	#mb_client_controller(
-	    interface := "Local~PROFINET_interface_1",
+	    "interface_" := "Local~PROFINET_interface_1",
 	    conn_id := 123, 
 	    remote_port := 502,
 	    timeout := T#2s,
@@ -565,12 +564,12 @@ BEGIN
 	if the import is successfully. This is due to the missing rtu 
 	hardware configuration.
 	
-	OB-call:
+	OB-call: 
 	The function blocks should be called from a Program cycle OB.
 	Advaced user may use Interval interupt OB, but doing so can 
 	cause serious problems if the cycle time is to short. All 
 	query blocks connected to a controller has to be called in the 
-	same order for each scan, meaning they have to be called from 
+	same order for each scan, implicate they have to be called from 
 	the same OB.
 	
 	The library extend on MB_MASTER and MB_CLIENT that comes 
@@ -590,20 +589,21 @@ BEGIN
 	SYSTEM BLOCKS USED:     Load memory     Work memory                    
 	serialize:                   3,2 kB         0,71 kB                          
 	deserialize:                 3,2 kB         0,71 kB            
-	mb_comm_load:                4,5 kB         1,10 kB (mb rtu)
-	mb_master:                   7,1 kB         3,57 kB (mb rtu)
-	mb_client:                  33,0 kB         17,0 kB (mb tcp)
+	mb_comm_load:                4,5 kB         1,10 kB (only RTU)
+	mb_master:                   7,1 kB         3,57 kB (only RTU)
+	mb_client:                  33,0 kB         17,0 kB (only TCP)
 	
 	The library itself:         86,2 kB          3,0 kB 
 	
 	The total memory requirements will strongly dependent on the number 
 	of queries and the number for devices. For a typical rtu application 
-	with four devices it most be expected that 15 kB of work memory will 
-	be used. 
+	with four devices it most be expected about 15 kB of work memory 
+	will be used. For similar tcp application described above it must be 
+	expected a scan time on 15 ms.
 	
 	Total mem. for a 1212C:      1,0 MB         75,0 kB 
 	                 1214C:      ?,? MB        100,0 kB
-	
+	   
 END_FUNCTION
 
 ORGANIZATION_BLOCK "tcp_ob"

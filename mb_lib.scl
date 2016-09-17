@@ -468,7 +468,7 @@ FUNCTION_BLOCK "mb_client_controller"
 { S7_Optimized_Access := 'TRUE' }
 VERSION : 1.0
    VAR_INPUT 
-      "interface_" : HW_ANY;   // Profinet interface id
+      interface : HW_ANY;   // Profinet interface id
       conn_id : CONN_OUC := 123;   // connection_id
       remote_ip : Array[1..4] of Byte := 192, 168, 1, 0;
       remote_port : UInt := 502;   // enable even parity
@@ -502,7 +502,7 @@ VERSION : 1.0
 
 
 BEGIN
-	#tcon_ip_v4.InterfaceId := #"interface_";
+	#tcon_ip_v4.InterfaceId := #interface;
 	#tcon_ip_v4.ID := #conn_id;
 	#tcon_ip_v4.RemoteAddress.ADDR := #remote_ip;
 	#tcon_ip_v4.RemotePort := #remote_port;

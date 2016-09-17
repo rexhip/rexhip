@@ -15,12 +15,11 @@ blocks already do. Rather it's an attempt to expand the existing blocks, and to 
 a common clean API for what the library call "device blocks". (interface blocks)
 
 Key features:
- - Avoid global states, which make it possible to create reusable 
-   device blocks. (Similar to proibus gsd-files)
+ - Avoid global states, which make it possible to create reusable device blocks. 
  - Clean and readable API.  
  - Advanced timeout handler that reduce idle time.  
- - Take all care of executing the queries, one by one.  
-   Sophisticated bus sharing mechanism between devices.
+ - Take all care of executing the queries, one by one. Sophisticated bus sharing 
+   mechanism between devices.
  - Logging capabilities for development and debugging.
  - Possible to create readable code still for application with 
    hundreds of modbus devices.

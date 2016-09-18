@@ -477,7 +477,7 @@ BEGIN
 	#mb_client_controller.remote_ip[3] := 1;
 	#mb_client_controller.remote_ip[4] := 2;
 	#mb_client_controller(
-	    "interface_" := "Local~PROFINET_interface_1",
+	    interface := "Local~PROFINET_interface_1",
 	    conn_id := 123, 
 	    remote_port := 502,
 	    timeout := T#2s,

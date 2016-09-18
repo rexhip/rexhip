@@ -86,7 +86,7 @@ VERSION : 1.0
 BEGIN
 	// Lightweight Modbus Abstraction Layer Library. 
 	// Author:   Ola Bjørnli
-	// Version:  0.3_beta29
+	// Version:  0.3_beta30
 	// License:  MIT-license
 	// Web:      http://mb.sn7.no
 	//           http://github.com/olab84/sn7mb
@@ -264,8 +264,9 @@ BEGIN
 	
 	// The code below is reduce the impact of setting a if-statement
 	// around queries. The device header occupy one query id.
-	#device.intern.header_qid := MAX(IN1 := #mb.run.qid_cnt + 1,
-	                                 IN2 := #device.intern.header_qid);
+	#device.intern.header_qid := MAX(
+	    IN1 := #mb.run.qid_cnt + 1 + #device.intern.fixed_space,
+	    IN2 := #device.intern.header_qid);
 	#mb.run.qid_cnt := #device.intern.header_qid;
 	
 END_FUNCTION
@@ -286,13 +287,6 @@ VERSION : 1.0
 
 
 BEGIN
-	// If the retry-token point at this device, and there is no communication problems
-	// then pass on the retry-token to the next device. The retry token tell which device
-	// with communication problem that should retry establish communication. 
-	#mb.device.did_retry := #mb.device.did_retry
-	+ BOOL_TO_UINT(#mb.device.did_retry = #mb.device.did_cnt
-	               AND NOT #device.qComError);
-	
 	// If device is disabled, then reset error flags.
 	IF #device.skip_all_queries THEN   
 	    #device.qError := false;       
@@ -332,7 +326,8 @@ BEGIN
 	    //   (Inside the controller)
 	    // - The purpose of the flag is make sure that a retry is only done once
 	    //   for each query loop revolution.
-	    #mb.device.retry_finished := #mb.device.did_retry = #mb.device.did_cnt;
+	    #mb.device.retry_finished := #mb.device.did_retry = #mb.device.did_cnt
+	    AND #mb.status.timeout;
 	    
 	    // Only one query for each device for each loop is allowed to be executed.
 	    // offset_qid which one. offset_qid is incread by one a query has executed
@@ -359,6 +354,13 @@ BEGIN
 	// qComError is only set if x repeating timeout errors has occurred.
 	#device.qComError := #device.intern.timeout_cnt > #device.conf.max_qComError;
 	
+	// If the retry-token point at this device, and there is no communication problems
+	// then pass on the retry-token to the next device. The retry token tell which device
+	// with communication problem that should retry establish communication. 
+	#mb.device.did_retry := #mb.device.did_retry
+	+ BOOL_TO_UINT(#mb.device.did_retry = #mb.device.did_cnt
+	               AND NOT #device.qComError);
+	
 	// Several condition that resault in passing on the query-token on to the
 	// next device. Skipping all or the rest of the queries for this device:
 	// - If this device has one query that have received a result.
@@ -370,7 +372,7 @@ BEGIN
 	        AND (#device.qComError
 	            AND (#mb.device.did_retry <> #mb.device.did_cnt
 	            OR #mb.device.retry_finished)
-	            // retry_finished will be reset in the controller.
+	        // retry_finished will be reset in the controller.
 	        OR #device.skip_all_queries )
 	THEN
 	    // Reset        

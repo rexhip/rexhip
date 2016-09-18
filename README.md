@@ -45,10 +45,12 @@ Key features:
 // Instances of device blocks for Siemens PAC3200 
 #siemens_PAC3200_instance_1(unit := 3, mb := #mb);
 #siemens_PAC3200_instance_2(unit := 4, mb := #mb);
+#siemens_PAC3200_instance_3(unit := 5, mb := #mb);
+
 
 
 // -----------------------------------------------------------------------
-// Device block for: ABB - AquaMaster 3 - Electromagnetic flowmeter
+// Device block for: ABB - AquaMaster 3 - Electromagnetic flow meter
 
 "mb_device_header"(device := #device_udt, mb := #mb);
 
@@ -67,6 +69,10 @@ Key features:
            mb := #mb);                   // inside the connected variable.
 
 "mb_device_footer"(device := #device_udt, mb := #mb);
+
+// The #device_udt contains a log, flags, configuration and internal states.
+// Implementing the device header and the footer give many benefits, but isn't
+// required.
 // -----------------------------------------------------------------------
 
 
@@ -81,7 +87,7 @@ Key features:
            d_addr := 13,                  // mb offset. Start read at address 13.
            d_len := #mb.c.auto_len,       // Length is calculated based on the size of "data".
            data := #current,		      // #current is a array of 3 reals.
-           mb := #mb);                    // #mb will be input on the device block.
+           mb := #mb);                    // #mb will be inOut on the device block.
 
 "mb_query"(unit := #unit,
            fc := #mb.fc.read_holding_reg,

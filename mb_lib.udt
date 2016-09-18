@@ -1,4 +1,37 @@
-﻿TYPE "udt_mb"
+﻿TYPE "udt_mb_device"
+VERSION : 0.1
+   STRUCT
+      skip_all_queries : Bool;   // Disable device, reset error flags.
+      unit : USInt;   // (not in use)
+      qError : Bool;   // All types of errors including comError
+      qComError : Bool;   // Communication error, set true after x repeating tries
+      conf : Struct   // Configuration
+         max_qComError { S7_SetPoint := 'True'} : USInt := 2;   // Max repeating timeout errors before qComError is set
+         time_qErrror { S7_SetPoint := 'True'} : Time := T#2s;   // Length of the qError_tof puls
+      END_STRUCT;
+      log : Struct   // Logging
+         done_cnt : UDInt;   // Successfully queries counter for this device
+         done_dtl {OriginalPartName := 'DTL'; LibVersion := '1.0'} : DTL;   // DTL for last successfully querie
+         err_cnt : UDInt;   // Failed queries counter for this device
+         err_dtl {OriginalPartName := 'DTL'; LibVersion := '1.0'} : DTL;   // DTL for last failed querie
+         err_status : Word;   // Status code from mb_master or mb_client
+         err_timeout : Bool;   // For last failed querie
+         err_d_addr : UDInt;   // d_addr for last failed querie, handy for troubleshooting
+      END_STRUCT;
+      intern : Struct   // Stored values for Internal use
+         header_qid { S7_HMI_Visible := 'False'} : Int;   // qid value at device header
+         timeout_cnt : USInt;   // Repeating timeout errors
+         err_dtl {OriginalPartName := 'DTL'; LibVersion := '1.0'} : DTL;   // DTL of last failed querie, in system time
+         offset_qid : Int := 1;   // Device query id.
+         insert_id { S7_HMI_Accessible := 'False'; S7_HMI_Visible := 'False'} : USInt;   // snap shot of insert_id in mb at header
+         recive_id { S7_HMI_Accessible := 'False'; S7_HMI_Visible := 'False'} : USInt;   // snap shot of recive_id in mb at header
+         fixed_space : USInt := 10;
+      END_STRUCT;
+   END_STRUCT;
+
+END_TYPE
+
+TYPE "udt_mb"
 VERSION : 0.1
    STRUCT
       q : Struct   // Query
@@ -57,38 +90,6 @@ VERSION : 0.1
       END_STRUCT;
       c : Struct   // Other constants
          auto_len : UInt := 0;   // 0 - Length will be callculated automatically.
-      END_STRUCT;
-   END_STRUCT;
-
-END_TYPE
-
-TYPE "udt_mb_device"
-VERSION : 0.1
-   STRUCT
-      skip_all_queries : Bool;   // Disable device, reset error flags.
-      unit : USInt;   // (not in use)
-      qError : Bool;   // All types of errors including comError
-      qComError : Bool;   // Communication error, set true after x repeating tries
-      conf : Struct   // Configuration
-         max_qComError { S7_SetPoint := 'True'} : USInt := 2;   // Max repeating timeout errors before qComError is set
-         time_qErrror { S7_SetPoint := 'True'} : Time := T#2s;   // Length of the qError_tof puls
-      END_STRUCT;
-      log : Struct   // Logging
-         done_cnt : UDInt;   // Successfully queries counter for this device
-         done_dtl {OriginalPartName := 'DTL'; LibVersion := '1.0'} : DTL;   // DTL for last successfully querie
-         err_cnt : UDInt;   // Failed queries counter for this device
-         err_dtl {OriginalPartName := 'DTL'; LibVersion := '1.0'} : DTL;   // DTL for last failed querie
-         err_status : Word;   // Status code from mb_master or mb_client
-         err_timeout : Bool;   // For last failed querie
-         err_d_addr : UDInt;   // d_addr for last failed querie, handy for troubleshooting
-      END_STRUCT;
-      intern : Struct   // Stored values for Internal use
-         header_qid { S7_HMI_Visible := 'False'} : Int;   // qid value at device header
-         timeout_cnt : USInt;   // Repeating timeout errors
-         err_dtl {OriginalPartName := 'DTL'; LibVersion := '1.0'} : DTL;   // DTL of last failed querie, in system time
-         offset_qid : Int := 1;   // Device query id.
-         insert_id { S7_HMI_Accessible := 'False'; S7_HMI_Visible := 'False'} : USInt;   // snap shot of insert_id in mb at header
-         recive_id { S7_HMI_Accessible := 'False'; S7_HMI_Visible := 'False'} : USInt;   // snap shot of recive_id in mb at header
       END_STRUCT;
    END_STRUCT;
 

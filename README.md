@@ -25,7 +25,7 @@ Key features:
    hundreds of modbus devices.
  - Store results inside optimized memory areas.
 
-```
+```pascal
 // A modbus RTU example that illustrate the library. 
 // (Support for modbus tcp is also included).
 

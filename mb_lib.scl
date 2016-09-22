@@ -86,7 +86,7 @@ VERSION : 1.0
 BEGIN
 	// Lightweight Modbus Abstraction Layer Library. 
 	// Author:   Ola Bjørnli
-	// Version:  0.3_beta30
+	// Version:  0.3_beta31
 	// License:  MIT-license
 	// Web:      http://mb.sn7.no
 	//           http://github.com/olab84/sn7mb
@@ -96,9 +96,10 @@ BEGIN
 	#mb.run.qid_cnt := #mb.run.qid_cnt + 1;
 	
 	// qid_cnt is increased for every query (above) and reset back
-	// to zero at the controller. qid is only increased when a query
-	// finnish. This two varables create a token together, telling
-	// witch query that should execute.
+	// to zero at mb_client_controller or mb_master_controller. qid
+	// is only increased when a query finnish. This two varables
+	// create a token together, telling witch query that should
+	// execute.
 	IF #mb.run.qid_cnt <> #mb.q.qid THEN
 	    RETURN;
 	ELSIF #fc = 0 THEN // 0 => skip query
@@ -237,33 +238,48 @@ VERSION : 1.0
 
 
 BEGIN
-	// Device id cnt. The first device has id "1".
+	// Device id cnt. The first device has id "1". Increased in every
+	// mb_device_header, reseted in mb_client_controller or
+	// mb_master_controller.
 	#mb.device.did_cnt := #mb.device.did_cnt + 1;
 	
 	// Take a snap shot of the recive_id and insert_id.
 	#device.intern.insert_id := #mb.device.insert_id;
 	#device.intern.recive_id := #mb.device.recive_id;
-	// The mb_query FC will change the insert_id or recive_id if a intermediate
-	// query between mb_device_header and mb_device_footer has the query-token.
-	// By compare insert_id in the mb udt and device udt at the footer, it can
-	// be determined if the query-token points at a query belonging to this
-	// device. 
+	// A mb_query FC between mb_device_header and mb_device_footer, will
+	// change the insert_id and the recive_id if a intermediate query is
+	// executed. By compare insert_id in the mb-udt and the device-udt at
+	// mb_device_footer, it can be determined if a query bellonging to this
+	// devices has recived it's resualt and a if new query has insert it's
+	// query-parms.
 	
-	// If the query-token points at this device header, or it point to a query
-	// in the previous device, that is surrounded by a if-statement and the 
-	// statement is now false.
+	// #mb.q.qid = #mb.run.qid_cnt => "This" device has the query-token !
+	
+	// - If the query-token points at this device header, or it point to a
+	//   query in the previous device, that is surrounded by a if-statement
+	//   and the statement is now false.
+	// - A gid change can only be done if insert, done or error is set,
+	//   this is to avoid a resualt from one query being intercepted by
+	//   another
 	IF #mb.q.qid > #mb.run.qid_cnt
 	    AND #mb.q.qid <= #device.intern.header_qid
+	    AND (#mb.run.insert OR #mb.status.done OR #mb.status.error)
 	THEN
-	    // At the beginning the offset_qid points at the first query of this
-	    // device. When it has executed the offset will point at the second
-	    // query. When all queries has executed the offset will be reset
-	    // back to the first query.
+	    // Reset.
+	    #mb.run.insert := true;
+	    #mb.conf.buffer_handler := true;
+	    
+	    // At first the offset_qid points at the first query of this
+	    // device. When it has executed the offset will point at the
+	    // second query. When all queries has executed the offset will
+	    // be reset back to the first query. 
 	    #mb.q.qid := #device.intern.header_qid + #device.intern.offset_qid;
 	END_IF;
 	
-	// The code below is reduce the impact of setting a if-statement
-	// around queries. The device header occupy one query id.
+	// - The code below is reduce the impact of setting a if-statement
+	//   around queries, by setting the qid_cnt to a fixed value at this 
+	//   point.
+	// - mb_device_header will occupy some query-id's. (Can be configured)
 	#device.intern.header_qid := MAX(
 	    IN1 := #mb.run.qid_cnt + 1 + #device.intern.fixed_space,
 	    IN2 := #device.intern.header_qid);
@@ -333,7 +349,7 @@ BEGIN
 	    // offset_qid which one. offset_qid is incread by one a query has executed
 	    // given no communication problems.
 	    #device.intern.offset_qid := #device.intern.offset_qid
-	    + BOOL_TO_INT(NOT #mb.status.timeout);
+	    + BOOL_TO_UINT(NOT #mb.status.timeout);
 	END_IF;
 	
 	// If all queries for this device has been executed, then reset offset_qid.
@@ -372,15 +388,13 @@ BEGIN
 	        AND (#device.qComError
 	            AND (#mb.device.did_retry <> #mb.device.did_cnt
 	            OR #mb.device.retry_finished)
-	        // retry_finished will be reset in the controller.
+	        // (retry_finished will be reset in the controller)
 	        OR #device.skip_all_queries )
 	THEN
-	    // Reset        
-	    #mb.q.qid := #mb.run.qid_cnt + 1;
+	    // Reset            
 	    #mb.run.insert := true;
 	    #mb.conf.buffer_handler := true;
-	    #mb.query_above.done := false;
-	    #mb.query_above.error := false;
+	    #mb.q.qid := #mb.run.qid_cnt + 1;
 	END_IF;
 	
 END_FUNCTION
@@ -470,11 +484,11 @@ FUNCTION_BLOCK "mb_client_controller"
 { S7_Optimized_Access := 'TRUE' }
 VERSION : 1.0
    VAR_INPUT 
-      interface : HW_ANY;   // Profinet interface id
-      conn_id : CONN_OUC := 123;   // connection_id
-      remote_ip : Array[1..4] of Byte := 192, 168, 1, 0;
-      remote_port : UInt := 502;   // enable even parity
-      timeout : Time := T#2s;   // sec
+      interface : HW_ANY := 64;   // Profinet interface id
+      conn_id : CONN_OUC := 123;   // Connection id
+      remote_ip : Array[1..4] of Byte := 192, 168, 1, 0;   // IPv4
+      remote_port : UInt := 502;   // TCP port
+      timeout : Time := T#2s;
       buffer_db_any : DB_ANY;
    END_VAR
 
@@ -552,8 +566,8 @@ BEGIN
 	    #mb.status.done := #mb_client.DONE;
 	    #mb.status.error := #mb_client.ERROR;
 	    #mb.status.timeout := #mb.status.error
-	        AND (#mb.status.status = 16#818C
-	        OR #mb.status.status = 16#80C8);
+	        AND (#mb.status.status = 16#818C //
+	        OR #mb.status.status = 16#80C8); //
 	END_IF;
 	
 	// --------------------------------------------------
@@ -605,7 +619,7 @@ VERSION : 0.1
 
 BEGIN
 	// Log keep all the diffrent values of "in". If a value of "in"
-	// acceding more then once just the first event will be logged.
+	// acceding more then once, then just the first event will be logged.
 	
 	FOR #c := 0 TO UDINT_TO_INT(CountOfElements(#log)) - 1 DO
 	    #e := MOVE_BLK_VARIANT(SRC := #log, COUNT := 1,SRC_INDEX := #c,

@@ -89,7 +89,6 @@ VERSION : 0.1
          offset_qid : UInt := 1;   // Device query id.
          insert_id { S7_HMI_Accessible := 'False'; S7_HMI_Visible := 'False'} : USInt;   // snap shot of insert_id in mb at header
          recive_id { S7_HMI_Accessible := 'False'; S7_HMI_Visible := 'False'} : USInt;   // snap shot of recive_id in mb at header
-         fixed_space : USInt := 10;
       END_STRUCT;
    END_STRUCT;
 

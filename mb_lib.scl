@@ -86,7 +86,7 @@ VERSION : 1.0
 BEGIN
 	// Lightweight Modbus Abstraction Layer Library. 
 	// Author:   Ola Bjørnli
-	// Version:  0.3_beta31
+	// Version:  0.3_beta32
 	// License:  MIT-license
 	// Web:      http://mb.sn7.no
 	//           http://github.com/olab84/sn7mb
@@ -281,7 +281,7 @@ BEGIN
 	//   point.
 	// - mb_device_header will occupy some query-id's. (Can be configured)
 	#device.intern.header_qid := MAX(
-	    IN1 := #mb.run.qid_cnt + 1 + #device.intern.fixed_space,
+	    IN1 := #mb.run.qid_cnt + 1 ,
 	    IN2 := #device.intern.header_qid);
 	#mb.run.qid_cnt := #device.intern.header_qid;
 	
@@ -398,87 +398,6 @@ BEGIN
 	END_IF;
 	
 END_FUNCTION
-
-FUNCTION_BLOCK "mb_master_controller"
-{ S7_Optimized_Access := 'TRUE' }
-VERSION : 1.0
-   VAR_INPUT 
-      hardware_id : PORT;   // hardware id
-      baud : UDInt := 9600;
-      parity : Bool := true;   // enable even parity. false=no parity.
-      timeout : Time := T#500ms;
-      buffer_db_any : DB_ANY;
-   END_VAR
-
-   VAR_OUTPUT 
-      qError : Bool;
-   END_VAR
-
-   VAR_IN_OUT 
-      buffer_variant : Variant;
-      mb : "udt_mb";
-   END_VAR
-
-   VAR 
-      mb_comm_load {OriginalPartName := 'MB_COMM_LOAD'; LibVersion := '2.1'} : MB_COMM_LOAD;
-      mb_master {OriginalPartName := 'MB_MASTER'; LibVersion := '2.2'} : MB_MASTER;
-      tof_error {OriginalPartName := 'IEC_TIMER'; LibVersion := '1.0'} : TOF_TIME;
-   END_VAR
-
-
-BEGIN
-	// Init. the hardware.
-	#mb_comm_load(REQ := NOT #mb_comm_load.DONE AND NOT #mb_master.BUSY,
-	              "PORT" := #hardware_id,
-	              BAUD := #baud,
-	              PARITY := SEL(G := #parity, IN0 := 0, IN1 := 2),
-	              RESP_TO := TIME_TO_UINT(#timeout),
-	              MB_DB := #mb_master);
-	
-	// The core master block.
-	#mb_master(REQ := #mb_comm_load.DONE AND NOT #mb_master.BUSY
-	           AND NOT #mb.run.insert,
-	           MB_ADDR := #mb.q.unit,
-	           MODE := #mb.run.mode,
-	           DATA_ADDR := #mb.run.data_addr,
-	           DATA_LEN := #mb.q.d_len,
-	           DONE => #mb.status.done,
-	           ERROR => #mb.status.error,
-	           STATUS => #mb.status.status,
-	           DATA_PTR := #buffer_variant);
-	
-	// Timeout errors are handled different from other errors.
-	#mb.status.timeout := #mb_master.ERROR
-	AND #mb_master.STATUS = 16#80C8;
-	
-	// --------------------------------------------------
-	#tof_error(IN := #mb.status.error,
-	           PT := #tof_error.PT,
-	           Q => #qError);
-	#mb.fix.buffer_db := #buffer_db_any;
-	
-	// If all queries has been executed, then start over again
-	// on the first query.
-	IF #mb.q.qid > #mb.run.qid_cnt THEN
-	    #mb.q.qid := 1;
-	    
-	    // The retry-id is the device that get to have retry to restoring
-	    // communication after the qComError falg is set for the device.
-	    // When one query loop has occurred the retry id is incremented. 
-	    #mb.device.did_retry := #mb.device.did_retry + 1;
-	    
-	    // retry_finished is set after one retry has taken place. 
-	    // The device that has the retry-token only has one try to make 
-	    // successfully query.
-	    #mb.device.retry_finished := false;
-	    IF #mb.device.did_retry > #mb.device.did_cnt THEN
-	        #mb.device.did_retry := 1;
-	    END_IF;
-	END_IF;
-	#mb.run.qid_cnt := 0; // qid_cnt is incremented in every query.
-	#mb.device.did_cnt := 0; // did_cnt is incremented in every device header.
-	
-END_FUNCTION_BLOCK
 
 FUNCTION_BLOCK "mb_client_controller"
 { S7_Optimized_Access := 'TRUE' }
@@ -599,6 +518,87 @@ BEGIN
 	
 END_FUNCTION_BLOCK
 
+FUNCTION_BLOCK "mb_master_controller"
+{ S7_Optimized_Access := 'TRUE' }
+VERSION : 1.0
+   VAR_INPUT 
+      hardware_id : PORT;   // hardware id
+      baud : UDInt := 9600;
+      parity : Bool := true;   // enable even parity. false=no parity.
+      timeout : Time := T#500ms;
+      buffer_db_any : DB_ANY;
+   END_VAR
+
+   VAR_OUTPUT 
+      qError : Bool;
+   END_VAR
+
+   VAR_IN_OUT 
+      buffer_variant : Variant;
+      mb : "udt_mb";
+   END_VAR
+
+   VAR 
+      mb_comm_load {OriginalPartName := 'MB_COMM_LOAD'; LibVersion := '2.1'} : MB_COMM_LOAD;
+      mb_master {OriginalPartName := 'MB_MASTER'; LibVersion := '2.2'} : MB_MASTER;
+      tof_error {OriginalPartName := 'IEC_TIMER'; LibVersion := '1.0'} : TOF_TIME;
+   END_VAR
+
+
+BEGIN
+	// Init. the hardware.
+	#mb_comm_load(REQ := NOT #mb_comm_load.DONE AND NOT #mb_master.BUSY,
+	              "PORT" := #hardware_id,
+	              BAUD := #baud,
+	              PARITY := SEL(G := #parity, IN0 := 0, IN1 := 2),
+	              RESP_TO := TIME_TO_UINT(#timeout),
+	              MB_DB := #mb_master);
+	
+	// The core master block.
+	#mb_master(REQ := #mb_comm_load.DONE AND NOT #mb_master.BUSY
+	           AND NOT #mb.run.insert,
+	           MB_ADDR := #mb.q.unit,
+	           MODE := #mb.run.mode,
+	           DATA_ADDR := #mb.run.data_addr,
+	           DATA_LEN := #mb.q.d_len,
+	           DONE => #mb.status.done,
+	           ERROR => #mb.status.error,
+	           STATUS => #mb.status.status,
+	           DATA_PTR := #buffer_variant);
+	
+	// Timeout errors are handled different from other errors.
+	#mb.status.timeout := #mb_master.ERROR
+	AND #mb_master.STATUS = 16#80C8;
+	
+	// --------------------------------------------------
+	#tof_error(IN := #mb.status.error,
+	           PT := #tof_error.PT,
+	           Q => #qError);
+	#mb.fix.buffer_db := #buffer_db_any;
+	
+	// If all queries has been executed, then start over again
+	// on the first query.
+	IF #mb.q.qid > #mb.run.qid_cnt THEN
+	    #mb.q.qid := 1;
+	    
+	    // The retry-id is the device that get to have retry to restoring
+	    // communication after the qComError falg is set for the device.
+	    // When one query loop has occurred the retry id is incremented. 
+	    #mb.device.did_retry := #mb.device.did_retry + 1;
+	    
+	    // retry_finished is set after one retry has taken place. 
+	    // The device that has the retry-token only has one try to make 
+	    // successfully query.
+	    #mb.device.retry_finished := false;
+	    IF #mb.device.did_retry > #mb.device.did_cnt THEN
+	        #mb.device.did_retry := 1;
+	    END_IF;
+	END_IF;
+	#mb.run.qid_cnt := 0; // qid_cnt is incremented in every query.
+	#mb.device.did_cnt := 0; // did_cnt is incremented in every device header.
+	
+END_FUNCTION_BLOCK
+
 FUNCTION "mb_log_words" : Void
 { S7_Optimized_Access := 'TRUE' }
 VERSION : 0.1
@@ -632,6 +632,33 @@ BEGIN
 	        EXIT;
 	    END_IF;
 	END_FOR;
+	
+END_FUNCTION
+
+FUNCTION "mb_resync" : Void
+{ S7_Optimized_Access := 'TRUE' }
+VERSION : 1.0
+   VAR_IN_OUT 
+      n : UInt;
+      mb : "udt_mb";
+   END_VAR
+
+
+BEGIN
+	// The code below is reduce the impact of setting a if-statement
+	// around queries. The device header occupy one query id.
+	
+	IF #mb.q.qid > #mb.run.qid_cnt
+	    AND #mb.q.qid < #n
+	    AND (#mb.run.insert OR #mb.status.done OR #mb.status.error)
+	THEN
+	    #mb.run.insert := true;
+	    #mb.conf.buffer_handler := true;
+	    #mb.q.qid := #n + 1;
+	END_IF;
+	
+	#n := MAX(IN1 := #mb.run.qid_cnt, IN2 := #n);
+	#mb.run.qid_cnt := #n;
 	
 END_FUNCTION
 

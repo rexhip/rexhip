@@ -86,7 +86,7 @@ VERSION : 1.0
 BEGIN
 	// Lightweight Modbus Abstraction Layer Library. 
 	// Author:   Ola Bjørnli
-	// Version:  0.3_beta32
+	// Version:  0.3_beta33
 	// License:  MIT-license
 	// Web:      http://mb.sn7.no
 	//           http://github.com/olab84/sn7mb
@@ -97,20 +97,22 @@ BEGIN
 	
 	// qid_cnt is increased for every query (above) and reset back
 	// to zero at mb_client_controller or mb_master_controller. qid
-	// is only increased when a query finnish. This two varables
-	// create a token together, telling witch query that should
-	// execute.
+	// is only increased when a query finnish. A query should execute
+	// when they are equal to each other. qid is reset back to "1"
+	// when all queryies has been executed.
 	IF #mb.run.qid_cnt <> #mb.q.qid THEN
 	    RETURN;
-	ELSIF #fc = 0 THEN // 0 => skip query
-	    #mb.run.insert := true;
-	    #mb.q.qid := #mb.q.qid + 1;
-	    #mb.conf.buffer_handler := true;
+	ELSIF #fc = 0 THEN // fc 0 => skip query. (A fiktiv function code)
+	    IF #mb.run.insert OR #mb.status.done OR #mb.status.error THEN
+	        #mb.run.insert := true;
+	        #mb.q.qid := #mb.q.qid + 1;
+	        #mb.conf.buffer_handler := true;
+	    END_IF;
 	    RETURN;
 	END_IF;
 	
 	// d_len=0 => Automatically calculate the length based on the
-	// size of data.
+	// size (bytes) of "#data".
 	IF #d_len = 0 AND #mb.conf.buffer_handler AND 
 	    (#mb.run.insert OR #mb.status.done OR #mb.status.error)
 	THEN
@@ -177,13 +179,13 @@ BEGIN
 	        "mb_buffer_handler"(
 	            action := 2, // write
 	            buffer_db := #mb.fix.buffer_db,
-	            data := #data ,
-	            bytes := #bytes );
+	            data := #data,
+	            bytes := #bytes);
 	    END_IF;
 	    #mb.run.insert := false;
 	    #mb.device.insert_id := #mb.device.insert_id + 1;
 	    
-	// if the query is finnished.    
+	// If the query is finnished. (with or without error)  
 	ELSIF #mb.status.done OR #mb.status.error THEN
 	    
 	    // Make sure that the query resault really belong to this query.   
@@ -209,15 +211,15 @@ BEGIN
 	        END_IF;
 	        
 	        // Temperary store the d_addr for debugging. Picked up
-	        // inside mb_device_footer.
+	        // inside mb_device_footer, and stored in the log.
 	        #mb.device.recived_d_addr := #d_addr;
 	        
 	        // recive_id is used inside device_header and device_footer.
 	        // if change between them, then it can be determined that the
-	        // device has receved an answeer from a query.        
+	        // device has receved an answeer from a query.
 	        #mb.device.recive_id := #mb.device.recive_id + 1;
 	    ELSE
-	        #mb.log.unsync := #mb.log.unsync + 1; // only for logging 
+	        #mb.log.unsync := #mb.log.unsync + 1; // Only for logging 
 	    END_IF;
 	    
 	    // Prepare for the next query.
@@ -550,7 +552,7 @@ BEGIN
 	#mb_comm_load(REQ := NOT #mb_comm_load.DONE AND NOT #mb_master.BUSY,
 	              "PORT" := #hardware_id,
 	              BAUD := #baud,
-	              PARITY := SEL(G := #parity, IN0 := 0, IN1 := 2),
+	              PARITY := SEL(G := #parity, IN0 := 0, IN1 := 2), // 0=none, 2=even
 	              RESP_TO := TIME_TO_UINT(#timeout),
 	              MB_DB := #mb_master);
 	
@@ -588,10 +590,10 @@ BEGIN
 	    
 	    // retry_finished is set after one retry has taken place. 
 	    // The device that has the retry-token only has one try to make 
-	    // successfully query.
+	    // a successfully query.
 	    #mb.device.retry_finished := false;
 	    IF #mb.device.did_retry > #mb.device.did_cnt THEN
-	        #mb.device.did_retry := 1;
+	        #mb.device.did_retry := 1; // reset
 	    END_IF;
 	END_IF;
 	#mb.run.qid_cnt := 0; // qid_cnt is incremented in every query.
@@ -645,8 +647,22 @@ VERSION : 1.0
 
 
 BEGIN
-	// The code below is reduce the impact of setting a if-statement
-	// around queries. The device header occupy one query id.
+	// See example bellow for this FC should be used:
+	// 
+	// IF __condition__ THEN
+	//      "mb_query"(unit := 123,
+	//                 fc := #mb.fc.read_holding_reg,
+	//                 d_addr := 456,
+	//                 d_len := 1,
+	//                 data := #resualt_data,
+	//                 #mb := #mb);
+	// END_IF;
+	// "mb_resync"(n := #n, mb := #mb);      <<========
+	//
+	// This FC should be placed after a query that is surround by
+	// if-statement The FC reduced the "hiccup" effect.
+	// if __condition__ changes only once a while there is no need
+	// of implementing this FC
 	
 	IF #mb.q.qid > #mb.run.qid_cnt
 	    AND #mb.q.qid < #n

@@ -130,11 +130,11 @@ BEGIN
 	// mb_cleint are shifted, e.g. 200 corresponds to mode 0.
 	
 	
-	// Similar query as above, except two input register are read.  Any number
+	// Similar query as above, except two input register are read. Any number
 	// of queries can be added, the library will take care of executing them,
 	// one by one.
 	"mb_query"(unit := #unit,
-	           fc := #mb.fc.write_output_bits,
+	           fc := #mb.fc.read_input_reg,
 	           d_addr := 1234,
 	           d_len := #mb.c.auto_len,
 	           data := #data_query_3,
@@ -164,10 +164,10 @@ BEGIN
 	               mb := #mb);
 	END_IF;
 	// Every time the number of queries is changed, the library gets a little
-	// "hiccup". If the if-statement changes rapedly, then the example will not
-	// work. Look at "special_example_conditon" for how it then should be done.
-	// However If the condition for the query change only once a while, like
-	// every hour, then the example above will work fine.
+	// "hiccup". If the if-statement changes rapedly, then the example won't
+	// work. Look at "special_example_conditon" FB for how it should be
+	// done. However If the condition for the query change only once a while,
+	// like every hour, then the example above will work fine.
 	 
 	
 	// As mention at the top the mb_device_header is not a hundred percent
@@ -185,12 +185,12 @@ BEGIN
 	//    intermediate queries between mb_device_footer and mb_device_header
 	//    gives a error. This flag is intended for use with HMI. The puls
 	//    length of the flag can be configured with
-	//    "#device_udt.config.time_qErrror".
+	//    "#device_udt.conf.time_qErrror".
 	//  - "#device_udt.qComError" a error flag that will be set after number
 	//    of repeating timeout of the intermediate queries. Intended to reset
 	//    values when communication problems occur. The number of repeating
 	//    timeout before the flag is set can be configured with
-	//    "#device_udt.config.max_qComError".
+	//    "#device_udt.conf.max_qComError".
 	//  - Only one query for each device is allowed to be executed for
 	//    each loop. This is avoid devices with many queries to occupy
 	//    the bus for long periods of time.
@@ -205,6 +205,8 @@ BEGIN
 	    
 	    #resault_data_query_2[1] := 0;
 	    #resault_data_query_2[2] := 0;
+	    
+	    #data_query_3 := 0;
 	END_IF;
 	
 END_FUNCTION_BLOCK
@@ -698,6 +700,9 @@ BEGIN
 	           d_len := #mb.c.auto_len,
 	           data := #data_query_1,
 	           mb := #mb);
+	
+	
+	// The mb_device_header include the same functionality as mb_resync.
 	
 END_FUNCTION_BLOCK
 

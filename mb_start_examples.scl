@@ -118,7 +118,7 @@ BEGIN
 	           data := #data_query_4,
 	           mb := #mb);
 	// The parameters: unit, d_len, data and mb, work the same way as in the
-	// example above. To use the Modicon convention one of the fc-constants
+	// previous example. To use the Modicon convention one of the fc-constants
 	// bellow should be used:
 	//   - #mb.fc.modicon_read           -> mb function code: 1, 2, 3 and 4  
 	//   - #mb.fc.modicon_write          -> mb function code: 15 and 16      
@@ -163,11 +163,12 @@ BEGIN
 	               data := #data_query_4,
 	               mb := #mb);
 	END_IF;
-	// Every time the number of queries is changed, the library gets a little
-	// "hiccup". If the if-statement changes rapedly, then the example won't
-	// work. Look at "special_example_conditon" FB for how it should be
-	// done. However If the condition for the query change only once a while,
-	// like every hour, then the example above will work fine.
+	// When there is a plc-scan where the number of queries changes, the
+	// library gets a little "hiccup". If the if-statement changes rapedly,
+	// then the example above won't work. Look at "special_example_conditon"
+	// FB for how it should be done. However If the condition for the query
+	// change only once a while, like every hour, then the example above will
+	// work fine.
 	 
 	
 	// As mention at the top the mb_device_header is not a hundred percent
@@ -554,22 +555,22 @@ BEGIN
 	at MB_SLAVE or MB_SERVER, which is included in TIA-portal, 
 	for those functionalities.
 	
-	To understand the examples it's require to have some basic 
-	knowlage about modbus. More readings about modbus at:
+	To understand the examples it's recommended to acquire some 
+	basic knowlage about modbus. More readings at the links bellow:
 	 - http://www.csimn.com/CSI_pages/Modbus101.html
 	 - http://www.simplymodbus.ca/FAQ.htm
 	 - http://www.modbus.org/specs.php
 	 
-	Resurs requirements:
+	Resurs requirements (memory):
 	--------------------------                    
 	SYSTEM BLOCKS USED:     Load memory     Work memory                    
-	serialize:                   3,2 kB         0,71 kB                          
-	deserialize:                 3,2 kB         0,71 kB            
-	mb_comm_load:                4,5 kB         1,10 kB (only RTU)
-	mb_master:                   7,1 kB         3,57 kB (only RTU)
-	mb_client:                  33,0 kB         17,0 kB (only TCP)
+	serialize:                   3.2 kB         0.71 kB                          
+	deserialize:                 3.2 kB         0.71 kB            
+	mb_comm_load:                4.5 kB         1.10 kB (only RTU)
+	mb_master:                   7.1 kB         3.57 kB (only RTU)
+	mb_client:                  33.0 kB         17.0 kB (only TCP)
 	
-	The library itself:         86,2 kB          3,0 kB 
+	The library itself (about): 87,0 kB          3,5 kB 
 	
 	The total memory requirements will strongly dependent on the number 
 	of queries and the number for devices. For a typical rtu application 
@@ -577,9 +578,9 @@ BEGIN
 	will be used. For similar tcp application described above it must be 
 	expected a scan time on 15 ms.
 	
-	Total mem. for a 1212C:      1,0 MB         75,0 kB 
-	                 1214C:      ?,? MB        100,0 kB
-	   
+	Total mem. for a 1212C:      1.0 MB         75.0 kB 
+	                 1214C:      4.0 MB        100.0 kB
+	
 END_FUNCTION
 
 ORGANIZATION_BLOCK "tcp_ob"
@@ -608,105 +609,7 @@ BEGIN
 	
 END_ORGANIZATION_BLOCK
 
-FUNCTION_BLOCK "special_example_1_conditon"
-{ S7_Optimized_Access := 'TRUE' }
-VERSION : 0.1
-   VAR_INPUT 
-      unit : USInt := 1;
-   END_VAR
-
-   VAR_IN_OUT 
-      mb : "udt_mb";
-   END_VAR
-
-   VAR 
-      data_query_1 : Word;
-      condition_for_exec_query_1 : Bool;
-      resault_data_query_2 : Word;
-      condition_for_exec_query_2 : Bool;
-      mem_query_2 : UInt;
-      resault_data_query_3 : UInt;
-      resault_data_query_4 : UInt;
-      resault_data_query_5 : UInt;
-      state_for_query_3 : UInt;
-      mem_query_3 : UInt;
-   END_VAR
-
-
-BEGIN
-	// This is an advanced example which most users don't need to worry
-	// about. Read "modbus_device_start_example" before reading this example.
-	// 
-	// If a condition is require for a query to be executed and the condition
-	// changes state rapedly. Then the example bellow should be followed.
-	//
-	// If the condition only changes once a while, like every hour, then the
-	// mb_resync does not need to be used.
-	
-	IF #condition_for_exec_query_2 THEN
-	    "mb_query"(unit := #unit,
-	               fc := #mb.fc.read_input_reg,
-	               d_addr := 123,
-	               d_len := 1,
-	               data := #resault_data_query_2,
-	               mb := #mb);
-	    // Any number of query can go here inside the if-statement.
-	END_IF;
-	"mb_resync"(n := #mem_query_2, mb := #mb );  
-	// n:   A static uint, the function use the variable to store a internal
-	//      state. The variable should not be used for anything else.
-	// mb:  The same udt_mb as in the rest of the library.
-	
-	
-	// Same as above, with a slighly different flavor.
-	CASE #state_for_query_3 OF
-	        
-	    1:  // One queries
-	        "mb_query"(unit := #unit,
-	                   fc := #mb.fc.read_input_reg,
-	                   d_addr := 321,
-	                   d_len := 1,
-	                   data := #resault_data_query_3,
-	                   mb := #mb);
-	        
-	    2:  // Two queries    
-	        "mb_query"(unit := #unit,
-	                   fc := #mb.fc.read_input_reg,
-	                   d_addr := 4321,
-	                   d_len := 1,
-	                   data := #resault_data_query_4,
-	                   mb := #mb);
-	        
-	        "mb_query"(unit := #unit,
-	                   fc := #mb.fc.write_single_holding_reg,
-	                   d_addr := 5678,
-	                   d_len := 2,
-	                   data := #resault_data_query_5,
-	                   mb := #mb);
-	        
-	    3:  ;  // no query.
-	        
-	END_CASE;
-	"mb_resync"(n := #mem_query_3, mb := #mb );
-	
-	
-	
-	// An alternative way for one query, achieving the same.
-	"mb_query"(unit := #unit,
-	           fc := SEL(G := #condition_for_exec_query_1,
-	                     IN0 := #mb.fc.skip_query,
-	                     IN1 := #mb.fc.write_holding_reg),
-	           d_addr := 12345,
-	           d_len := #mb.c.auto_len,
-	           data := #data_query_1,
-	           mb := #mb);
-	
-	
-	// The mb_device_header include the same functionality as mb_resync.
-	
-END_FUNCTION_BLOCK
-
-FUNCTION_BLOCK "special_example_2_state_machine"
+FUNCTION_BLOCK "special_example_1_state_machine"
 { S7_Optimized_Access := 'TRUE' }
 VERSION : 0.1
    VAR_INPUT 
@@ -763,6 +666,37 @@ BEGIN
 	                   mb := #mb);
 	        #state := SEL(G := #mb.query_above.done, IN0 := #state, IN1 := 0);
 	END_CASE;
+	
+END_FUNCTION_BLOCK
+
+FUNCTION_BLOCK "special_example_2_conditon"
+{ S7_Optimized_Access := 'TRUE' }
+VERSION : 0.1
+   VAR_IN_OUT 
+      mb : "udt_mb";
+   END_VAR
+
+   VAR 
+      condition_for_exec_query_1 : Bool;
+      resault_data_query_1 : Word;
+   END_VAR
+
+
+BEGIN
+	// If a condition is require for a query to be executed and the condition
+	// changes state rapedly. Then the example bellow should be followed.
+	//
+	// If the condition only changes once a while, like every hour, then this
+	// can be ignored.
+	
+	"mb_query"(unit := 123,
+	           fc := SEL(G := #condition_for_exec_query_1,
+	                     IN0 := #mb.fc.skip_query,
+	                     IN1 := #mb.fc.write_holding_reg),
+	           d_addr := 12345,
+	           d_len := #mb.c.auto_len,
+	           data := #resault_data_query_1,
+	           mb := #mb);
 	
 END_FUNCTION_BLOCK
 

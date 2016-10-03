@@ -8,6 +8,7 @@ VERSION : 0.1
       conf : Struct   // Configuration
          max_qComError { S7_SetPoint := 'True'} : USInt := 2;   // Max repeating timeout errors before qComError is set
          time_qErrror { S7_SetPoint := 'True'} : Time := T#2s;   // Length of the qError_tof puls
+         exec_all_quries : Bool;
       END_STRUCT;
       log : Struct   // Logging
          done_cnt : UDInt;   // Successfully queries counter for this device
@@ -56,6 +57,7 @@ VERSION : 0.1
          insert_id : USInt;
          recive_id : USInt;   // toggle when recived
          recived_d_addr : UDInt;
+         did : UInt;
       END_STRUCT;
       conf : Struct   // Configuration
          buffer_handler : Bool := true;   // enable buffer handler

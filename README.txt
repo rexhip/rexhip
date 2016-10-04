@@ -1,12 +1,10 @@
-Lightweight Modbus Abstraction Layer Library.
+Modbus API For Siemens S7 PLC's.
 ---------------------------------------------
-For Siemens S7-1200 and S7-1500 PLC's.
 
 ```
 Author:   Ola Bjørnli
 License:  MIT-license
-Web:      http://mb.sn7.no
-          http://github.com/olab84/sn7mb
+Web:      http://github.com/olab84/sn7mb
 ```
 
 The library extend on MB_MASTER and MB_CLIENT, the modbus blocks that comes along with 
@@ -30,13 +28,13 @@ Key features:
 // (Support for modbus tcp is also included).
 
 #mb_master_controller(
-    hardware_id := "Local~CB_1241_(RS485)", 
-    baud := 9600, // bps
-    parity := true, // Enable even parity.
+    hardware_id := "Local~CB_1241_(RS485)",//  
+    baud := 9600,                          // bps
+    parity := true,                        // Enable even parity.
     timeout := T#500ms,   
-    buffer_db_any := "modbus_rtu_buffer",  
-    buffer_variant := "modbus_rtu_buffer",  
-    mb := #mb ); // a udt that comes along with the library
+    buffer_db_any := "modbus_rtu_buffer",  // - A global DB where optimized is off,
+	buffer_variant := "modbus_rtu_buffer", //   should contain a array of 125 words
+    mb := #mb );                           // - A udt that comes along 
 
 // Instances of device blocks for ABB Aqua master 3	
 #abb_aquaMaster_3_instance_1(unit := 1, mb := #mb);
@@ -52,6 +50,11 @@ Key features:
 // -----------------------------------------------------------------------
 // Device block for: ABB - AquaMaster 3 - Electromagnetic flow meter
 
+// A customized device block need to be created for all device, once
+// it's created it con be placed inside a global library and be reused.
+// The pattern bellow is hopefully intuitive, the library will take care
+// of executing the queries one by one.
+
 "mb_device_header"(device := #device_udt, mb := #mb);
 
 "mb_query"(unit := #unit,                // Station address.
@@ -65,9 +68,9 @@ Key features:
            fc := #mb.fc.read_input_reg,  
            d_addr := 5025,
            d_len := 2,
-           data := #pressure,            // The result will be stored 		   
-           mb := #mb);                   // inside the connected variable.
-
+           data := #pressure,       // - The result will be stored 		   
+           mb := #mb);              //   inside the connected variable.
+		                            //   Can be a array or a udt. 
 "mb_device_footer"(device := #device_udt, mb := #mb);
 
 // The #device_udt contains a log, flags, configuration and internal states.
@@ -82,18 +85,18 @@ Key features:
 
 "mb_device_header"(device := #device_udt, mb := #mb);
 
-"mb_query"(unit := #unit,                 // #unit will be input on the device block. 
-           fc := #mb.fc.read_holding_reg, // 3 .
+"mb_query"(unit := #unit,                 // #unit will be a input on the device block. 
+           fc := #mb.fc.read_holding_reg, // 3.
            d_addr := 13,                  // mb offset. Start read at address 13.
-           d_len := #mb.c.auto_len,       // Length is calculated based on the size of "data".
-           data := #current,		      // #current is a array of 3 reals.
+           d_len := #mb.c.auto_len,       // Length is calculated based on the size (bytes) of "data".
+           data := #current,		      // #current is a array of 3 reals. (See data sheet of device)
            mb := #mb);                    // #mb will be inOut on the device block.
-
-"mb_query"(unit := #unit,
-           fc := #mb.fc.read_holding_reg,
-           d_addr := 55,
-           d_len := #mb.c.auto_len,
-           data := #common,
+                                          
+"mb_query"(unit := #unit,                 
+           fc := #mb.fc.read_holding_reg, 
+           d_addr := 55,                  
+           d_len := #mb.c.auto_len,       
+           data := #common,               // A udt with common data. (See data sheet of device)
            mb := #mb);
 
 "mb_device_footer"(device := #device_udt, mb := #mb);
@@ -103,8 +106,8 @@ Key features:
 Requirements:
  - TIA-portal: v13, sp1, upd8 (or greater)
  - S7-1200: firmware version >= 4.1.3
- - S7-1500: not tested, but should work fine.
- - S7-300 and S7-400: Not supported.
+   S7-1500: not tested, but should work fine.
+   S7-300 and S7-400: Not supported.
 
 ```
 The software is not affiliated with Siemens AG

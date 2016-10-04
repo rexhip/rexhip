@@ -143,12 +143,12 @@ VERSION : 1.0
 
 
 BEGIN
-	// Lightweight Modbus Abstraction Layer Library. 
+	// HippoTrex - Modbus API Siemens PLC's. 
+	// ----------------------------
 	// Author:   Ola Bjørnli
-	// Version:  0.3_beta33
+	// Version:  0.3_beta34
 	// License:  MIT-license
-	// Web:      http://mb.sn7.no
-	//           http://github.com/olab84/sn7mb
+	// Web:      http://github.com/olab84/sn7mb
 	
 	#mb.query_above.done := false;
 	#mb.query_above.error := false;
@@ -180,22 +180,22 @@ BEGIN
 	                        data := #data,
 	                        bytes := #bytes);
 	    CASE #fc OF
-	        1, 2, 5, 15: #tmp_len := DINT_TO_UINT( #bytes * 8 ); // bits
-	        3, 4, 6, 16: #tmp_len := DINT_TO_UINT( #bytes / 2 ); // words
+	        1, 2, 5, 15: #tmp_len := DINT_TO_UINT( #bytes * 8 ); // Bits
+	        3, 4, 6, 16: #tmp_len := DINT_TO_UINT( #bytes / 2 ); // Words
 	        200..202:
 	            CASE #d_addr OF
 	                1..9999, 10001..19999:
-	                    #tmp_len := DINT_TO_UINT( #bytes * 8 ); // bits
+	                    #tmp_len := DINT_TO_UINT( #bytes * 8 ); // Bits
 	                30001..39999, 30001..49999, 400001..465535:
-	                    #tmp_len := DINT_TO_UINT( #bytes / 2 ); // words
+	                    #tmp_len := DINT_TO_UINT( #bytes / 2 ); // Words
 	            END_CASE;
 	    END_CASE;
 	ELSE
-	    #tmp_len := #d_len; // words (16 bits)
+	    #tmp_len := #d_len; // Words (16 bits)
 	    #bytes := #d_len * 2;
 	END_IF;
 	
-	IF #mb.run.insert THEN // Insert this query.
+	IF #mb.run.insert THEN // Insert query.
 	    #mb.run.mode := 0; // 0 => read (default)
 	    
 	    // mb_client and mb_master use modicon convention address.
@@ -229,7 +229,8 @@ BEGIN
 	            #mb.run.data_addr := #d_addr;
 	    END_CASE;
 	    
-	    // The params is transfered over to the udt.     
+	    // The params is transfered over to the udt. They are later
+	    // transfered from the udt to mb_master or mb_client.
 	    #mb.q.unit := #unit;
 	    #mb.q.fc := #fc;
 	    #mb.q.d_addr := #d_addr;
@@ -237,15 +238,15 @@ BEGIN
 	    IF (#mb.run.mode = 1 OR #mb.run.mode = 2) // If it's a write query
 	        AND #mb.conf.buffer_handler
 	    THEN
-	        // Copy the content from "#data" to the buffer.
+	        // Copy the content from "#data" to the buffer db.
 	        "mb_buffer_handler"(
 	            action := 2, // write
 	            buffer_db := #mb.fix.buffer_db,
 	            data := #data,
 	            bytes := #bytes);
 	    END_IF;
-	    #mb.run.insert := false;
-	    #mb.device.insert_id := #mb.device.insert_id + 1;
+	    #mb.run.insert := false; // false while waiting for the resualt.
+	    #mb.device.insert_id := #mb.device.insert_id + 1; 
 	    
 	// If the query is finnished. (with or without error)  
 	ELSIF #mb.status.done OR #mb.status.error THEN
@@ -256,7 +257,7 @@ BEGIN
 	        AND #mb.q.d_addr = #d_addr
 	        AND #mb.q.d_len = #tmp_len
 	    THEN
-	        IF #mb.status.done THEN // Successfully            
+	        IF #mb.status.done THEN // Successfully (no error)         
 	            IF #mb.run.mode = 0 // If it's a read query 
 	                AND #mb.conf.buffer_handler
 	            THEN
@@ -268,7 +269,7 @@ BEGIN
 	                    bytes := #bytes );
 	            END_IF;
 	            #mb.query_above.done := true;
-	        ELSIF #mb.status.error THEN  // failed
+	        ELSIF #mb.status.error THEN  // failed (error)
 	            #mb.query_above.error := true;
 	        END_IF;
 	        
@@ -282,6 +283,7 @@ BEGIN
 	        #mb.device.recive_id := #mb.device.recive_id + 1;
 	    ELSE
 	        #mb.log.unsync := #mb.log.unsync + 1; // Only for logging 
+	        // This can occure if the number of queries changes. 
 	    END_IF;
 	    
 	    // Prepare for the next query.
@@ -289,6 +291,7 @@ BEGIN
 	    #mb.q.qid := #mb.q.qid + 1;
 	END_IF;
 	
+	// The buffer_handler read and write data to the buffer.
 	#mb.conf.buffer_handler := true;
 END_FUNCTION
 

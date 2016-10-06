@@ -7,17 +7,14 @@ License:  MIT-license
 Web:      http://github.com/olab84/sn7mb
 ```
 
-The library extend on MB_MASTER and MB_CLIENT, the modbus blocks that comes along with 
-TIA-portal. The library is not an attempt to reinvent the wheel, by doing what those 
-blocks already do. Rather it's an attempt to expand the existing blocks, and to create 
-a common clean API for what the library call "device blocks". (interface blocks)
+The library extend on MB_MASTER and MB_CLIENT, the modbus blocks that comes along with TIA-portal. The library is not an attempt to reinvent the wheel, by doing what those blocks already do. Rather it's an attempt to expand the existing blocks, and to create a common clean API for "device blocks" (interface blocks).
 
 Key features:
  - Avoid global states, which make it possible to create reusable device blocks. 
- - Clean and readable API. This makes possible to create application with hundreds of modbus devices.
- - Advanced timeout handler that reduce idle time.  
+ - Clean and readable API, this makes it possible to create large scale modbus application with hundres of devices.
+ - Advanced timeout handler that reduce idle time.
  - Take all care of executing the queries, one by one. Sophisticated bus sharing mechanism between devices.
- - Logging capabilities for development and debugging.
+ - Logging features for development and debugging.
  - Store results inside optimized memory areas.
 
 ```pascal

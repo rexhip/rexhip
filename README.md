@@ -14,13 +14,10 @@ a common clean API for what the library call "device blocks". (interface blocks)
 
 Key features:
  - Avoid global states, which make it possible to create reusable device blocks. 
- - Clean and readable API.  
+ - Clean and readable API. This makes possible to create application with hundreds of modbus devices.
  - Advanced timeout handler that reduce idle time.  
- - Take all care of executing the queries, one by one. Sophisticated bus sharing 
-   mechanism between devices.
+ - Take all care of executing the queries, one by one. Sophisticated bus sharing mechanism between devices.
  - Logging capabilities for development and debugging.
- - Possible to create readable code still for application with 
-   hundreds of modbus devices.
  - Store results inside optimized memory areas.
 
 ```pascal
@@ -33,7 +30,7 @@ Key features:
     parity := true,                        // Enable even parity.
     timeout := T#500ms,   
     buffer_db_any := "modbus_rtu_buffer",  // - A global DB where optimized is off,
-	buffer_variant := "modbus_rtu_buffer", //   should contain a array of 125 words
+    buffer_variant := "modbus_rtu_buffer", //   should contain a array of 125 words
     mb := #mb );                           // - A udt that comes along 
 
 // Instances of device blocks for ABB Aqua master 3	

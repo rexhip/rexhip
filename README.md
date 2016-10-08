@@ -4,31 +4,31 @@ Modbus API For Siemens S7 PLC's.
 ```
 Author:   Ola Bjørnli
 License:  MIT-license
-Web:      http://github.com/olab84/TrexHippo
+Web:      http://github.com/olab84/sn7mb
 ```
 
-The library extend on MB_MASTER and MB_CLIENT, the modbus blocks that comes along with TIA-portal. The library is not an attempt to reinvent the wheel, by doing what those blocks already do. Rather it's an attempt to expand the existing blocks, and to create a common clean API for "device blocks" (interface blocks).
+The library extend on MB_MASTER and MB_CLIENT, the modbus blocks that comes along with TIA-portal. The library is not an attempt to reinvent the wheel, by doing what those blocks already do. Rather it's an attempt to expand the functionality of the existing blocks, and to create a common clean API for "device blocks" (interface blocks).
 
 Key features:
- - Avoid global states, which make it possible to create reusable device blocks. 
- - Clean and readable API, this makes it possible to create large scale modbus application with hundres of devices.
+ - Eliminate global states, which make it possible to create reusable device blocks. 
+ - Clean and readable API, this makes it possible to create large scale modbus application, and it helps to cut engineering time.
  - Advanced timeout handler that reduce idle time.
- - Take all care of executing the queries, one by one. Sophisticated bus sharing mechanism between devices.
+ - Sophisticated bus sharing mechanism between devices.
  - Logging features for development and debugging.
- - Store results inside optimized memory areas.
+ - Results can be stored inside optimized memory areas.
 
 ```pascal
 // A modbus RTU example that illustrate the library. 
 // (Support for modbus tcp is also included).
 
 #mb_master_controller(
-    hardware_id := "Local~CB_1241_(RS485)",//  
-    baud := 9600,                          // bps
-    parity := true,                        // Enable even parity.
+    hardware_id := "Local~CB_1241_(RS485)", //  
+    baud := 9600,                           // bps
+    parity := true,                         // Enable even parity.
     timeout := T#500ms,   
-    buffer_db_any := "modbus_rtu_buffer",  // - A global DB where optimized is off,
-    buffer_variant := "modbus_rtu_buffer", //   should contain a array of 125 words
-    mb := #mb );                           // - A udt that comes along 
+    buffer_db_any := "modbus_rtu_buffer",   // - A global DB where optimized is off,
+    buffer_variant := "modbus_rtu_buffer",  //   should contain a array of 125 words
+    mb := #mb );                            // - A udt that comes along 
 
 // Instances of device blocks for ABB Aqua master 3	
 #abb_aquaMaster_3_instance_1(unit := 1, mb := #mb);
@@ -46,7 +46,7 @@ Key features:
 
 // A customized device block need to be created for all device, once
 // it's created it con be placed inside a global library and be reused.
-// The pattern bellow is hopefully intuitive, the library will take care
+// The pattern bellow should be intuitive, the library will take care
 // of executing the queries one by one.
 
 "mb_device_header"(device := #device_udt, mb := #mb);
@@ -79,12 +79,12 @@ Key features:
 
 "mb_device_header"(device := #device_udt, mb := #mb);
 
-"mb_query"(unit := #unit,                 // #unit will be a input on the device block. 
-           fc := #mb.fc.read_holding_reg, // 3.
+"mb_query"(unit := #unit,                 // #unit will be a input on this device block. 
+           fc := #mb.fc.read_holding_reg, // (3)
            d_addr := 13,                  // mb offset. Start read at address 13.
            d_len := #mb.c.auto_len,       // Length is calculated based on the size (bytes) of "data".
            data := #current,		      // #current is a array of 3 reals. (See data sheet of device)
-           mb := #mb);                    // #mb will be inOut on the device block.
+           mb := #mb);                    // #mb will be inOut on this device block.
                                           
 "mb_query"(unit := #unit,                 
            fc := #mb.fc.read_holding_reg, 
@@ -100,8 +100,8 @@ Key features:
 Requirements:
  - TIA-portal: v13, sp1, upd8 (or greater)
  - S7-1200: firmware version >= 4.1.3
-   S7-1500: not tested, but should work fine.
-   S7-300 and S7-400: Not supported.
+ - S7-1500: not tested, but should work fine.
+ - S7-300 and S7-400: Not supported.
 
 ```
 The software is not affiliated with Siemens AG

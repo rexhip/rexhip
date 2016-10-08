@@ -137,8 +137,8 @@ VERSION : 1.0
    VAR_TEMP 
       c : Int;
       e : Int;
-      tmp_len : UInt;
-      bytes : DInt;
+      tLen : UInt;
+      tBytes : DInt;
    END_VAR
 
 
@@ -146,7 +146,7 @@ BEGIN
 	// HippoTrex - Modbus API Siemens PLC's. 
 	// ----------------------------
 	// Author:   Ola Bjørnli
-	// Version:  0.3_beta34
+	// Version:  0.3_beta35
 	// License:  MIT-license
 	// Web:      http://github.com/olab84/sn7mb
 	
@@ -178,21 +178,21 @@ BEGIN
 	    "mb_buffer_handler"(action := 1, // Count bytes.
 	                        buffer_db := 0,
 	                        data := #data,
-	                        bytes := #bytes);
+	                        bytes := #tBytes);
 	    CASE #fc OF
-	        1, 2, 5, 15: #tmp_len := DINT_TO_UINT( #bytes * 8 ); // Bits
-	        3, 4, 6, 16: #tmp_len := DINT_TO_UINT( #bytes / 2 ); // Words
+	        1, 2, 5, 15: #tLen := DINT_TO_UINT( #tBytes * 8 ); // Bits
+	        3, 4, 6, 16: #tLen := DINT_TO_UINT( #tBytes / 2 ); // Words
 	        200..202:
 	            CASE #d_addr OF
 	                1..9999, 10001..19999:
-	                    #tmp_len := DINT_TO_UINT( #bytes * 8 ); // Bits
+	                    #tLen := DINT_TO_UINT( #tBytes * 8 ); // Bits
 	                30001..39999, 30001..49999, 400001..465535:
-	                    #tmp_len := DINT_TO_UINT( #bytes / 2 ); // Words
+	                    #tLen := DINT_TO_UINT( #tBytes / 2 ); // Words
 	            END_CASE;
 	    END_CASE;
 	ELSE
-	    #tmp_len := #d_len; // Words (16 bits)
-	    #bytes := #d_len * 2;
+	    #tLen := #d_len; // Words (16 bits)
+	    #tBytes := #d_len * 2;
 	END_IF;
 	
 	IF #mb.run.insert THEN // Insert query.
@@ -234,7 +234,7 @@ BEGIN
 	    #mb.q.unit := #unit;
 	    #mb.q.fc := #fc;
 	    #mb.q.d_addr := #d_addr;
-	    #mb.q.d_len := #tmp_len;
+	    #mb.q.d_len := #tLen;
 	    IF (#mb.run.mode = 1 OR #mb.run.mode = 2) // If it's a write query
 	        AND #mb.conf.buffer_handler
 	    THEN
@@ -243,7 +243,7 @@ BEGIN
 	            action := 2, // write
 	            buffer_db := #mb.fix.buffer_db,
 	            data := #data,
-	            bytes := #bytes);
+	            bytes := #tBytes);
 	    END_IF;
 	    #mb.run.insert := false; // false while waiting for the resualt.
 	    #mb.device.insert_id := #mb.device.insert_id + 1; 
@@ -255,7 +255,7 @@ BEGIN
 	    IF #mb.q.unit = #unit
 	        AND #mb.q.fc = #fc
 	        AND #mb.q.d_addr = #d_addr
-	        AND #mb.q.d_len = #tmp_len
+	        AND #mb.q.d_len = #tLen
 	    THEN
 	        IF #mb.status.done THEN // Successfully (no error)         
 	            IF #mb.run.mode = 0 // If it's a read query 
@@ -266,7 +266,7 @@ BEGIN
 	                    action := 3, // read
 	                    buffer_db := #mb.fix.buffer_db,
 	                    data := #data,
-	                    bytes := #bytes );
+	                    bytes := #tBytes );
 	            END_IF;
 	            #mb.query_above.done := true;
 	        ELSIF #mb.status.error THEN  // failed (error)
@@ -346,7 +346,7 @@ VERSION : 1.0
    VAR_TEMP 
       e : Int;
       rd_sys_t {OriginalPartName := 'DTL'; LibVersion := '1.0'} : DTL;
-      tmp_err : Bool;
+      tError : Bool;
    END_VAR
 
 
@@ -378,7 +378,7 @@ BEGIN
 	              IN0 := 0,
 	              IN1 := MIN(IN1 := #device.intern.timeout_cnt + 1,
 	                         IN2 := 254));
-	        #tmp_err := true;
+	        #tError := true;
 	        #device.qError := true;
 	        #e := RD_SYS_T(#device.intern.err_dtl);
 	    END_IF;
@@ -411,7 +411,7 @@ BEGIN
 	// it high for a certain time. The time can be configured with "device.conf.time_qErrror".
 	IF #device.qError THEN
 	    #e := RD_SYS_T(#rd_sys_t);
-	    #device.qError := #tmp_err OR #device.conf.time_qErrror <> 0
+	    #device.qError := #tError OR #device.conf.time_qErrror <> 0
 	    AND #rd_sys_t < #device.intern.err_dtl
 	    + #device.conf.time_qErrror;
 	END_IF;
@@ -472,15 +472,20 @@ VERSION : 1.0
       mb_comm_load {OriginalPartName := 'MB_COMM_LOAD'; LibVersion := '2.1'} : MB_COMM_LOAD;
       mb_master {OriginalPartName := 'MB_MASTER'; LibVersion := '2.2'} : MB_MASTER;
       tof_error {OriginalPartName := 'IEC_TIMER'; LibVersion := '1.0'} : TOF_TIME;
+      direct : Bool := true;
    END_VAR
 
 
 BEGIN
+	IF #direct THEN
+	    #mb_comm_load.PARITY := SEL(G := #parity, IN0 := 0, IN1 := 2);
+	    // 0=none, 2=even
+	END_IF;
+	
 	// Init. the hardware.
 	#mb_comm_load(REQ := NOT #mb_comm_load.DONE AND NOT #mb_master.BUSY,
 	              "PORT" := #hardware_id,
 	              BAUD := #baud,
-	              PARITY := SEL(G := #parity, IN0 := 0, IN1 := 2), // 0=none, 2=even
 	              RESP_TO := TIME_TO_UINT(#timeout),
 	              MB_DB := #mb_master);
 	
@@ -514,7 +519,7 @@ VERSION : 1.0
    VAR_INPUT 
       interface : HW_ANY := 64;   // Profinet interface id
       conn_id : CONN_OUC := 123;   // Connection id
-      remote_ip : Array[1..4] of Byte := 192, 168, 1, 0;   // IPv4
+      remote_ip : Array[1..4] of Byte;   // IPv4
       remote_port : UInt := 502;   // TCP port
       timeout : Time := T#2s;
       buffer_db_any : DB_ANY;
@@ -567,6 +572,7 @@ BEGIN
 	#mb_client.Rcv_Timeout := UINT_TO_REAL(TIME_TO_UINT(#timeout)) / 1000;
 	#mb_client.Blocked_Proc_Timeout := MIN(IN1 := 3,
 	                                       IN2 := #mb_client.Rcv_Timeout + 1);
+	
 	#mb_client(REQ := NOT #mb_client.BUSY AND NOT #mb.run.insert
 	                AND NOT #mb_client.DISCONNECT,
 	           DISCONNECT := #disconnect OR #tdiscon_bool,

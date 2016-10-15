@@ -426,7 +426,7 @@ BEGIN
 	           data := #resault_data_1,
 	           mb := #mb);
 	
-	"mb_log_words"(in := #mb.status.status, log := #log);
+	"mb_log_words"(in := #mb.stat.status, log := #log);
 	// This is only for debugging. If a strange error occurred then look in to the
 	// log. The status coodes is decribed in tia-portal help journal. Look up
 	// MB_CLIENT, TCON, TSEND and TDISCON.
@@ -594,7 +594,7 @@ BEGIN
 	mb_master:                   7.1 kB         3.57 kB (only RTU)
 	mb_client:                  33.0 kB         17.0 kB (only TCP)
 	
-	The library itself (about): 87.0 kB          3.5 kB 
+	The library itself (about): 90.0 kB          4.0 kB 
 	
 	The total memory requirements will strongly dependent on the number 
 	of queries and the number for devices. For a typical rtu application 
@@ -685,15 +685,18 @@ VERSION : 0.1
    VAR 
       condition_for_exec_query_1 : Bool;
       resault_data_query_1 : Word;
+      condition_for_exec_query_2 : Bool;
+      resault_data_query_2 : Word;
+      R_TRIG_Instance {OriginalPartName := 'R_TRIG_1200'; LibVersion := '1.0'} : R_TRIG;
+      start : Bool;
    END_VAR
 
 
 BEGIN
 	// If a condition is require for a query to be executed and the condition
 	// changes state rapedly. Then the example bellow should be followed.
-	//
-	// If the condition only changes once a while, like every hour, then this
-	// can be ignored.
+	// If the condition only changes once a while, then this example can be
+	// ignored.
 	
 	"mb_query"(unit := 123,
 	           fc := SEL(G := #condition_for_exec_query_1,
@@ -703,6 +706,29 @@ BEGIN
 	           d_len := #mb.c.auto_len,
 	           data := #resault_data_query_1,
 	           mb := #mb);
+	
+	
+	
+	// To make sure that a query is executed only once the exmple 
+	// bellow can be used.
+	#R_TRIG_Instance(CLK := #condition_for_exec_query_2);
+	IF #R_TRIG_Instance.Q THEN
+	    #start := true;
+	END_IF;
+	
+	"mb_query"(unit := 123,
+	           fc := SEL(G := #start,
+	                     IN0 := #mb.fc.skip_query,
+	                     IN1 := #mb.fc.write_holding_reg),
+	           d_addr := 12345,
+	           d_len := 1,
+	           data := #resault_data_query_2,
+	           mb := #mb);
+	
+	IF #mb.stat.query_above THEN
+	    #start := false;
+	END_IF;
+	
 	
 END_FUNCTION_BLOCK
 
@@ -741,11 +767,9 @@ BEGIN
 	                   d_len := #mb.c.auto_len,
 	                   data := #query_1,
 	                   mb := #mb);
-	        #state := #state + BOOL_TO_SINT(#mb.query_above.done);
-	        // "#mb.query_above.done" is true if the query above
-	        // in the code just finnished a sucessfull query.
-	        // There is also "#mb.query_above.error" to check if
-	        // the query above resualted in an error.    
+	        #state := #state + BOOL_TO_SINT(#mb.stat.query_above AND #mb.stat.done);
+	        // "#mb.stat.query_above" is true if the query above
+	        // in the code just finnished a query. (with or without error)        
 	    1:
 	        "mb_query"(unit := #unit,
 	                   fc := #mb.fc.write_holding_reg,
@@ -753,7 +777,7 @@ BEGIN
 	                   d_len := #mb.c.auto_len,
 	                   data := #query_2,
 	                   mb := #mb);
-	        #state := #state + BOOL_TO_SINT(#mb.query_above.done);
+	        #state := #state + BOOL_TO_SINT(#mb.stat.query_above AND #mb.stat.done);
 	    2:
 	        "mb_query"(unit := #unit,
 	                   fc := #mb.fc.read_holding_reg,
@@ -761,7 +785,7 @@ BEGIN
 	                   d_len := #mb.c.auto_len,
 	                   data := #query_3,
 	                   mb := #mb);
-	        #state := SEL(G := #mb.query_above.done, IN0 := #state, IN1 := 0);
+	        #state := SEL(G := #mb.stat.query_above AND #mb.stat.done, IN0 := #state, IN1 := 0);
 	END_CASE;
 	
 END_FUNCTION_BLOCK

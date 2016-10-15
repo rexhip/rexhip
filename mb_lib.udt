@@ -1,13 +1,13 @@
 ﻿TYPE "udt_mb_device"
 VERSION : 0.1
    STRUCT
-      skip_all_queries : Bool;   // Disable device, reset error flags.
       unit : USInt;   // (not in use)
+      disable : Bool;   // Skip all queries and reset
       qError : Bool;   // All types of errors including comError
       qComError : Bool;   // Communication error, set true after x repeating tries
       conf : Struct   // Configuration
          max_qComError { S7_SetPoint := 'True'} : USInt := 2;   // Max repeating timeout errors before qComError is set
-         time_qErrror { S7_SetPoint := 'True'} : Time := T#2s;   // Length of the qError_tof puls
+         tof_qErrror { S7_SetPoint := 'True'} : Time := T#2s;   // Length of the qError puls
          exec_all_quries : Bool;
       END_STRUCT;
       log : Struct   // Logging
@@ -35,16 +35,17 @@ TYPE "udt_mb"
 VERSION : 0.1
    STRUCT
       q : Struct   // Query
+         qid : UInt := 1;   // query id
          unit : UInt := 1;   // Station address
          "fc" : UInt := 3;   // Function code
          d_addr : UDInt;   // Data address
          d_len : UInt := 1;   // Data length
-         qid : UInt := 1;   // query id
       END_STRUCT;
       run : Struct   // Constantly changing variables
+         qid_cnt : UInt;   // Query id cnt. increase for each query, reset in controller. One loop each scan
          mode : USInt := 0;   // from fc
          data_addr : UDInt;   // from d_addr
-         qid_cnt : UInt;   // Query id cnt. increase for each query, reset in controller. One loop each scan
+         inc : Bool;   // inc. qid if a unsync resualt
          insert : Bool := true;   // insert query param
       END_STRUCT;
       fix : Struct   // Static varables.
@@ -65,15 +66,15 @@ VERSION : 0.1
       log : Struct   // Logging
          unsync : USInt;
       END_STRUCT;
-      status : Struct   // Status of last query
+      stat : Struct   // Status of last query
+         query_above : Bool;   // Refer to the query that is above in the code.
          done : Bool;   // Successfully
-         error : Bool;   // Failed
+         err : Bool;   // Failed (not timeout)
          timeout : Bool;   // Communication problems
-         status : Word;   // status code of mb_master or mb_client
-      END_STRUCT;
-      query_above : Struct   // Refer to the query that is above in the code.
-         done : Bool;   // Successfully
-         error : Bool;   // Failed
+         done_or_err : Bool;   // done or error
+         err_timeout : Bool;   // error with or without timeout
+         done_err_timeout : Bool;   // Done, error or timeout
+         status : Word;   // status word of mb_master or mb_client
       END_STRUCT;
       "fc" : Struct   // Function codes
          skip_query { S7_HMI_Accessible := 'False'; S7_HMI_Visible := 'False'} : USInt := 0;   // 0

@@ -11,9 +11,8 @@ The library extend on MB_MASTER and MB_CLIENT, the modbus blocks that comes alon
 
 Key features:
  - Eliminate global states, which make it possible to create reusable device blocks. 
- - Clean and readable API, this makes it possible to create large scale modbus application, and it helps to cut engineering time.
- - Advanced timeout handler that reduce idle time.
- - Sophisticated bus sharing mechanism between devices.
+ - Clean and readable API, this makes it possible to create large scale application, and it helps to cut engineering time.
+ - Advanced timeout handler that reduce idle time, and sophisticated bus sharing mechanism.
  - Logging features for development and debugging.
  - Results can be stored inside optimized memory areas.
 

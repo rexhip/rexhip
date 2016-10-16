@@ -165,7 +165,7 @@ BEGIN
 	IF #mb.run.qid_cnt <> #mb.q.qid THEN
 	    RETURN;
 	ELSIF #fc = 0 THEN // fc 0 => skip query. (A fiktiv function code)
-	    IF #mb.run.insert OR #mb.stat.done OR #mb.stat.error THEN
+	    IF #mb.run.insert OR #mb.stat.done_or_error_or_timeout THEN
 	        #mb.run.insert := true;
 	        #mb.q.qid := #mb.q.qid + 1;
 	        #mb.conf.buffer_handler := true;
@@ -472,6 +472,76 @@ BEGIN
 	
 END_FUNCTION
 
+FUNCTION_BLOCK "mb_master_controller"
+{ S7_Optimized_Access := 'TRUE' }
+VERSION : 1.0
+   VAR_INPUT 
+      hardware_id : PORT;   // hardware id
+      baud : UDInt := 9600;
+      parity : Bool := true;   // enable even parity. false=no parity.
+      timeout : Time := T#500ms;
+      buffer_db_any : DB_ANY;
+   END_VAR
+
+   VAR_OUTPUT 
+      qError : Bool;
+   END_VAR
+
+   VAR_IN_OUT 
+      buffer_variant : Variant;
+      mb : "udt_mb";
+   END_VAR
+
+   VAR 
+      mb_comm_load {OriginalPartName := 'MB_COMM_LOAD'; LibVersion := '2.1'} : MB_COMM_LOAD;
+      mb_master {OriginalPartName := 'MB_MASTER'; LibVersion := '2.2'} : MB_MASTER;
+      tof_error {OriginalPartName := 'IEC_TIMER'; LibVersion := '1.0'} : TOF_TIME;
+      set_parity : Bool := true;
+      mb_comm_load_req : Bool;
+   END_VAR
+
+
+BEGIN
+	// If for some special reason the application need odd parity,
+	// then "set_parity" can be set false, and odd parity can be 
+	// given set directly at mb_comm_load. In general the library want
+	// to discourage using odd parity. 0=none, 1=odd, 2=even.
+	IF #set_parity THEN
+	    #mb_comm_load.PARITY := SEL(G := #parity, IN0 := 0, IN1 := 2);
+	END_IF;
+	
+	// Initiate the hardware.
+	#mb_comm_load(REQ := NOT #mb_comm_load.DONE AND NOT #mb_master.BUSY
+	                    XOR #mb_comm_load_req,
+	              "PORT" := #hardware_id,
+	              BAUD := #baud,
+	              RESP_TO := TIME_TO_UINT(#timeout),
+	              MB_DB := #mb_master);
+	
+	// The core master block.
+	#mb_master(REQ := #mb_comm_load.DONE AND NOT #mb_master.BUSY
+	           AND NOT #mb.run.insert,
+	           MB_ADDR := #mb.q.unit,
+	           MODE := #mb.run.mode,
+	           DATA_ADDR := #mb.run.data_addr,
+	           DATA_LEN := #mb.q.d_len,
+	           DONE => #mb.stat.done,
+	           ERROR => #mb.stat.error_or_timeout,
+	           STATUS => #mb.stat.status,
+	           DATA_PTR := #buffer_variant);
+	
+	// Timeout errors are handled different from other errors.
+	#mb.stat.timeout := #mb_master.ERROR
+	AND #mb_master.STATUS = 16#80C8;
+	
+	// --------------------------------------------------
+	#mb.fix.buffer_db := #buffer_db_any;
+	"mb_common"(#mb);
+	#tof_error(IN := #mb.stat.error_or_timeout,
+	           PT := #tof_error.PT, Q => #qError);
+	
+END_FUNCTION_BLOCK
+
 FUNCTION_BLOCK "mb_client_controller"
 { S7_Optimized_Access := 'TRUE' }
 VERSION : 1.0
@@ -568,76 +638,6 @@ BEGIN
 	#tof_error(IN := #mb.stat.error,
 	           PT := #tof_error.PT,
 	           Q => #qError);
-	
-END_FUNCTION_BLOCK
-
-FUNCTION_BLOCK "mb_master_controller"
-{ S7_Optimized_Access := 'TRUE' }
-VERSION : 1.0
-   VAR_INPUT 
-      hardware_id : PORT;   // hardware id
-      baud : UDInt := 9600;
-      parity : Bool := true;   // enable even parity. false=no parity.
-      timeout : Time := T#500ms;
-      buffer_db_any : DB_ANY;
-   END_VAR
-
-   VAR_OUTPUT 
-      qError : Bool;
-   END_VAR
-
-   VAR_IN_OUT 
-      buffer_variant : Variant;
-      mb : "udt_mb";
-   END_VAR
-
-   VAR 
-      mb_comm_load {OriginalPartName := 'MB_COMM_LOAD'; LibVersion := '2.1'} : MB_COMM_LOAD;
-      mb_master {OriginalPartName := 'MB_MASTER'; LibVersion := '2.2'} : MB_MASTER;
-      tof_error {OriginalPartName := 'IEC_TIMER'; LibVersion := '1.0'} : TOF_TIME;
-      set_parity : Bool := true;
-      mb_comm_load_req : Bool;
-   END_VAR
-
-
-BEGIN
-	// If for some special reason the application need odd parity,
-	// then "set_parity" can be set false, and odd parity can be 
-	// given set directly at mb_comm_load. In general the library want
-	// to discourage using odd parity. 0=none, 1=odd, 2=even.
-	IF #set_parity THEN
-	    #mb_comm_load.PARITY := SEL(G := #parity, IN0 := 0, IN1 := 2);
-	END_IF;
-	
-	// Initiate the hardware.
-	#mb_comm_load(REQ := NOT #mb_comm_load.DONE AND NOT #mb_master.BUSY
-	                    XOR #mb_comm_load_req,
-	              "PORT" := #hardware_id,
-	              BAUD := #baud,
-	              RESP_TO := TIME_TO_UINT(#timeout),
-	              MB_DB := #mb_master);
-	
-	// The core master block.
-	#mb_master(REQ := #mb_comm_load.DONE AND NOT #mb_master.BUSY
-	           AND NOT #mb.run.insert,
-	           MB_ADDR := #mb.q.unit,
-	           MODE := #mb.run.mode,
-	           DATA_ADDR := #mb.run.data_addr,
-	           DATA_LEN := #mb.q.d_len,
-	           DONE => #mb.stat.done,
-	           ERROR => #mb.stat.error_or_timeout,
-	           STATUS => #mb.stat.status,
-	           DATA_PTR := #buffer_variant);
-	
-	// Timeout errors are handled different from other errors.
-	#mb.stat.timeout := #mb_master.ERROR
-	AND #mb_master.STATUS = 16#80C8;
-	
-	// --------------------------------------------------
-	#mb.fix.buffer_db := #buffer_db_any;
-	"mb_common"(#mb);
-	#tof_error(IN := #mb.stat.error_or_timeout,
-	           PT := #tof_error.PT, Q => #qError);
 	
 END_FUNCTION_BLOCK
 

@@ -69,11 +69,11 @@ VERSION : 0.1
       stat : Struct   // Status of last query
          query_above : Bool;   // Refer to the query that is above in the code.
          done : Bool;   // Successfully
-         err : Bool;   // Failed (not timeout)
+         error : Bool;   // Failed (not timeout)
          timeout : Bool;   // Communication problems
-         done_or_err : Bool;   // done or error
-         err_timeout : Bool;   // error with or without timeout
-         done_err_timeout : Bool;   // Done, error or timeout
+         done_or_error : Bool;   // done or error
+         error_or_timeout : Bool;   // error with or without timeout
+         done_or_error_or_timeout : Bool;   // Done, error or timeout
          status : Word;   // status word of mb_master or mb_client
       END_STRUCT;
       "fc" : Struct   // Function codes

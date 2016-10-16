@@ -26,6 +26,7 @@ BEGIN
 	        #e := Serialize(SRC_VARIABLE := #data,
 	                        DEST_ARRAY => #buffer2,
 	                        POS := #bytes);
+	        
 	    2:  // Write to buffer    
 	        #bytes := 0;
 	        #e := Serialize(SRC_VARIABLE := #data,
@@ -38,6 +39,7 @@ BEGIN
 	                 byteOffset := #c,
 	                 value := #buffer2[#c]);
 	        END_FOR;
+	        
 	    3:  // Read from buffer        
 	        IF #bytes = 0 THEN
 	            // 0 => auto. Calculate have many bytes #data consist of.
@@ -95,7 +97,7 @@ BEGIN
 	//   another
 	IF #mb.q.qid > #mb.run.qid_cnt
 	    AND #mb.q.qid <= #device.intern.header_qid
-	    AND (#mb.run.insert OR #mb.stat.done_err_timeout)
+	    AND (#mb.run.insert OR #mb.stat.done_or_error_or_timeout)
 	THEN
 	    // Reset.
 	    #mb.run.insert := true;
@@ -148,7 +150,7 @@ BEGIN
 	// HippoTrex - Modbus API Siemens PLC's. 
 	// -----------------------------------------
 	// Author:   Ola Bjørnli
-	// Version:  0.3_beta36
+	// Version:  0.3_beta38
 	// License:  MIT-license
 	// Web:      http://github.com/olab84/sn7mb
 	
@@ -163,7 +165,7 @@ BEGIN
 	IF #mb.run.qid_cnt <> #mb.q.qid THEN
 	    RETURN;
 	ELSIF #fc = 0 THEN // fc 0 => skip query. (A fiktiv function code)
-	    IF #mb.run.insert OR #mb.stat.done OR #mb.stat.err THEN
+	    IF #mb.run.insert OR #mb.stat.done OR #mb.stat.error THEN
 	        #mb.run.insert := true;
 	        #mb.q.qid := #mb.q.qid + 1;
 	        #mb.conf.buffer_handler := true;
@@ -174,7 +176,7 @@ BEGIN
 	// d_len=0 => Automatically calculate the length based on the
 	// size (bytes) of "#data".
 	IF #d_len = 0 AND #mb.conf.buffer_handler AND 
-	    (#mb.run.insert OR #mb.stat.done OR #mb.stat.err)
+	    (#mb.run.insert OR #mb.stat.done OR #mb.stat.error)
 	THEN
 	    "mb_buffer_handler"(action := 1, // Count bytes.
 	                        buffer_db := 0,
@@ -250,7 +252,7 @@ BEGIN
 	    #mb.device.insert_id := #mb.device.insert_id + 1; 
 	    
 	// If the query is finnished. (with or without error)  
-	ELSIF #mb.stat.done_err_timeout THEN
+	ELSIF #mb.stat.done_or_error_or_timeout THEN
 	    
 	    // Make sure that the query resault really belong to this query.   
 	    IF #mb.q.unit = #unit
@@ -310,9 +312,9 @@ BEGIN
 	// Common for both rtu and tcp.
 	
 	// Status for last query.
-	#mb.stat.err := #mb.stat.err_timeout AND NOT #mb.stat.timeout;
-	#mb.stat.done_or_err := #mb.stat.done OR #mb.stat.err;
-	#mb.stat.done_err_timeout := #mb.stat.done OR #mb.stat.err_timeout;
+	#mb.stat.error := #mb.stat.error_or_timeout AND NOT #mb.stat.timeout;
+	#mb.stat.done_or_error := #mb.stat.done OR #mb.stat.error;
+	#mb.stat.done_or_error_or_timeout := #mb.stat.done OR #mb.stat.error_or_timeout;
 	
 	// If all queries has been executed, then start over again on the first query.
 	IF #mb.q.qid > #mb.run.qid_cnt THEN
@@ -375,7 +377,7 @@ BEGIN
 	        #device.qComError := false;
 	        #device.intern.timeout_cnt := 0;
 	        
-	    ELSIF #mb.stat.err_timeout THEN // Logging - failed query        
+	    ELSIF #mb.stat.error_or_timeout THEN // Logging - failed query        
 	        #device.log.err_cnt := #device.log.err_cnt + 1;
 	        #e := RD_LOC_T(#device.log.err_dtl);
 	        #device.log.err_status := #mb.stat.status;
@@ -470,6 +472,105 @@ BEGIN
 	
 END_FUNCTION
 
+FUNCTION_BLOCK "mb_client_controller"
+{ S7_Optimized_Access := 'TRUE' }
+VERSION : 1.0
+   VAR_INPUT 
+      interface : HW_ANY := 64;   // Profinet interface id
+      conn_id : CONN_OUC := 123;   // Connection id
+      remote_ip : Array[1..4] of Byte;   // IPv4
+      remote_port : UInt := 502;   // TCP port
+      timeout : Time := T#300ms;
+      buffer_db_any : DB_ANY;
+   END_VAR
+
+   VAR_OUTPUT 
+      qError : Bool;
+   END_VAR
+
+   VAR_IN_OUT 
+      buffer_variant : Variant;
+      mb : "udt_mb";
+   END_VAR
+
+   VAR 
+      mb_client {OriginalPartName := 'MB_CLIENT'; LibVersion := '4.0'} : MB_CLIENT;
+      tcon_ip_v4 {OriginalPartName := 'TCON_IP_v4'; LibVersion := '1.0'} : TCON_IP_v4;
+      ton_timeout {OriginalPartName := 'IEC_TIMER'; LibVersion := '1.0'} : TON_TIME;
+      ton_timeout_q : Bool;
+      tdiscon {OriginalPartName := 'T_DISCON'; LibVersion := '2.1'} : TDISCON;
+      tdiscon_bool : Bool;
+      disconnect : Bool := false;
+      tof_error {OriginalPartName := 'IEC_TIMER'; LibVersion := '1.0'} : TOF_TIME;
+   END_VAR
+
+   VAR_TEMP 
+      tmp_reconnect_after : Bool;
+   END_VAR
+
+
+BEGIN
+	#tcon_ip_v4.InterfaceId := #interface;
+	#tcon_ip_v4.ID := #conn_id;
+	#tcon_ip_v4.RemoteAddress.ADDR := #remote_ip;
+	#tcon_ip_v4.RemotePort := #remote_port;
+	
+	// If a new download has taken place, and this block is re-initialize,
+	// then the mb_client block will output the error code saying that:
+	// "Attempt being made to re-establish an existing connection." (80A3).
+	// The solution to this problem is to disconnect and then reconnect.
+	#tdiscon(REQ := #mb_client.ERROR AND #mb_client.STATUS = 16#80A3,
+	         ID := #conn_id);
+	IF #tdiscon.BUSY THEN
+	    #tdiscon_bool := true;
+	ELSIF #tdiscon.DONE THEN
+	    #tdiscon_bool := false;
+	END_IF;
+	
+	#mb_client.MB_Unit_ID := UINT_TO_BYTE(#mb.q.unit);
+	#mb_client.Rcv_Timeout := UINT_TO_REAL(TIME_TO_UINT(#timeout)) / 1000;
+	#mb_client.Blocked_Proc_Timeout := MAX(
+	IN1 := 3.0, IN2 := #mb_client.Rcv_Timeout + 1.0);
+	#mb_client(REQ := NOT #mb_client.BUSY AND NOT #mb.run.insert
+	                AND NOT #mb_client.DISCONNECT,
+	           DISCONNECT := #disconnect OR #tdiscon_bool,
+	           MB_MODE := #mb.run.mode,
+	           MB_DATA_ADDR := #mb.run.data_addr,
+	           MB_DATA_LEN := #mb.q.d_len,
+	           STATUS => #mb.stat.status,
+	           MB_DATA_PTR := #buffer_variant,
+	           CONNECT := #tcon_ip_v4);
+	
+	// If mb_client has not establish a connection it will not throw
+	// timeout error. That's way timeout is handled manually bellow.
+	#ton_timeout(IN := NOT #mb.run.insert
+	             AND (NOT #mb_client.DONE OR NOT #mb_client.ERROR),
+	             PT := #timeout,
+	             Q => #ton_timeout_q);
+	
+	// Timeout errors are handled different from other errors.
+	IF #ton_timeout_q THEN
+	    #mb.stat.done := false;
+	    #mb.stat.error_or_timeout := true;
+	    #mb.stat.timeout := true;
+	    RESET_TIMER(#ton_timeout);
+	ELSE
+	    #mb.stat.done := #mb_client.DONE;
+	    #mb.stat.error_or_timeout := #mb_client.ERROR;
+	    #mb.stat.timeout := #mb.stat.error_or_timeout
+	        AND (#mb.stat.status = 16#818C //
+	        OR #mb.stat.status = 16#80C8); //
+	END_IF;
+	
+	// --------------------------------------------------
+	#mb.fix.buffer_db := #buffer_db_any;
+	"mb_common"(#mb);
+	#tof_error(IN := #mb.stat.error,
+	           PT := #tof_error.PT,
+	           Q => #qError);
+	
+END_FUNCTION_BLOCK
+
 FUNCTION_BLOCK "mb_master_controller"
 { S7_Optimized_Access := 'TRUE' }
 VERSION : 1.0
@@ -524,7 +625,7 @@ BEGIN
 	           DATA_ADDR := #mb.run.data_addr,
 	           DATA_LEN := #mb.q.d_len,
 	           DONE => #mb.stat.done,
-	           ERROR => #mb.stat.err_timeout,
+	           ERROR => #mb.stat.error_or_timeout,
 	           STATUS => #mb.stat.status,
 	           DATA_PTR := #buffer_variant);
 	
@@ -535,108 +636,8 @@ BEGIN
 	// --------------------------------------------------
 	#mb.fix.buffer_db := #buffer_db_any;
 	"mb_common"(#mb);
-	#tof_error(IN := #mb.stat.err_timeout,
+	#tof_error(IN := #mb.stat.error_or_timeout,
 	           PT := #tof_error.PT, Q => #qError);
-	
-END_FUNCTION_BLOCK
-
-FUNCTION_BLOCK "mb_client_controller"
-{ S7_Optimized_Access := 'TRUE' }
-VERSION : 1.0
-   VAR_INPUT 
-      interface : HW_ANY := 64;   // Profinet interface id
-      conn_id : CONN_OUC := 123;   // Connection id
-      remote_ip : Array[1..4] of Byte;   // IPv4
-      remote_port : UInt := 502;   // TCP port
-      timeout : Time := T#2s;
-      buffer_db_any : DB_ANY;
-   END_VAR
-
-   VAR_OUTPUT 
-      qError : Bool;
-   END_VAR
-
-   VAR_IN_OUT 
-      buffer_variant : Variant;
-      mb : "udt_mb";
-   END_VAR
-
-   VAR 
-      mb_client {OriginalPartName := 'MB_CLIENT'; LibVersion := '4.0'} : MB_CLIENT;
-      tcon_ip_v4 {OriginalPartName := 'TCON_IP_v4'; LibVersion := '1.0'} : TCON_IP_v4;
-      ton_timeout {OriginalPartName := 'IEC_TIMER'; LibVersion := '1.0'} : TON_TIME;
-      ton_timeout_q : Bool;
-      tdiscon {OriginalPartName := 'T_DISCON'; LibVersion := '2.1'} : TDISCON;
-      tdiscon_bool : Bool;
-      disconnect : Bool := false;
-      tof_error {OriginalPartName := 'IEC_TIMER'; LibVersion := '1.0'} : TOF_TIME;
-   END_VAR
-
-   VAR_TEMP 
-      tmp_reconnect_after : Bool;
-   END_VAR
-
-
-BEGIN
-	#tcon_ip_v4.InterfaceId := #interface;
-	#tcon_ip_v4.ID := #conn_id;
-	#tcon_ip_v4.RemoteAddress.ADDR := #remote_ip;
-	#tcon_ip_v4.RemotePort := #remote_port;
-	
-	// If a new download has taken place, and this block is re-initialize,
-	// then the mb_client block will output the error code saying that:
-	// "Attempt being made to re-establish an existing connection." (80A3).
-	// The solution to this problem is to disconnect and then reconnect.
-	#tdiscon(REQ := #mb_client.ERROR AND #mb_client.STATUS = 16#80A3,
-	         ID := #conn_id);
-	IF #tdiscon.BUSY THEN
-	    #tdiscon_bool := true;
-	ELSIF #tdiscon.DONE THEN
-	    #tdiscon_bool := false;
-	END_IF;
-	
-	#mb_client.MB_Unit_ID := UINT_TO_BYTE(#mb.q.unit);
-	#mb_client.Rcv_Timeout := UINT_TO_REAL(TIME_TO_UINT(#timeout)) / 1000;
-	#mb_client.Blocked_Proc_Timeout := MIN(IN1 := 3,
-	                                       IN2 := #mb_client.Rcv_Timeout + 1);
-	
-	#mb_client(REQ := NOT #mb_client.BUSY AND NOT #mb.run.insert
-	                AND NOT #mb_client.DISCONNECT,
-	           DISCONNECT := #disconnect OR #tdiscon_bool,
-	           MB_MODE := #mb.run.mode,
-	           MB_DATA_ADDR := #mb.run.data_addr,
-	           MB_DATA_LEN := #mb.q.d_len,
-	           STATUS => #mb.stat.status,
-	           MB_DATA_PTR := #buffer_variant,
-	           CONNECT := #tcon_ip_v4);
-	
-	// If mb_client has not establish a connection it will not throw
-	// timeout error. That's way timeout is handled manually bellow.
-	#ton_timeout(IN := NOT #mb.run.insert
-	             AND (NOT #mb_client.DONE OR NOT #mb_client.ERROR),
-	             PT := #timeout,
-	             Q => #ton_timeout_q);
-	
-	// Timeout errors are handled different from other errors.
-	IF #ton_timeout_q THEN
-	    #mb.stat.done := false;
-	    #mb.stat.err_timeout := true;
-	    #mb.stat.timeout := true;
-	    RESET_TIMER(#ton_timeout);
-	ELSE
-	    #mb.stat.done := #mb_client.DONE;
-	    #mb.stat.err_timeout := #mb_client.ERROR;
-	    #mb.stat.timeout := #mb.stat.err_timeout
-	        AND (#mb.stat.status = 16#818C //
-	        OR #mb.stat.status = 16#80C8); //
-	END_IF;
-	
-	// --------------------------------------------------
-	#mb.fix.buffer_db := #buffer_db_any;
-	"mb_common"(#mb);
-	#tof_error(IN := #mb.stat.err,
-	           PT := #tof_error.PT,
-	           Q => #qError);
 	
 END_FUNCTION_BLOCK
 

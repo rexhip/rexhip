@@ -59,6 +59,92 @@ BEGIN
 	
 END_FUNCTION_BLOCK
 
+DATA_BLOCK "modbus_rtu_buffer"
+{ S7_Optimized_Access := 'FALSE' }
+VERSION : 0.1
+NON_RETAIN
+   STRUCT 
+      buffer : Array[0..125] of Word;
+   END_STRUCT;
+
+
+BEGIN
+
+END_DATA_BLOCK
+
+DATA_BLOCK "modbus_tcp_buffer"
+{ S7_Optimized_Access := 'FALSE' }
+VERSION : 0.1
+NON_RETAIN
+   STRUCT 
+      buffer : Array[0..125] of Word;
+   END_STRUCT;
+
+
+BEGIN
+
+END_DATA_BLOCK
+
+FUNCTION_BLOCK "example_novus_tht"
+{ S7_Optimized_Access := 'TRUE' }
+VERSION : 0.1
+   VAR_INPUT 
+      unit : USInt;
+   END_VAR
+
+   VAR_OUTPUT 
+      temperature : Int;
+      humidity : Int;
+   END_VAR
+
+   VAR_IN_OUT 
+      mb : "udt_mb";
+   END_VAR
+
+   VAR 
+      device_udt : "udt_mb_device";
+      serial_number : DWord;
+      raw_values { S7_HMI_Accessible := 'False'; S7_HMI_Visible := 'False'} : Struct
+         temp { S7_HMI_Accessible := 'False'; S7_HMI_Visible := 'False'} : Int;
+         hum { S7_HMI_Accessible := 'False'; S7_HMI_Visible := 'False'} : Int;
+      END_STRUCT;
+   END_VAR
+
+
+BEGIN
+	// - Novus - RHT (Temperature transmitter)
+	// - http://www.novusautomation.com/downloads/Arquivos/v10x_b_manual_rht_wm-dm-p10_485_lcd_%20english.pdf
+	// - Example code, no test with equipment done.
+	
+	"mb_device_header"(device := #device_udt, mb := #mb);
+	
+	"mb_query"(unit := #unit,
+	           fc := #mb.fc.read_holding_reg,
+	           d_addr := 7,
+	           d_len := #mb.c.auto_len,
+	           data := #raw_values,
+	           mb := #mb);
+	
+	"mb_query"(unit := #unit,
+	           fc := #mb.fc.read_holding_reg,
+	           d_addr := 0,
+	           d_len := #mb.c.auto_len,
+	           data := #serial_number,
+	           mb := #mb);
+	
+	"mb_device_footer"(device := #device_udt, mb := #mb);
+	
+	IF #device_udt.qComError THEN
+	    #serial_number := 0;
+	    #raw_values.temp := 0;
+	    #raw_values.hum := 0;
+	END_IF;
+	
+	#temperature := #raw_values.temp / 10;
+	#humidity := #raw_values.hum / 10;
+	
+END_FUNCTION_BLOCK
+
 FUNCTION_BLOCK "start_example_device_block"
 { S7_Optimized_Access := 'TRUE' }
 VERSION : 0.1
@@ -284,91 +370,68 @@ BEGIN
 	
 END_FUNCTION_BLOCK
 
-DATA_BLOCK "modbus_rtu_buffer"
-{ S7_Optimized_Access := 'FALSE' }
-VERSION : 0.1
-NON_RETAIN
-   STRUCT 
-      buffer : Array[0..125] of Word;
-   END_STRUCT;
-
-
-BEGIN
-
-END_DATA_BLOCK
-
-FUNCTION_BLOCK "example_novus_tht"
+FUNCTION_BLOCK "start_example_mb_tcp"
 { S7_Optimized_Access := 'TRUE' }
 VERSION : 0.1
-   VAR_INPUT 
-      unit : USInt;
-   END_VAR
-
-   VAR_OUTPUT 
-      temperature : Int;
-      humidity : Int;
-   END_VAR
-
-   VAR_IN_OUT 
-      mb : "udt_mb";
-   END_VAR
-
    VAR 
-      device_udt : "udt_mb_device";
-      serial_number : DWord;
-      raw_values { S7_HMI_Accessible := 'False'; S7_HMI_Visible := 'False'} : Struct
-         temp { S7_HMI_Accessible := 'False'; S7_HMI_Visible := 'False'} : Int;
-         hum { S7_HMI_Accessible := 'False'; S7_HMI_Visible := 'False'} : Int;
-      END_STRUCT;
+      mb : "udt_mb";
+      mb_client_controller : "mb_client_controller";
+      device_start_example : "start_example_device_block";
+      resault_data_1 : Word;
+      log : Array[1..20] of Word;
    END_VAR
 
 
 BEGIN
-	// - Novus - RHT (Temperature transmitter)
-	// - http://www.novusautomation.com/downloads/Arquivos/v10x_b_manual_rht_wm-dm-p10_485_lcd_%20english.pdf
-	// - Example code, no test with equipment done.
+	// interface:       Ethernet port to be used, the const. can be found inside
+	//                  the "hardware configuration".
+	// conn_id:         A unique id for each tcp connectin in the plc-program.
+	// ip_addr:         The ip-address of the server, the client will communicate
+	//                  with.
+	// port_number:     TCP-port, 502 is the default port. UDP isn't available.
+	// timeout:         Timeout.
+	// buffer_db_any:   A db with standard access consisting a array of 125 words.
+	// buffer_variant:  Input the same variable as to "buffer_db_any".
+	// mb:              A udt that is the link between the controller and it's
+	//                  belonging queries inside the device block bellow.
+	#mb_client_controller.remote_ip[1] := 192;
+	#mb_client_controller.remote_ip[2] := 168;
+	#mb_client_controller.remote_ip[3] := 1;
+	#mb_client_controller.remote_ip[4] := 2;
+	#mb_client_controller(
+	    interface := "Local~PROFINET_interface_1",
+	    conn_id := 123, 
+	    remote_port := 502,
+	    timeout := T#2s,
+	    buffer_db_any := "modbus_tcp_buffer",  
+	    buffer_variant := "modbus_tcp_buffer", 
+	    mb := #mb);
 	
-	"mb_device_header"(device := #device_udt, mb := #mb);
+	#device_start_example(unit := 1,   // Device address. For tcp devices
+	                                   // unit can usually be set to "1".
+	                      mb := #mb);  // Same udt as above.
+	// Note that a device block can be used for both tcp and rtu. This of course
+	// require that the device has the hardware for both for TCP (Ethernet) and
+	// for RTU (RS-485).
 	
-	"mb_query"(unit := #unit,
+	// Read holding register 1234 from device with unit address 123. This is an
+	// example showing that a query does not necessarily need to be inside a
+	// device block as obove, however making reusable device blocks is good
+	// practice. Also the logging capacities and timeout handeling will not be
+	// utilized when done as bellow.
+	"mb_query"(unit := 123,
 	           fc := #mb.fc.read_holding_reg,
-	           d_addr := 7,
+	           d_addr := 1234,
 	           d_len := #mb.c.auto_len,
-	           data := #raw_values,
+	           data := #resault_data_1,
 	           mb := #mb);
 	
-	"mb_query"(unit := #unit,
-	           fc := #mb.fc.read_holding_reg,
-	           d_addr := 0,
-	           d_len := #mb.c.auto_len,
-	           data := #serial_number,
-	           mb := #mb);
-	
-	"mb_device_footer"(device := #device_udt, mb := #mb);
-	
-	IF #device_udt.qComError THEN
-	    #serial_number := 0;
-	    #raw_values.temp := 0;
-	    #raw_values.hum := 0;
-	END_IF;
-	
-	#temperature := #raw_values.temp / 10;
-	#humidity := #raw_values.hum / 10;
+	"mb_log_words"(in := #mb.stat.status, log := #log);
+	// This is only for debugging. If a strange error occurred then look in to the
+	// log. The status coodes is decribed in tia-portal help journal. Look up
+	// MB_CLIENT, TCON, TSEND and TDISCON.
 	
 END_FUNCTION_BLOCK
-
-DATA_BLOCK "modbus_tcp_buffer"
-{ S7_Optimized_Access := 'FALSE' }
-VERSION : 0.1
-NON_RETAIN
-   STRUCT 
-      buffer : Array[0..125] of Word;
-   END_STRUCT;
-
-
-BEGIN
-
-END_DATA_BLOCK
 
 FUNCTION_BLOCK "start_example_mb_rtu"
 { S7_Optimized_Access := 'TRUE' }
@@ -449,69 +512,6 @@ BEGIN
 	
 END_FUNCTION_BLOCK
 
-FUNCTION_BLOCK "start_example_mb_tcp"
-{ S7_Optimized_Access := 'TRUE' }
-VERSION : 0.1
-   VAR 
-      mb : "udt_mb";
-      mb_client_controller : "mb_client_controller";
-      device_start_example : "start_example_device_block";
-      resault_data_1 : Word;
-      log : Array[1..20] of Word;
-   END_VAR
-
-
-BEGIN
-	// interface:       Ethernet port to be used, the const. can be found inside
-	//                  the "hardware configuration".
-	// conn_id:         A unique id for each tcp connectin in the plc-program.
-	// ip_addr:         The ip-address of the server, the client will communicate
-	//                  with.
-	// port_number:     TCP-port, 502 is the default port. UDP isn't available.
-	// timeout:         Timeout.
-	// buffer_db_any:   A db with standard access consisting a array of 125 words.
-	// buffer_variant:  Input the same variable as to "buffer_db_any".
-	// mb:              A udt that is the link between the controller and it's
-	//                  belonging queries inside the device block bellow.
-	#mb_client_controller.remote_ip[1] := 192;
-	#mb_client_controller.remote_ip[2] := 168;
-	#mb_client_controller.remote_ip[3] := 1;
-	#mb_client_controller.remote_ip[4] := 2;
-	#mb_client_controller(
-	    interface := "Local~PROFINET_interface_1",
-	    conn_id := 123, 
-	    remote_port := 502,
-	    timeout := T#2s,
-	    buffer_db_any := "modbus_tcp_buffer",  
-	    buffer_variant := "modbus_tcp_buffer", 
-	    mb := #mb);
-	
-	#device_start_example(unit := 1,   // Device address. For tcp devices
-	                                   // unit can usually be set to "1".
-	                      mb := #mb);  // Same udt as above.
-	// Note that a device block can be used for both tcp and rtu. This of course
-	// require that the device has the hardware for both for TCP (Ethernet) and
-	// for RTU (RS-485).
-	
-	// Read holding register 1234 from device with unit address 123. This is an
-	// example showing that a query does not necessarily need to be inside a
-	// device block as obove, however making reusable device blocks is good
-	// practice. Also the logging capacities and timeout handeling will not be
-	// utilized when done as bellow.
-	"mb_query"(unit := 123,
-	           fc := #mb.fc.read_holding_reg,
-	           d_addr := 1234,
-	           d_len := #mb.c.auto_len,
-	           data := #resault_data_1,
-	           mb := #mb);
-	
-	"mb_log_words"(in := #mb.stat.status, log := #log);
-	// This is only for debugging. If a strange error occurred then look in to the
-	// log. The status coodes is decribed in tia-portal help journal. Look up
-	// MB_CLIENT, TCON, TSEND and TDISCON.
-	
-END_FUNCTION_BLOCK
-
 DATA_BLOCK "start_example_mb_tcp_DB"
 { S7_Optimized_Access := 'TRUE' }
 VERSION : 0.1
@@ -531,6 +531,19 @@ NON_RETAIN
 BEGIN
 
 END_DATA_BLOCK
+
+ORGANIZATION_BLOCK "rtu_ob"
+TITLE = "Main Program Sweep (Cycle)"
+{ S7_Optimized_Access := 'TRUE' }
+VERSION : 0.1
+
+BEGIN
+	// Program cycle OB
+	
+	// Open the block to see the example.
+	"start_example_mb_rtu_DB"();
+	
+END_ORGANIZATION_BLOCK
 
 FUNCTION "README" : Void
 { S7_Optimized_Access := 'TRUE' }
@@ -601,24 +614,66 @@ VERSION : 0.1
 
 BEGIN
 	// Program cycle OB
-	(*
+	
 	// Open the block to see the example.
 	"start_example_mb_tcp_DB"();
 	
 END_ORGANIZATION_BLOCK
 
-ORGANIZATION_BLOCK "rtu_ob"
-TITLE = "Main Program Sweep (Cycle)"
+FUNCTION_BLOCK "example_siemens_PAC3200"
 { S7_Optimized_Access := 'TRUE' }
 VERSION : 0.1
+   VAR_INPUT 
+      unit : USInt;
+   END_VAR
+
+   VAR_IN_OUT 
+      mb : "udt_mb";
+   END_VAR
+
+   VAR 
+      device_udt : "udt_mb_device";
+      current : Struct
+         a : Real;   // unit: A
+         b : Real;   // unit: A
+         c : Real;   // unit: A
+      END_STRUCT;
+      common : Struct
+         frequency : Real;   // unit: hz
+         avg_voltage_Vph_n : Real;   // unit: V
+         avg_voltage_Vph_ph : Real;   // unit: V
+         avg_current : Real;   // unit: A
+         total_apparent_power : Real;   // unit: VA
+         total_active_power : Real;   // unit: W
+      END_STRUCT;
+   END_VAR
+
 
 BEGIN
-	// Program cycle OB
-	(*
-	// Open the block to see the example.
-	"start_example_mb_rtu_DB"();
+	// - Siemens - PAC3200
+	// - http://w3.siemens.com.br/buildingtechnologies/br/documents/manual-sentron-pac3200.pdf
+	//   3.9.3, page 40
+	// - Example code, no test with equipment done.
 	
-END_ORGANIZATION_BLOCK
+	"mb_device_header"(device := #device_udt, mb := #mb);
+	
+	"mb_query"(unit := #unit,
+	           fc := #mb.fc.read_holding_reg,
+	           d_addr := 13,
+	           d_len := #mb.c.auto_len,
+	           data := #current,
+	           mb := #mb);
+	
+	"mb_query"(unit := #unit,
+	           fc := #mb.fc.read_holding_reg,
+	           d_addr := 55,
+	           d_len := #mb.c.auto_len,
+	           data := #common,
+	           mb := #mb);
+	
+	"mb_device_footer"(device := #device_udt, mb := #mb);
+	
+END_FUNCTION_BLOCK
 
 FUNCTION_BLOCK "special_example_2_conditon"
 { S7_Optimized_Access := 'TRUE' }
@@ -732,61 +787,6 @@ BEGIN
 	                   mb := #mb);
 	        #state := SEL(G := #mb.stat.query_above AND #mb.stat.done, IN0 := #state, IN1 := 0);
 	END_CASE;
-	
-END_FUNCTION_BLOCK
-
-FUNCTION_BLOCK "example_siemens_PAC3200"
-{ S7_Optimized_Access := 'TRUE' }
-VERSION : 0.1
-   VAR_INPUT 
-      unit : USInt;
-   END_VAR
-
-   VAR_IN_OUT 
-      mb : "udt_mb";
-   END_VAR
-
-   VAR 
-      device_udt : "udt_mb_device";
-      current : Struct
-         a : Real;   // unit: A
-         b : Real;   // unit: A
-         c : Real;   // unit: A
-      END_STRUCT;
-      common : Struct
-         frequency : Real;   // unit: hz
-         avg_voltage_Vph_n : Real;   // unit: V
-         avg_voltage_Vph_ph : Real;   // unit: V
-         avg_current : Real;   // unit: A
-         total_apparent_power : Real;   // unit: VA
-         total_active_power : Real;   // unit: W
-      END_STRUCT;
-   END_VAR
-
-
-BEGIN
-	// - Siemens - PAC3200
-	// - http://w3.siemens.com.br/buildingtechnologies/br/documents/manual-sentron-pac3200.pdf
-	//   3.9.3, page 40
-	// - Example code, no test with equipment done.
-	
-	"mb_device_header"(device := #device_udt, mb := #mb);
-	
-	"mb_query"(unit := #unit,
-	           fc := #mb.fc.read_holding_reg,
-	           d_addr := 13,
-	           d_len := #mb.c.auto_len,
-	           data := #current,
-	           mb := #mb);
-	
-	"mb_query"(unit := #unit,
-	           fc := #mb.fc.read_holding_reg,
-	           d_addr := 55,
-	           d_len := #mb.c.auto_len,
-	           data := #common,
-	           mb := #mb);
-	
-	"mb_device_footer"(device := #device_udt, mb := #mb);
 	
 END_FUNCTION_BLOCK
 

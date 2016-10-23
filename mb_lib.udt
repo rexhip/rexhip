@@ -5,6 +5,7 @@ VERSION : 0.1
       disable : Bool;   // Skip all queries and reset
       qError : Bool;   // All types of errors including comError
       qComError : Bool;   // Communication error, set true after x repeating tries
+      qFinnish : Bool;   // qid is hand over to next device
       conf : Struct   // Configuration
          max_qComError { S7_SetPoint := 'True'} : USInt := 2;   // Max repeating timeout errors before qComError is set
          tof_qErrror { S7_SetPoint := 'True'} : Time := T#2s;   // Length of the qError puls
@@ -66,31 +67,37 @@ VERSION : 0.1
       log : Struct   // Logging
          unsync : USInt;
       END_STRUCT;
-      stat : Struct   // Status of last query
-         query_above : Bool;   // Refer to the query that is above in the code.
-         done : Bool;   // Successfully
-         error : Bool;   // Failed (not timeout)
-         timeout : Bool;   // Communication problems
-         done_or_error : Bool;   // done or error
-         error_or_timeout : Bool;   // error with or without timeout
-         done_or_error_or_timeout : Bool;   // Done, error or timeout
+      stat : Struct   // Status of last executed query
+         done : Bool;   // Successfull
+         error : Bool;   // Error, including timeout error
+         done_or_error : Bool;   // Done, error or timeout
+         timeout : Bool;   // Only timeout error
+         exception : Bool;   // error except timeout
+         done_or_exception : Bool;   // Done or error, except timeout
+         query_above : Bool;   // Refer to the query above in the code.
          status : Word;   // status word of mb_master or mb_client
       END_STRUCT;
-      "fc" : Struct   // Function codes
-         skip_query { S7_HMI_Accessible := 'False'; S7_HMI_Visible := 'False'} : USInt := 0;   // 0
-         read_output_bits { S7_HMI_Accessible := 'False'; S7_HMI_Visible := 'False'} : USInt := 1;   // 1 - (coils)
-         read_input_bits { S7_HMI_Accessible := 'False'; S7_HMI_Visible := 'False'} : USInt := 2;   // 2 - (discrete inputs)
-         read_holding_reg { S7_HMI_Accessible := 'False'; S7_HMI_Visible := 'False'} : USInt := 3;   // 3
-         read_input_reg { S7_HMI_Accessible := 'False'; S7_HMI_Visible := 'False'} : USInt := 4;   // 4
-         write_single_output_bit { S7_HMI_Accessible := 'False'; S7_HMI_Visible := 'False'} : USInt := 5;   // 5 - (coil)
-         write_single_holding_reg { S7_HMI_Accessible := 'False'; S7_HMI_Visible := 'False'} : USInt := 6;   // 6
-         write_output_bits { S7_HMI_Accessible := 'False'; S7_HMI_Visible := 'False'} : USInt := 15;   // 15 - (coils)
-         write_holding_reg { S7_HMI_Accessible := 'False'; S7_HMI_Visible := 'False'} : USInt := 16;   // 16
-         modicon_read { S7_HMI_Accessible := 'False'; S7_HMI_Visible := 'False'} : USInt := 200;   // 200
-         modicon_write_single { S7_HMI_Accessible := 'False'; S7_HMI_Visible := 'False'} : USInt := 201;   // 201
-         modicon_write { S7_HMI_Accessible := 'False'; S7_HMI_Visible := 'False'} : USInt := 202;   // 202
-      END_STRUCT;
-      c : Struct   // Other constants
+      c : Struct   // Constants
+         "fc" : Struct   // Function codes
+            read : Struct   // Read: 1, 2, 3, 4
+               output_bits { S7_HMI_Accessible := 'False'; S7_HMI_Visible := 'False'} : USInt := 1;   // 1 - (coils)
+               input_bits { S7_HMI_Accessible := 'False'; S7_HMI_Visible := 'False'} : USInt := 2;   // 2 - (discrete inputs)
+               holding_reg { S7_HMI_Accessible := 'False'; S7_HMI_Visible := 'False'} : USInt := 3;   // 3
+               input_reg { S7_HMI_Accessible := 'False'; S7_HMI_Visible := 'False'} : USInt := 4;   // 4
+            END_STRUCT;
+            write : Struct   // Write: 5, 6, 15, 16
+               single_output_bit { S7_HMI_Accessible := 'False'; S7_HMI_Visible := 'False'} : USInt := 5;   // 5 - (coil)
+               single_holding_reg { S7_HMI_Accessible := 'False'; S7_HMI_Visible := 'False'} : USInt := 6;   // 6
+               output_bits { S7_HMI_Accessible := 'False'; S7_HMI_Visible := 'False'} : USInt := 15;   // 15 - (coils)
+               holding_reg { S7_HMI_Accessible := 'False'; S7_HMI_Visible := 'False'} : USInt := 16;   // 16
+            END_STRUCT;
+            modicon : Struct   // Modicon convention addressing. (eg: hold.reg. start at 40001)
+               read { S7_HMI_Accessible := 'False'; S7_HMI_Visible := 'False'} : USInt := 200;   // Mode 0
+               write_single { S7_HMI_Accessible := 'False'; S7_HMI_Visible := 'False'} : USInt := 201;   // Mode 1 (fc: 5, 6)
+               write { S7_HMI_Accessible := 'False'; S7_HMI_Visible := 'False'} : USInt := 202;   // Mode 2 (fc: 15, 16)
+            END_STRUCT;
+            skip_query { S7_HMI_Accessible := 'False'; S7_HMI_Visible := 'False'} : USInt := 0;   // 0
+         END_STRUCT;
          auto_len : UInt := 0;   // 0 - Length will be callculated automatically.
       END_STRUCT;
    END_STRUCT;

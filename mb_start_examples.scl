@@ -30,21 +30,21 @@ BEGIN
 	"mb_device_header"(device := #device_udt, mb := #mb);
 	
 	"mb_query"(unit := #unit,
-	           fc := #mb.fc.read_input_reg,
+	           fc := #mb.c."fc".read.input_reg,
 	           d_addr := 5017,
 	           d_len := 2,
 	           data := #flow,
 	           mb := #mb);
 	
 	"mb_query"(unit := #unit,
-	           fc := #mb.fc.read_input_reg,
+	           fc := #mb.c."fc".read.input_reg,
 	           d_addr := 5025,
 	           d_len := 2,
 	           data := #pressure,
 	           mb := #mb);
 	
 	"mb_query"(unit := #unit,
-	           fc := #mb.fc.read_holding_reg,
+	           fc := #mb.c."fc".read.holding_reg,
 	           d_addr := 12003,
 	           d_len := #mb.c.auto_len,
 	           data := #totaliser,
@@ -60,12 +60,12 @@ BEGIN
 END_FUNCTION_BLOCK
 
 DATA_BLOCK "modbus_rtu_buffer"
-{ S7_Optimized_Access := 'FALSE' }
+{ S7_Optimized_Access := 'TRUE' }
 VERSION : 0.1
 NON_RETAIN
-   STRUCT 
+   VAR 
       buffer : Array[0..125] of Word;
-   END_STRUCT;
+   END_VAR
 
 
 BEGIN
@@ -73,12 +73,12 @@ BEGIN
 END_DATA_BLOCK
 
 DATA_BLOCK "modbus_tcp_buffer"
-{ S7_Optimized_Access := 'FALSE' }
+{ S7_Optimized_Access := 'TRUE' }
 VERSION : 0.1
 NON_RETAIN
-   STRUCT 
+   VAR 
       buffer : Array[0..125] of Word;
-   END_STRUCT;
+   END_VAR
 
 
 BEGIN
@@ -119,14 +119,14 @@ BEGIN
 	"mb_device_header"(device := #device_udt, mb := #mb);
 	
 	"mb_query"(unit := #unit,
-	           fc := #mb.fc.read_holding_reg,
+	           fc := #mb.c."fc".read.holding_reg,
 	           d_addr := 7,
 	           d_len := #mb.c.auto_len,
 	           data := #raw_values,
 	           mb := #mb);
 	
 	"mb_query"(unit := #unit,
-	           fc := #mb.fc.read_holding_reg,
+	           fc := #mb.c."fc".read.holding_reg,
 	           d_addr := 0,
 	           d_len := #mb.c.auto_len,
 	           data := #serial_number,
@@ -215,7 +215,7 @@ BEGIN
 	// JBUS addressing.
 	// ----------------------
 	"mb_query"(unit := #unit,
-	           fc := #mb.fc.read_holding_reg,
+	           fc := #mb.c."fc".read.holding_reg,
 	           d_addr := 123,
 	           d_len := #mb.c.auto_len,
 	           data := #resault_data_query_1,
@@ -231,13 +231,13 @@ BEGIN
 	//
 	// --- fc:
 	// Modbus function code, supported codes: 1, 2, 3, 4, 5, 6, 15 and 16. Start
-	// typing "#mb.fc." and the auto complete list will show all available function
+	// typing "#mb.c.f." and the auto complete list will show all available function
 	// codes. 
 	//
 	// --- d_addr:
 	// Data addr, the actual value that will be sent in the modbus telegram.
 	// Eg. to read holding address 123, you simply pass 123 to d_addr and 
-	// "#mb.fc.read_holding_reg" (3) to fc. 40001 should NOT be added to 123.
+	// "#mb.c.f.read.holding_reg" (3) to fc. 40001 should NOT be added to 123.
 	//
 	// --- d_len:
 	// Data length. By passing zero (#mb.c.auto_len) to the parameter the
@@ -266,7 +266,7 @@ BEGIN
 	// The Modicon convention addressing:
 	// -------------------------------------
 	"mb_query"(unit := #unit,
-	           fc := #mb.fc.modicon_read,
+	           fc := #mb.c."fc".modicon.read,
 	           d_addr := 40005,
 	           d_len := #mb.c.auto_len,
 	           data := #data_query_4,
@@ -274,9 +274,9 @@ BEGIN
 	// The parameters: unit, d_len, data and mb, work the same way as in the
 	// previous example. To use the Modicon convention one of the fc-constants
 	// bellow should be used:
-	//   - #mb.fc.modicon_read           -> mb function code: 1, 2, 3 and 4  
-	//   - #mb.fc.modicon_write          -> mb function code: 15 and 16      
-	//   - #mb.fc.modicon_write_single   -> mb function code: 5 and 6        
+	//   - #mb.c.f.modicon_read           -> mb function code: 1, 2, 3 and 4  
+	//   - #mb.c.f.modicon_write          -> mb function code: 15 and 16      
+	//   - #mb.c.f.modicon_write.single   -> mb function code: 5 and 6        
 	// 
 	// When the modicon convention is used, the function code is "embedded" in
 	// to d_addr. Eg. query 40005 will actually query holding register with
@@ -290,30 +290,30 @@ BEGIN
 	// of queries can be added, the library will take care of executing them,
 	// one by one.
 	"mb_query"(unit := #unit,
-	           fc := #mb.fc.read_input_reg,
+	           fc := #mb.c."fc".read.input_reg,
 	           d_addr := 1234,
 	           d_len := #mb.c.auto_len,
 	           data := #data_query_3,
 	           mb := #mb);
 	
 	
-	// A write query executed with function code "6" (write_single_holding_reg)
+	// A write query executed with function code "6" (write.single_holding_reg)
 	"mb_query"(unit := #unit,
-	           fc := #mb.fc.write_single_holding_reg,
+	           fc := #mb.c."fc".write.single_holding_reg,
 	           d_addr := 42,
 	           d_len := 1,
 	           data := #data_query_5,
 	           mb := #mb);
 	// Some (old) modbus devices doesn't support modbus function code "16"
-	// "write_holding_reg". In that case function code number "6" need to
-	// be used ("write_single_holding_reg"). Look up supported function
+	// "write.holding_reg". In that case function code number "6" need to
+	// be used ("write.single_holding_reg"). Look up supported function
 	// codes in the manual for the modbus device.
 	
 	
 	// A query that has a condition for execution.
 	IF #conditon_of_exec_query_4 THEN
 	    "mb_query"(unit := #unit,
-	               fc := #mb.fc.write_holding_reg,
+	               fc := #mb.c."fc".write.holding_reg,
 	               d_addr := 12345,
 	               d_len := #mb.c.auto_len,
 	               data := #data_query_4,
@@ -375,7 +375,7 @@ FUNCTION_BLOCK "start_example_mb_tcp"
 VERSION : 0.1
    VAR 
       mb : "udt_mb";
-      mb_client_controller : "mb_client_controller";
+      mb_client_ctrl : "mb_client_ctrl";
       device_start_example : "start_example_device_block";
       resault_data_1 : Word;
       log : Array[1..20] of Word;
@@ -390,21 +390,20 @@ BEGIN
 	//                  with.
 	// port_number:     TCP-port, 502 is the default port. UDP isn't available.
 	// timeout:         Timeout.
-	// buffer_db_any:   A db with standard access consisting a array of 125 words.
-	// buffer_variant:  Input the same variable as to "buffer_db_any".
-	// mb:              A udt that is the link between the controller and it's
-	//                  belonging queries inside the device block bellow.
-	#mb_client_controller.remote_ip[1] := 192;
-	#mb_client_controller.remote_ip[2] := 168;
-	#mb_client_controller.remote_ip[3] := 1;
-	#mb_client_controller.remote_ip[4] := 2;
-	#mb_client_controller(
+	// buffer_db_any:   A db with standard access, contain a array of 125 words.
+	// buffer_variant:  Input the same db as to "buffer_db_any".
+	// mb:              A udt that link the queries to there belonging controller.
+	#mb_client_ctrl.remote_ip[1] := 192;
+	#mb_client_ctrl.remote_ip[2] := 168;
+	#mb_client_ctrl.remote_ip[3] := 1;
+	#mb_client_ctrl.remote_ip[4] := 2;
+	#mb_client_ctrl(
 	    interface := "Local~PROFINET_interface_1",
 	    conn_id := 123, 
 	    remote_port := 502,
 	    timeout := T#2s,
-	    buffer_db_any := "modbus_tcp_buffer",  
-	    buffer_variant := "modbus_tcp_buffer", 
+	    buffer_db := "modbus_tcp_buffer",
+	    buffer := "modbus_tcp_buffer".buffer,
 	    mb := #mb);
 	
 	#device_start_example(unit := 1,   // Device address. For tcp devices
@@ -420,7 +419,7 @@ BEGIN
 	// practice. Also the logging capacities and timeout handeling will not be
 	// utilized when done as bellow.
 	"mb_query"(unit := 123,
-	           fc := #mb.fc.read_holding_reg,
+	           fc := #mb.c."fc".read.holding_reg,
 	           d_addr := 1234,
 	           d_len := #mb.c.auto_len,
 	           data := #resault_data_1,
@@ -438,7 +437,7 @@ FUNCTION_BLOCK "start_example_mb_rtu"
 VERSION : 0.1
    VAR 
       mb : "udt_mb";
-      mb_master_controller : "mb_master_controller";
+      mb_master_ctrl : "mb_master_ctrl";
       device_start_example_device1 : "start_example_device_block";
       device_start_example_device2 : "start_example_device_block";
       device_start_example_device3 : "start_example_device_block";
@@ -459,13 +458,13 @@ BEGIN
 	// buffer_variant:  Input the same variable as to "buffer_db_any".
 	// mb:              A udt that is the link between the controller and it's
 	//                  belonging queries inside the device block bellow.                 
-	#mb_master_controller(
+	#mb_master_ctrl(
 	    hardware_id := "Local~CB_1241_(RS485)", 
 	    baud := 9600, 
 	    parity := true, 
 	    timeout := T#500ms,   
-	    buffer_db_any := "modbus_rtu_buffer", 
-	    buffer_variant := "modbus_rtu_buffer", 
+	    buffer_db := "modbus_rtu_buffer", 
+	    buffer := "modbus_rtu_buffer".buffer,
 	    mb := #mb );
 	
 	                 
@@ -503,7 +502,7 @@ BEGIN
 	// inside a device block as obove, however making reusable device
 	// blocks is good practice.
 	"mb_query"(unit := 123,
-	           fc := #mb.fc.read_holding_reg,
+	           fc := #mb.c."fc".read.holding_reg,
 	           d_addr := 456,
 	           d_len := #mb.c.auto_len,
 	           data := #resault_data_1,
@@ -633,11 +632,7 @@ VERSION : 0.1
 
    VAR 
       device_udt : "udt_mb_device";
-      current : Struct
-         a : Real;   // unit: A
-         b : Real;   // unit: A
-         c : Real;   // unit: A
-      END_STRUCT;
+      current : Array[1..3] of Real;
       common : Struct
          frequency : Real;   // unit: hz
          avg_voltage_Vph_n : Real;   // unit: V
@@ -658,14 +653,14 @@ BEGIN
 	"mb_device_header"(device := #device_udt, mb := #mb);
 	
 	"mb_query"(unit := #unit,
-	           fc := #mb.fc.read_holding_reg,
+	           fc := #mb.c."fc".read.holding_reg,
 	           d_addr := 13,
 	           d_len := #mb.c.auto_len,
 	           data := #current,
 	           mb := #mb);
 	
 	"mb_query"(unit := #unit,
-	           fc := #mb.fc.read_holding_reg,
+	           fc := #mb.c."fc".read.holding_reg,
 	           d_addr := 55,
 	           d_len := #mb.c.auto_len,
 	           data := #common,
@@ -700,14 +695,14 @@ BEGIN
 	
 	"mb_query"(unit := 123,
 	           fc := SEL(G := #condition_for_exec_query_1,
-	                     IN0 := #mb.fc.skip_query,
-	                     IN1 := #mb.fc.write_holding_reg),
+	                     IN0 := #mb.c."fc".skip_query,
+	                     IN1 := #mb.c."fc".write.holding_reg),
 	           d_addr := 12345,
 	           d_len := #mb.c.auto_len,
 	           data := #resault_data_query_1,
 	           mb := #mb);
 	
-	
+	// -------------------------------------------------------------
 	
 	// To make sure that a query is executed only once the exmple 
 	// bellow can be used.
@@ -718,14 +713,14 @@ BEGIN
 	
 	"mb_query"(unit := 123,
 	           fc := SEL(G := #start,
-	                     IN0 := #mb.fc.skip_query,
-	                     IN1 := #mb.fc.write_holding_reg),
+	                     IN0 := #mb.c."fc".skip_query,
+	                     IN1 := #mb.c."fc".write.holding_reg),
 	           d_addr := 12345,
 	           d_len := 1,
 	           data := #resault_data_query_2,
 	           mb := #mb);
 	
-	IF #mb.stat.query_above THEN
+	IF #mb.stat.query_above AND #mb.stat.done THEN
 	    #start := false;
 	END_IF;
 	
@@ -762,7 +757,7 @@ BEGIN
 	CASE #state OF
 	    0:
 	        "mb_query"(unit := #unit,
-	                   fc := #mb.fc.write_holding_reg,
+	                   fc := #mb.c."fc".write.holding_reg,
 	                   d_addr := 123,
 	                   d_len := #mb.c.auto_len,
 	                   data := #query_1,
@@ -772,7 +767,7 @@ BEGIN
 	        // in the code just finnished a query. (with or without error)        
 	    1:
 	        "mb_query"(unit := #unit,
-	                   fc := #mb.fc.write_holding_reg,
+	                   fc := #mb.c."fc".write.holding_reg,
 	                   d_addr := 456,
 	                   d_len := #mb.c.auto_len,
 	                   data := #query_2,
@@ -780,7 +775,7 @@ BEGIN
 	        #state := #state + BOOL_TO_SINT(#mb.stat.query_above AND #mb.stat.done);
 	    2:
 	        "mb_query"(unit := #unit,
-	                   fc := #mb.fc.read_holding_reg,
+	                   fc := #mb.c."fc".read.holding_reg,
 	                   d_addr := 789,
 	                   d_len := #mb.c.auto_len,
 	                   data := #query_3,

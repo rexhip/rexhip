@@ -35,6 +35,7 @@ END_TYPE
 TYPE "udt_mb"
 VERSION : 0.1
    STRUCT
+      buffer : Array[0..300] of Byte;
       q : Struct   // Query
          qid : UInt := 1;   // query id
          unit : UInt := 1;   // Station address
@@ -48,9 +49,6 @@ VERSION : 0.1
          data_addr : UDInt;   // from d_addr
          inc : Bool;   // inc. qid if a unsync resualt
          insert : Bool := true;   // insert query param
-      END_STRUCT;
-      fix : Struct   // Static varables.
-         buffer_db : DB_ANY;
       END_STRUCT;
       device : Struct   // Advanced timeout handler
          did_cnt : UInt;   // Device id cnt

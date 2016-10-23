@@ -3,60 +3,41 @@
 VERSION : 1.0
    VAR_INPUT 
       action : SInt;
-      buffer_db : DB_ANY;
    END_VAR
 
    VAR_IN_OUT 
       data : Variant;
       bytes : DInt;
+      buffer : Array[0..300] of Byte;
    END_VAR
 
    VAR_TEMP 
-      buffer2 : Array[0..300] of Byte;
+      tmp_buffer : Array[0..300] of Byte;
       e : Int;
-      c : Int;
    END_VAR
 
 
 BEGIN
 	// This FC do 3 diffrent actions.
 	CASE #action OF
-	    1:  // Count bytes             
+	    1:  // Count bytes.
 	        #bytes := 0;
+	        #tmp_buffer := #buffer;
 	        #e := Serialize(SRC_VARIABLE := #data,
-	                        DEST_ARRAY => #buffer2,
+	                        DEST_ARRAY => #tmp_buffer,
 	                        POS := #bytes);
 	        
-	    2:  // Write to buffer    
+	    2:  // Write to buffer.
 	        #bytes := 0;
 	        #e := Serialize(SRC_VARIABLE := #data,
-	                        DEST_ARRAY => #buffer2,
+	                        DEST_ARRAY => #tmp_buffer,
 	                        POS := #bytes);
-	        FOR #c := 0 TO #bytes - 1 DO
-	            // Copy the content of the buffer inside this FC to the buffer db.
-	            POKE(area := 16#84,
-	                 dbNumber := #buffer_db,
-	                 byteOffset := #c,
-	                 value := #buffer2[#c]);
-	        END_FOR;
+	        #buffer := #tmp_buffer;
 	        
-	    3:  // Read from buffer        
-	        IF #bytes = 0 THEN
-	            // 0 => auto. Calculate have many bytes #data consist of.
-	            #e := Serialize(SRC_VARIABLE := #data,
-	                            DEST_ARRAY => #buffer2,
-	                            POS := #bytes);
-	        END_IF;
-	        
-	        // Copy the content from the buffer db in to the buffer inside
-	        // this FC.
-	        FOR #c := 0 TO #bytes - 1 DO
-	            #buffer2[#c] := PEEK(area := 16#84,
-	                                 dbNumber := #buffer_db,
-	                                 byteOffset := #c);
-	        END_FOR;
+	    3:  // Read from buffer.
 	        #bytes := 0;
-	        #e := Deserialize(SRC_ARRAY := #buffer2,
+	        #tmp_buffer := #buffer;
+	        #e := Deserialize(SRC_ARRAY := #tmp_buffer,
 	                          DEST_VARIABLE => #data,
 	                          POS := #bytes);
 	END_CASE;
@@ -151,7 +132,7 @@ BEGIN
 	// HippoTrex - Modbus API Siemens PLC's. 
 	// -----------------------------------------
 	// Author:   Ola Bjørnli
-	// Version:  0.4_beta39
+	// Version:  0.4_beta50
 	// License:  MIT-license
 	// Web:      http://github.com/olab84/sn7mb
 	
@@ -178,10 +159,10 @@ BEGIN
 	IF #d_len = 0 AND #mb.conf.buffer_handler AND 
 	    (#mb.run.insert OR #mb.stat.done_or_error)
 	THEN
-	    "mb_buffer_handler"(action := 1, // Count bytes.
-	                        buffer_db := 0,
+	    "mb_buffer_handler"(action := 1, // Count bytes.                        
 	                        data := #data,
-	                        bytes := #tBytes);
+	                        bytes := #tBytes,
+	                        buffer := #mb.buffer);
 	    CASE #fc OF
 	        1, 2, 5, 15: #tLen := DINT_TO_UINT( #tBytes * 8 ); // Bits
 	        3, 4, 6, 16: #tLen := DINT_TO_UINT( #tBytes / 2 ); // Words
@@ -241,11 +222,10 @@ BEGIN
 	    IF (#mb.run.mode = 1 OR #mb.run.mode = 2) // If it's a write query
 	        AND #mb.conf.buffer_handler
 	    THEN // Copy the content from "#data" to the buffer db.
-	        "mb_buffer_handler"(
-	            action := 2, // write
-	            buffer_db := #mb.fix.buffer_db,
-	            data := #data,
-	            bytes := #tBytes);
+	        "mb_buffer_handler"(action := 2, // write            
+	                            data := #data,
+	                            bytes := #tBytes,
+	                            buffer := #mb.buffer);
 	    END_IF;
 	    #mb.run.insert := false; // false while waiting for the resualt.
 	    #mb.device.insert_id := #mb.device.insert_id + 1; 
@@ -264,11 +244,10 @@ BEGIN
 	            AND #mb.conf.buffer_handler
 	        THEN
 	            // Copy the content from the buffer to "#data"
-	            "mb_buffer_handler"(
-	                action := 3, // Read
-	                buffer_db := #mb.fix.buffer_db,
-	                data := #data,
-	                bytes := #tBytes );
+	            "mb_buffer_handler"(action := 3, // Read                
+	                                data := #data,
+	                                bytes := #tBytes,
+	                                buffer := #mb.buffer);
 	        END_IF;
 	        #mb.stat.query_above := true;
 	        
@@ -476,88 +455,15 @@ BEGIN
 	#device.qFinnish := #tFinnish OR #mb.stat.query_above;
 END_FUNCTION
 
-FUNCTION_BLOCK "mb_master_ctrl"
-{ S7_Optimized_Access := 'TRUE' }
-VERSION : 1.0
-   VAR_INPUT 
-      hardware_id : PORT;   // hardware id
-      baud : UDInt := 9600;
-      parity : Bool := true;   // enable even parity. false=no parity.
-      timeout : Time := T#500ms;
-      buffer_db : DB_ANY;   // db_any
-   END_VAR
-
-   VAR_OUTPUT 
-      qError : Bool;
-   END_VAR
-
-   VAR_IN_OUT 
-      buffer : Variant;   // A array of words inside a global db.
-      mb : "udt_mb";
-   END_VAR
-
-   VAR 
-      conf : Struct
-         parity : Bool := true;
-         mb_comm_load_req : Bool;
-      END_STRUCT;
-      mb_comm_load {OriginalPartName := 'MB_COMM_LOAD'; LibVersion := '2.1'} : MB_COMM_LOAD;
-      mb_master {OriginalPartName := 'MB_MASTER'; LibVersion := '2.2'} : MB_MASTER;
-      tof_error {OriginalPartName := 'IEC_TIMER'; LibVersion := '1.0'} : TOF_TIME;
-   END_VAR
-
-
-BEGIN
-	// If for some special reason the application need odd parity,
-	// then "set_parity" can be set false, and odd parity can be 
-	// given set directly at mb_comm_load. In general the library want
-	// to discourage using odd parity. 0=none, 1=odd, 2=even.
-	IF #conf.parity THEN
-	    #mb_comm_load.PARITY := SEL(G := #parity, IN0 := 0, IN1 := 2);
-	END_IF;
-	
-	// Initiate the hardware.
-	#mb_comm_load(REQ := NOT #mb_comm_load.DONE AND NOT #mb_master.BUSY
-	              XOR #conf.mb_comm_load_req,
-	              "PORT" := #hardware_id,
-	              BAUD := #baud,
-	              RESP_TO := TIME_TO_UINT(#timeout),
-	              MB_DB := #mb_master);
-	
-	// The core master block.
-	#mb_master(REQ := #mb_comm_load.DONE AND NOT #mb_master.BUSY
-	           AND NOT #mb.run.insert,
-	           MB_ADDR := #mb.q.unit,
-	           MODE := #mb.run.mode,
-	           DATA_ADDR := #mb.run.data_addr,
-	           DATA_LEN := #mb.q.d_len,
-	           DONE => #mb.stat.done,
-	           ERROR => #mb.stat.error,
-	           STATUS => #mb.stat.status,
-	           DATA_PTR := #buffer);
-	
-	// Timeout errors are handled different from other errors.
-	#mb.stat.timeout := #mb_master.ERROR
-	AND #mb_master.STATUS = 16#80C8;
-	
-	// --------------------------------------------------
-	#mb.fix.buffer_db := #buffer_db;
-	"mb_common"(#mb);
-	#tof_error(IN := #mb.stat.error,
-	           PT := #tof_error.PT, Q => #qError);
-	
-END_FUNCTION_BLOCK
-
 FUNCTION_BLOCK "mb_client_ctrl"
 { S7_Optimized_Access := 'TRUE' }
 VERSION : 1.0
    VAR_INPUT 
       interface : HW_ANY := 64;   // Profinet interface id
       conn_id : CONN_OUC := 123;   // Connection id
-      remote_ip : Array[1..4] of Byte;   // IPv4
-      remote_port : UInt := 502;   // TCP port
+      ip_addr : Array[1..4] of Byte;   // IPv4
+      tcp_port : UInt := 502;   // TCP port
       timeout : Time := T#1s;
-      buffer_db : DB_ANY;   // db_any
    END_VAR
 
    VAR_OUTPUT 
@@ -565,7 +471,6 @@ VERSION : 1.0
    END_VAR
 
    VAR_IN_OUT 
-      buffer : Variant;   // A array of words inside a global db.
       mb : "udt_mb";
    END_VAR
 
@@ -593,8 +498,8 @@ BEGIN
 	
 	#tcon_ip_v4.InterfaceId := #interface;
 	#tcon_ip_v4.ID := #conn_id; 
-	#tcon_ip_v4.RemoteAddress.ADDR := #remote_ip;
-	#tcon_ip_v4.RemotePort := #remote_port;
+	#tcon_ip_v4.RemoteAddress.ADDR := #ip_addr;
+	#tcon_ip_v4.RemotePort := #tcp_port;
 	#mb_client.MB_Unit_ID := UINT_TO_BYTE(#mb.q.unit);
 	#mb_client.Rcv_Timeout := UINT_TO_REAL(
 	TIME_TO_UINT(#timeout)) * 0.001;
@@ -608,7 +513,7 @@ BEGIN
 	           DONE => #mb.stat.done,
 	           ERROR => #mb.stat.error,
 	           STATUS => #mb.stat.status,
-	           MB_DATA_PTR := #buffer,
+	           MB_DATA_PTR := #mb.buffer,
 	           CONNECT := #tcon_ip_v4);
 	
 	// Timeout handeling.
@@ -635,11 +540,8 @@ BEGIN
 	#tdiscon(REQ := #mb_client.STATUS = 16#80A3, ID := #conn_id);
 	
 	// --------------------------------------------------
-	#mb.fix.buffer_db := #buffer_db;
 	"mb_common"(#mb);
-	#tof_error(IN := #mb.stat.error,
-	           PT := #tof_error.PT,
-	           Q => #qError);
+	#tof_error(IN := #mb.stat.error, PT := #tof_error.PT, Q => #qError);
 	
 END_FUNCTION_BLOCK
 
@@ -678,4 +580,71 @@ BEGIN
 	END_FOR;
 	
 END_FUNCTION
+
+FUNCTION_BLOCK "mb_master_ctrl"
+{ S7_Optimized_Access := 'TRUE' }
+VERSION : 1.0
+   VAR_INPUT 
+      hardware_id : PORT;   // hardware id
+      baud : UDInt := 9600;
+      parity : Bool := true;   // enable even parity. false=no parity.
+      timeout : Time := T#500ms;
+   END_VAR
+
+   VAR_OUTPUT 
+      qError : Bool;
+   END_VAR
+
+   VAR_IN_OUT 
+      mb : "udt_mb";
+   END_VAR
+
+   VAR 
+      conf : Struct
+         parity : Bool := true;
+         mb_comm_load_req : Bool;
+      END_STRUCT;
+      mb_comm_load {OriginalPartName := 'MB_COMM_LOAD'; LibVersion := '2.1'} : MB_COMM_LOAD;
+      mb_master {OriginalPartName := 'MB_MASTER'; LibVersion := '2.2'} : MB_MASTER;
+      tof_error {OriginalPartName := 'IEC_TIMER'; LibVersion := '1.0'} : TOF_TIME;
+   END_VAR
+
+
+BEGIN
+	// If for some reason odd parity need to be used then conf.parity can
+	// be set false, and set directly at mb_comm_load. 0=none, 1=odd, 2=even.
+	IF #conf.parity THEN
+	    #mb_comm_load.PARITY := SEL(G := #parity, IN0 := 0, IN1 := 2);
+	END_IF;
+	
+	// Initiate the hardware.
+	#mb_comm_load(REQ := NOT #mb_comm_load.DONE AND NOT #mb_master.BUSY
+	              XOR #conf.mb_comm_load_req,
+	              "PORT" := #hardware_id,
+	              BAUD := #baud,
+	              RESP_TO := TIME_TO_UINT(#timeout),
+	              MB_DB := #mb_master);
+	
+	// The core master block.
+	#mb_master(REQ := #mb_comm_load.DONE AND NOT #mb_master.BUSY
+	           AND NOT #mb.run.insert,
+	           MB_ADDR := #mb.q.unit,
+	           MODE := #mb.run.mode,
+	           DATA_ADDR := #mb.run.data_addr,
+	           DATA_LEN := #mb.q.d_len,
+	           DONE => #mb.stat.done,
+	           ERROR => #mb.stat.error,
+	           STATUS => #mb.stat.status,
+	           DATA_PTR := #mb.buffer);
+	
+	// Timeout error (Handled different from other errors)
+	#mb.stat.timeout := #mb_master.ERROR
+	AND #mb_master.STATUS = 16#80C8;
+	
+	// --------------------------------------------------
+	"mb_common"(#mb);
+	#tof_error(IN := #mb.stat.error,
+	           PT := #tof_error.PT, Q => #qError);
+	
+END_FUNCTION_BLOCK
 

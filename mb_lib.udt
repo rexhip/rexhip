@@ -9,7 +9,7 @@ VERSION : 0.1
       conf : Struct   // Configuration
          max_qComError { S7_SetPoint := 'True'} : USInt := 2;   // Max repeating timeout errors before qComError is set
          tof_qErrror { S7_SetPoint := 'True'} : Time := T#2s;   // Length of the qError puls
-         exec_all_quries : Bool;
+         exec_all_quries : Bool;   // Exec. all queries in the device block for each loop.
       END_STRUCT;
       log : Struct   // Logging
          done_cnt : UDInt;   // Successfully queries counter for this device
@@ -35,7 +35,7 @@ END_TYPE
 TYPE "udt_mb"
 VERSION : 0.1
    STRUCT
-      buffer : Array[0..300] of Byte;
+      buffer : Array[0..250] of Byte;
       q : Struct   // Query
          qid : UInt := 1;   // query id
          unit : UInt := 1;   // Station address

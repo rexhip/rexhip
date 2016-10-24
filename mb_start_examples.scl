@@ -732,14 +732,14 @@ BEGIN
 	"mb_device_header"(device := #device_udt, mb := #mb);
 	
 	"mb_query"(unit := #unit,
-	           fc := #mb.c."fc".read.holding_reg,
+	           fc := #mb.c.fc.read.holding_reg,
 	           d_addr := 13,
 	           d_len := #mb.c.auto_len,
 	           data := #current,
 	           mb := #mb);
 	
 	"mb_query"(unit := #unit,
-	           fc := #mb.c."fc".read.holding_reg,
+	           fc := #mb.c.fc.read.holding_reg,
 	           d_addr := 55,
 	           d_len := #mb.c.auto_len,
 	           data := #common,

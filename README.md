@@ -11,7 +11,7 @@ The library extend on MB_MASTER and MB_CLIENT, the modbus blocks that comes alon
 
 Key features:
  - Clean and readable API, with no global states. This makes it possible to create reusable device blocks, which in turn helps to cut engineering time.
- - Reduce idle time, by skipping queries that has led to recurring timeouts before. Ocatonally a retry will be done.
+ - Reduce idle time, by skipping queries that has led to recurring timeouts before. Ocatonally retries will be done.
  - Bus sharing, the library select one query from each device for every loop. If desired, this feature can be disabled.
  - Logging features for development and debugging.
  
@@ -107,5 +107,5 @@ Requirements:
  - S7-1200 or S7-1500. (S7-1200 firmware version >= 4.1.3)
 
 ```
-The software is not affiliated with Siemens AG
+The software is not affiliated with Siemens AG.
 ```  

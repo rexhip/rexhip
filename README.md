@@ -20,7 +20,7 @@ Key features:
 // A modbus RTU example that illustrate the library. 
 // Support for modbus tcp is also included.
 
-#mb_master_crl(
+#mb_master_ctrl(
     hardware_id := "Local~CB_1241_(RS485)", 
     baud := 9600, // bps
     parity := true, // Enable even parity.

@@ -58,14 +58,7 @@ Key features:
            mb := #mb);                   // Same udt as on the controller.
 
 // The result will be stored in the connected variable of data. The variable can 
-// be any datatypes, including arrays and udt's. 
-
-"mb_query"(unit := #unit,
-           fc := #mb.c.fc.read.input_reg,  
-           d_addr := 5025,
-           d_len := 2,
-           data := #pressure,       	   		   
-           mb := #mb);              
+// be any datatypes, including arrays and udt's.         
 
 // Any number of queries can be added. The libary will take care of 
 // executing them, one by one.

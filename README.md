@@ -35,9 +35,10 @@ Key features:
 #siemens_PAC3200_instance_1(unit := 3, mb := #mb);
 #siemens_PAC3200_instance_2(unit := 4, mb := #mb);
 #siemens_PAC3200_instance_3(unit := 5, mb := #mb);
+```
 
 
-
+```pascal
 // ====================================================================================
 // Device block for: ABB - AquaMaster 3 - Electromagnetic flow meter
 
@@ -59,9 +60,10 @@ Key features:
 
 "mb_device_footer"(device := #device_udt, mb := #mb);
 // ====================================================================================
+```
 
 
-
+```pascal
 // ====================================================================================
 // Device block for: Siemens - PAC3200
 

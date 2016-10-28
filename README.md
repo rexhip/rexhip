@@ -38,41 +38,31 @@ Key features:
 
 
 
-// -----------------------------------------------------------------------
+// ====================================================================================
 // Device block for: ABB - AquaMaster 3 - Electromagnetic flow meter
-
-// A customized device block need to be created for each specific device, 
-// once it's created it con be placed inside a global library and be reused.
 
 "mb_device_header"(device := #device_udt, mb := #mb);
 
-// If modicon convention addressing is prefered, then use #mb.c.fc.modicon.read for the 
-// fc-parameter. The function code will then be determine by the address range eg. 
-// 40001 corresponds to the first holding register.
+// If modicon convention addressing is prefered, then use #mb.c.fc.modicon.read for 
+// the fc-parameter. The function code will then be determine by the address range 
+// eg. 40001 corresponds to the first holding register.
 
-"mb_query"(unit := #unit,                // Station address.
+"mb_query"(unit := #unit,                  // Station address.
            fc := #mb.c.fc.read.input_reg,  // Function code.
-           d_addr := 5017,               // Data address.
-           d_len := 2,                   // Data length.
+           d_addr := 5017,                 // Data address.
+           d_len := 2,                     // Data length.
            data := #flow,                
-           mb := #mb);                   // Same udt as on the controller.
+           mb := #mb);      // Same udt as on the controller.
 
 // The result will be stored in the connected variable of data. The variable can 
 // be any datatypes, including arrays and udt's.         
 
-// Any number of queries can be added. The libary will take care of 
-// executing them, one by one.
-
 "mb_device_footer"(device := #device_udt, mb := #mb);
-
-// The #device_udt contains a log, flags, configuration and internal states.
-// Implementing the device header and the footer give many benefits, but isn't
-// required.
-// -----------------------------------------------------------------------
+// ====================================================================================
 
 
 
-// -----------------------------------------------------------------------
+// ====================================================================================
 // Device block for: Siemens - PAC3200
 
 "mb_device_header"(device := #device_udt, mb := #mb);
@@ -92,7 +82,10 @@ Key features:
            mb := #mb);
 
 "mb_device_footer"(device := #device_udt, mb := #mb);
-// -----------------------------------------------------------------------
+// The #device_udt contains a log, flags, configuration and internal states.
+// Implementing the device header and the footer give many benefits, but isn't
+// required.
+// ====================================================================================
 ```
    
 Requirements:

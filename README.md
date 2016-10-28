@@ -17,6 +17,7 @@ Key features:
  
 
 ```pascal
+// =========================================================
 // A modbus RTU example that illustrate the library. 
 // Support for modbus tcp is also included.
 
@@ -35,6 +36,7 @@ Key features:
 #siemens_PAC3200_instance_1(unit := 3, mb := #mb);
 #siemens_PAC3200_instance_2(unit := 4, mb := #mb);
 #siemens_PAC3200_instance_3(unit := 5, mb := #mb);
+// =========================================================
 ```
 
 

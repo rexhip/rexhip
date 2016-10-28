@@ -67,18 +67,18 @@ Key features:
 
 "mb_device_header"(device := #device_udt, mb := #mb);
 
-"mb_query"(unit := #unit,                 // #unit is a input variable.
+"mb_query"(unit := #unit,                   // #unit is a input variable.
            fc := #mb.c.fc.read.holding_reg, // Function code 3.
-           d_addr := 13,                  // Start read at address 13.
-           d_len := #mb.c.auto_len,       // Length is calculated based on the size (words) of "data".
-           data := #current,		  // #current is a array of 3 reals. (See data sheet of device)
-           mb := #mb);                    // #mb is a inOut variable.
+           d_addr := 13,                    // Start read at address 13.
+           d_len := #mb.c.auto_len,         // Length is calculated automatically based on the size of "data".
+           data := #current,		              // #current is a array of 3 reals.
+           mb := #mb);                      // #mb is a inOut variable.
                                           
 "mb_query"(unit := #unit,                 
            fc := #mb.c.fc.read.holding_reg, 
            d_addr := 55,                  
            d_len := #mb.c.auto_len,       
-           data := #common,               // A udt with common data. (See data sheet of device)
+           data := #frequency,
            mb := #mb);
 
 "mb_device_footer"(device := #device_udt, mb := #mb);

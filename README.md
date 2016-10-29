@@ -10,11 +10,11 @@ Web:      https://github.com/olab84/TrexHippo
 The library extend on MB_MASTER and MB_CLIENT, the modbus blocks that comes along with TIA-portal. The library is not an attempt to reinvent the wheel, by doing what those blocks already do. Rather it's an attempt to expand the functionality of the existing blocks, and to create a common API for modbus devices.
 
 Key features:
- - Clean and readable API, with no global states. This makes it possible to create reusable device blocks, which in turn helps to cut engineering time.
- - Reduce idle time, by skipping queries that has led to recurring timeouts before. Ocatonally retries will be done.
- - Bus sharing, the library select one query from each device for every loop. If desired, this feature can be disabled.
+ - Makes it easy to modulate a program, witch in turn also makes it easy to reuse code, and to combine modules from diffrent modbus devices.
+ - A clean API, which helps to cut engineering time.
+ - Reduce idle time, by skipping queries that has led to recurring timeouts before. Retries will be done ocatonally.
+ - The library select queries from the modules in turn, this prevent a module from occupying the bus for long periods of time.
  - Logging features for development and debugging.
- 
 
 ```pascal
 // =========================================================

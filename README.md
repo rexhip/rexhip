@@ -77,7 +77,7 @@ Key features:
            fc := #mb.c.fc.read.holding_reg, // Function code 3.
            d_addr := 13,                    // Start read at address 13.
            d_len := #mb.c.auto_len,         // Length is calculated automatically based on the size of "data".
-           data := #current,                // #current is a array of 3 reals.
+           data := #current,                // 
            mb := #mb);                      // #mb is a inOut variable.
                                           
 "mb_query"(unit := #unit,                 

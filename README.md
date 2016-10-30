@@ -29,11 +29,12 @@ Key features:
     timeout := T#500ms,       
     mb := #mb ); // A udt that comes along.
 
-// Instances of device blocks for ABB Aqua master 
-#abb_aquaMaster_3_instance_1(unit := 1, mb := #mb);
+// Instances of device blocks for ABB Aqua master. (interface blocks)
+// (unit = station address)
+#abb_aquaMaster_3_instance_1(unit := 1, mb := #mb); 
 #abb_aquaMaster_3_instance_2(unit := 2, mb := #mb);
 
-// Instances of device blocks for Siemens PAC3200 
+// Instances of device blocks for Siemens PAC3200. 
 #siemens_PAC3200_instance_1(unit := 3, mb := #mb);
 #siemens_PAC3200_instance_2(unit := 4, mb := #mb);
 #siemens_PAC3200_instance_3(unit := 5, mb := #mb);

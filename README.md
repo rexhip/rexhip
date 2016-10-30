@@ -14,7 +14,7 @@ Key features:
  - Interface blocks can easily be reused and combind in new programs.
  - A clean API, which helps to cut engineering time.
  - Reduce idle time, by skipping queries that has led to recurring timeouts before. Retries will be done ocatonally.
- - The library select queries from the interface blocks in turn, this prevent a device from occupying the bus for long periods of time.
+ - The library select queries from the interface blocks in turn, this prevent one interface block from occupying the bus for long periods of time.
  - Logging features for development and debugging.
 
 ```pascal

@@ -101,10 +101,10 @@ Requirements:
 Quick starter quide:
  - Download the latest relase. (https://github.com/olab84/TrexHippo/releases)
  - Start a new prodject in TIA-portal, and then add new PLC.
- - Open "External Source files" in the tree structure, and import the files bellow from the download zip-file: 
+ - Localise "External Source files" in the tree structure. Inside the downloaded zip file, the following files should be imported: 
    mb_lib.scl, mb_lib.udt and mb_start_examples.scl
  - Compile once more to get rid of all the errors.
- - Continue with the "README" FC and study the start example.
+ - Continue read the "README" FC and study the start example.
 
 ```
 The software is not affiliated with Siemens AG.

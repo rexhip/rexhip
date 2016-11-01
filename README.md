@@ -98,6 +98,14 @@ Requirements:
  - TIA-portal: v13, sp1, upd8 (or later)
  - S7-1200 or S7-1500. (S7-1200 firmware version >= 4.1.3)
 
+Quick starter quide:
+ - Download the latest relase. (https://github.com/olab84/TrexHippo/releases)
+ - Start a new prodject in TIA-portal, and insert new PLC.
+ - Goto "External Source files" in the tree structure, and import the following files from the download zip-file: 
+   mb_lib.scl, mb_lib.udt and mb_start_examples.scl
+ - Compile the the once more to get rid of all the errors.
+ - Continue with the "README" FC and study the start example.
+
 ```
 The software is not affiliated with Siemens AG.
 ```  

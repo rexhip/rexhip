@@ -100,10 +100,10 @@ Requirements:
 
 Quick starter quide:
  - Download the latest relase. (https://github.com/olab84/TrexHippo/releases)
- - Start a new prodject in TIA-portal, and insert new PLC.
- - Goto "External Source files" in the tree structure, and import the following files from the download zip-file: 
+ - Start a new prodject in TIA-portal, and then add new PLC.
+ - Open "External Source files" in the tree structure, and import the files bellow from the download zip-file: 
    mb_lib.scl, mb_lib.udt and mb_start_examples.scl
- - Compile the the once more to get rid of all the errors.
+ - Compile once more to get rid of all the errors.
  - Continue with the "README" FC and study the start example.
 
 ```

@@ -98,7 +98,7 @@ Requirements:
  - TIA-portal: v13, sp1, upd8 (or later)
  - S7-1200 or S7-1500. (S7-1200 firmware version >= 4.1.3)
 
-Quick starter quide:
+Quick starter guide:
  - Download the latest relase. (https://github.com/olab84/TrexHippo/releases)
  - Start a new prodject in TIA-portal, and then add new PLC.
  - Localise "External Source files" in the tree structure. Inside the downloaded zip file, the following files should be imported: 

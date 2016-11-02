@@ -105,7 +105,7 @@ Quick starter quide:
    mb_lib.scl, mb_lib.udt and mb_start_examples.scl
  - Select all the imported files, right click them and choose "Generate blocks from source".
  - Compile once more to get rid of all the errors.
- - Continue read the "README" FC and study the start example.
+ - Continue read the generated "README" FC, and study the start examples.
 
 ```
 The software is not affiliated with Siemens AG.

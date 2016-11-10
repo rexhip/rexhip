@@ -31,7 +31,7 @@ Key features:
 
 // Instances of device blocks for ABB Aqua master. (interface blocks)
 // (unit = station address)
-#abb_aquaMaster_3_instance_1(unit := 1, mb := #mb); 
+#abb_aquaMaster_3_instance_1(unit := 1, mb := #mb);
 #abb_aquaMaster_3_instance_2(unit := 2, mb := #mb);
 
 // Instances of device blocks for Siemens PAC3200. 
@@ -53,7 +53,7 @@ Key features:
 // eg. 40001 corresponds to the first holding register.
 
 "mb_query"(unit := #unit,                  // Station address.
-           fc := #mb.c.fc.read.input_reg,  // Function code.
+           fc := #mb.c.read.input_reg,  // Function code.
            d_addr := 5017,                 // Data address.
            d_len := 2,                     // Data length.
            data := #flow,                
@@ -74,14 +74,14 @@ Key features:
 "mb_device_header"(device := #device_udt, mb := #mb);
 
 "mb_query"(unit := #unit,                   // - #unit is a input variable.
-           fc := #mb.c.fc.read.holding_reg, // - Function code 3.
+           fc := #mb.c.read.holding_reg, // - Function code 3.
            d_addr := 13,                    // - Start read at address 13.
            d_len := #mb.c.auto_len,         // - Length is calculated automatically 
            data := #current,                //   based on the size of "data". 
            mb := #mb);                      // - #mb is a inOut variable.
                                           
 "mb_query"(unit := #unit,                 
-           fc := #mb.c.fc.read.holding_reg, 
+           fc := #mb.c.read.holding_reg, 
            d_addr := 55,                  
            d_len := #mb.c.auto_len,       
            data := #frequency,

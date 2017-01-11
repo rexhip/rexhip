@@ -6,6 +6,7 @@ Author:   Ola Bjørnli
 License:  MIT-license
 Web:      https://github.com/olab84/TrexHippo
 ```
+d
 
 The library extend on MB_MASTER and MB_CLIENT, the modbus blocks that comes along with TIA-portal. The library is not an attempt to reinvent the wheel, by doing what those blocks already do. Rather it's an attempt to expand the functionality of the existing blocks, and to create a common API for modbus devices.
 

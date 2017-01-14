@@ -82,8 +82,8 @@ Key features:
            fc := #mb.c.read.holding_reg, 
            d_addr := 55,                  
            d_len := #mb.c.auto_len,       
-           data := #frequency,
-           mb := #mb);
+           data := #frequency,             // - data, can be any datatype, inclding
+           mb := #mb);                     //   arrays and udt's.
 
 "mb_device_footer"(common := #common, mb := #mb);
 

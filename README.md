@@ -86,7 +86,7 @@ Key features:
            mb := #mb);
 
 "mb_device_footer"(common := #common_udt, mb := #mb);
-// The #com_udt contains a log, flags, configuration and internal states.
+// The #common_udt contains a log, flags, configuration and internal states.
 // Implementing the device header and footer isn't required, but give many benefits.
 // ====================================================================================
 ```

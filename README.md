@@ -89,7 +89,7 @@ Key features:
 
 if #common.out.communication_error then
     #current := 0;
-end_if;
+end_if ;
 
 // The #common contains a log, flags, configuration and internal states.
 // Implementing the device header and footer isn't required, but give many benefits.

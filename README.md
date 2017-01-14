@@ -1,21 +1,18 @@
-Modbus API For Siemens S7 PLC's.
+Modbus API For Siemens PLC's.
 ---------------------------------------------
 
-```
-Author:   Ola Bjørnli
-License:  MIT-license
-Web:      https://github.com/olab84/TrexHippo
-```
-d
+- Author:   Ola Bjørnli
+- License:  MIT-license
+- Web:      https://github.com/olab84/rexhip
 
-The library extend on MB_MASTER and MB_CLIENT, the modbus blocks that comes along with TIA-portal. The library is not an attempt to reinvent the wheel, by doing what those blocks already do. Rather it's an attempt to expand the functionality of the existing blocks, and to create a common API for modbus devices.
+The library extend on MB_MASTER and MB_CLIENT, the modbus blocks that comes along with TIA-portal. The library is not an attempt to reinvent the wheel, by doing what those blocks already do. Rather it's an attempt to expand the functionality of those existing blocks, and to create a common API for modbus devices.
 
 Key features:
- - Makes it easy to split the program in to reusable interface blocks. ("Device blocks")
- - Interface blocks can easily be reused and combind in new programs.
+ - Makes it easy to split the program in to reusable «device blocks» (interface blocks).
+ - Device blocks can easily be reused and combined in new programs.
  - A clean API, which helps to cut engineering time.
- - Reduce idle time, by skipping queries that has led to recurring timeouts before. Retries will be done ocatonally.
- - The library select queries from the interface blocks in turn, this prevent one interface block from occupying the bus for long periods of time.
+ - Reduce idle time, by skipping queries that has led to recurring timeout before. Retries will be done occasionally.
+ - The library select queries from the device blocks in turn, this prevent one device block from occupying the bus for long periods of time.
  - Logging features for development and debugging.
 
 ```pascal
@@ -25,13 +22,13 @@ Key features:
 
 #mb_master_ctrl(
     hardware_id := "Local~CB_1241_(RS485)", 
-    baud := 9600, // bps
+    baud := 9600, // bits per seconds 
     parity := true, // Enable even parity.
     timeout := T#500ms,       
     mb := #mb ); // A udt that comes along.
 
 // Instances of device blocks for ABB Aqua master. (interface blocks)
-// (unit = station address)
+// (unit = station address / device address)
 #abb_aquaMaster_3_instance_1(unit := 1, mb := #mb);
 #abb_aquaMaster_3_instance_2(unit := 2, mb := #mb);
 
@@ -47,23 +44,23 @@ Key features:
 // ====================================================================================
 // Device block for: ABB - AquaMaster 3 - Electromagnetic flow meter
 
-"mb_device_header"(device := #device_udt, mb := #mb);
+"mb_device_header"(common := #common_udt, mb := #mb);
 
-// If modicon convention addressing is prefered, then use #mb.c.fc.modicon.read for 
-// the fc-parameter. The function code will then be determine by the address range 
-// eg. 40001 corresponds to the first holding register.
+// If Modicon convention addressing is preferred, then use #mb.c.mode.read for 
+// the fc-parameter. The function code will then be determine by the address range,
+// Eg. 40001 corresponds to the first holding register.
 
 "mb_query"(unit := #unit,                  // Station address.
-           fc := #mb.c.read.input_reg,  // Function code.
+           fc := #mb.c.read.input_reg,     // Function code.
            d_addr := 5017,                 // Data address.
            d_len := 2,                     // Data length.
-           data := #flow,                
+           data := #flow,                  // The data itself (inOut).
            mb := #mb);      // Same udt as on the controller.
 
 // The result will be stored in the connected variable of data. The variable can 
-// be any datatypes, including arrays and udt's.         
+// be any data types, including arrays and udt's.         
 
-"mb_device_footer"(device := #device_udt, mb := #mb);
+"mb_device_footer"(common := #common_udt, mb := #mb);
 // ====================================================================================
 ```
 
@@ -72,13 +69,13 @@ Key features:
 // ====================================================================================
 // Device block for: Siemens - PAC3200
 
-"mb_device_header"(device := #device_udt, mb := #mb);
+"mb_device_header"(common := #common_udt, mb := #mb);
 
 "mb_query"(unit := #unit,                   // - #unit is a input variable.
-           fc := #mb.c.read.holding_reg, // - Function code 3.
+           fc := #mb.c.read.holding_reg,    // - Function code 3.
            d_addr := 13,                    // - Start read at address 13.
            d_len := #mb.c.auto_len,         // - Length is calculated automatically 
-           data := #current,                //   based on the size of "data". 
+           data := #current,                //   based on the size of "data". 		                   
            mb := #mb);                      // - #mb is a inOut variable.
                                           
 "mb_query"(unit := #unit,                 
@@ -88,10 +85,9 @@ Key features:
            data := #frequency,
            mb := #mb);
 
-"mb_device_footer"(device := #device_udt, mb := #mb);
-// The #device_udt contains a log, flags, configuration and internal states.
-// Implementing the device header and the footer give many benefits, but isn't
-// required.
+"mb_device_footer"(common := #common_udt, mb := #mb);
+// The #com_udt contains a log, flags, configuration and internal states.
+// Implementing the device header and footer isn't required, but give many benefits.
 // ====================================================================================
 ```
    
@@ -100,8 +96,8 @@ Requirements:
  - S7-1200 or S7-1500. (S7-1200 firmware version >= 4.1.3)
 
 Quick starter guide:
- - Download the latest relase. (https://github.com/olab84/TrexHippo/releases)
- - Start a new prodject in TIA-portal, and then add new PLC.
+ - Download the latest release. (https://github.com/olab84/rexhip/releases)
+ - Start a new project in TIA-portal, and then add new PLC.
  - Localise "External Source files" in the tree structure. Inside the downloaded zip file, the following files should be imported: 
    mb_lib.scl, mb_lib.udt and mb_start_examples.scl
  - Select all the imported files, right click them and choose "Generate blocks from source".

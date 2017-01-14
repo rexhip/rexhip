@@ -10,7 +10,7 @@ VERSION : 0.1
    END_VAR
 
    VAR 
-      device_udt : "udt_mb_device";
+      common : "udt_mb_common";
       resault_data_query_1 : Struct
          word_1 : Word;
          word_2 : Word;
@@ -33,8 +33,7 @@ BEGIN
 	// bellow. Just ignore it for now, since it isn't a hundred percent
 	// necessary to make the library work, though it give many advantages.
 	// The benefit of the header is described at the bottom of this block.
-	"mb_device_header"(device := #device_udt,
-	                   mb := #mb);
+	"mb_device_header"(common := #common, mb := #mb);
 	
 	
 	// Modbus documentation addressing:
@@ -65,8 +64,8 @@ BEGIN
 	// Other way of addressing has to be calculated manually.
 	
 	
-	// JBUS addressing.
-	// ----------------------
+	// JBUS addressing (direct addressing).
+	// ------------------------------------------
 	"mb_query"(unit := #unit,
 	           fc := #mb.c.read.holding_reg,
 	           d_addr := 123,
@@ -84,13 +83,14 @@ BEGIN
 	//
 	// --- fc:
 	// Modbus function code, supported codes: 1, 2, 3, 4, 5, 6, 15 and 16. Start
-	// typing "#mb.c.f." and the auto complete list will show all available function
+	// typing "#mb.c." and the auto complete list will show all available function
 	// codes. 
 	//
 	// --- d_addr:
 	// Data addr, the actual value that will be sent in the modbus telegram.
-	// Eg. to read holding address 123, you simply pass 123 to d_addr and 
-	// "#mb.c.f.read.holding_reg" (3) to  40001 should NOT be added to 123.
+	// Eg. to read holding address 123, you simply pass 123 to d_addr and
+	// "#mb.c.read.holding_reg" (3) to the fc-parameter. 40001 should NOT be
+	// added to 123.
 	//
 	// --- d_len:
 	// Data length. By passing zero (#mb.c.auto_len) to the parameter the
@@ -104,7 +104,7 @@ BEGIN
 	// will be written in to "data". Equally the content of "data" will be sent
 	// to a modbus device in the case of a write query. The parameter is not
 	// limited to words, but can contain any complex data structure with all
-	// kind of data types. Likes real, bool, bytes, arrays, etc.
+	// kind of data types. Eg. real, bool, bytes, arrays, etc.
 	// Though, Three criterion most to be followed:
 	// 1. The datatype should match the datatype of the registers in the device.
 	//    For some devices the received data needs a "swap" or a "swap_word" after.    
@@ -125,11 +125,11 @@ BEGIN
 	           data := #data_query_4,
 	           mb := #mb);
 	// The parameters: unit, d_len, data and mb, work the same way as in the
-	// previous example. To use the Modicon convention one of the fc-constants
+	// previous example. To use the Modicon convention, one of the fc-constants
 	// bellow should be used:
-	//   - #mb.c.f.modicon_read           -> mb function code: 1, 2, 3 and 4  
-	//   - #mb.c.f.modicon_write          -> mb function code: 15 and 16      
-	//   - #mb.c.f.modicon_write.single   -> mb function code: 5 and 6        
+	//   - #mb.c.mode.read           -> mb function code: 1, 2, 3 and 4  
+	//   - #mb.c.mode.write          -> mb function code: 15 and 16      
+	//   - #mb.c.mode.write_single   -> mb function code: 5 and 6        
 	// 
 	// When the modicon convention is used, the function code is "embedded" in
 	// to d_addr. Eg. query 40005 will actually query holding register with
@@ -159,7 +159,7 @@ BEGIN
 	           mb := #mb);
 	// Some (old) modbus devices doesn't support modbus function code "16"
 	// "write.holding_reg". In that case function code number "6" need to
-	// be used ("write.single_holding_reg"). Look up supported function
+	// be used ("mb.c.write.single_holding_reg"). Look up supported function
 	// codes in the manual for the modbus device.
 	
 	
@@ -183,26 +183,25 @@ BEGIN
 	// Header and footer
 	// -----------------------------------
 	// As mention at the top the mb_device_header is not a hundred percent
-	// necessary, so isn't the mb_device_footer. However if the
-	// "footer" is implemented then the "header" has to be implement. Else
+	// necessary, so isn't the mb_device_footer. However if the "footer"
+	// is implemented then the "header" has to be implement as well, else
 	// the library will not work. No query should go before the "header"
 	// or after the "footer".
-	"mb_device_footer"(device := #device_udt,
-	                   mb := #mb);
-	// This are the benefits of using the device header and the footer FC's:
+	"mb_device_footer"(common := #common, mb := #mb);
+	// Bellow are the benefits of using the device header and the footer:
 	//  - The logging capacities: Inside the device-udt there is logging of
 	//    successfully and failed queries, which is helpful
-	//    for debugging. Look at "#device_udt.log. ..."
-	//  - "#device_udt.qError" a common error flag that is set if any of the
+	//    for debugging. Look inside the udt, "#common.log. ..."
+	//  - "#common.out.error" a common error flag that is set if any of the
 	//    intermediate queries between mb_device_footer and mb_device_header
 	//    gives a error. This flag is intended for use with HMI. The pulse
 	//    length of the flag can be configured with
-	//    "#device_udt.conf.time_qErrror".
-	//  - "#device_udt.qComError" a error flag that will be set after number
-	//    of repeating timeout of the intermediate queries. Intended to reset
-	//    values when communication problems occur. The number of repeating
-	//    timeout before the flag is set can be configured with
-	//    "#device_udt.conf.max_qComError".
+	//    "#common.conf.errror_flag_puls_length".
+	//  - "#common.out.communication_error" a error flag that will be set after
+	//    number of repeating timeout of the intermediate queries. Intended
+	//    to reset values when communication problems occur. The number of
+	//    repeating timeout before the flag is set can be configured with
+	//    "#common.conf.max_repeating_timeouts".
 	//  - Only one query for each device is allowed to be executed for
 	//    every loop. This is to avoid devices with many queries to occupy
 	//    the bus for long periods of time.
@@ -211,7 +210,7 @@ BEGIN
 	
 	
 	// For this example values are set to zero if communication problems accrue.
-	IF #device_udt.qComError THEN
+	IF #common.out.communication_error THEN
 	    #resault_data_query_1.word_1 := 0;
 	    #resault_data_query_1.word_2 := 0;
 	    
@@ -240,7 +239,7 @@ VERSION : 0.1
    END_VAR
 
    VAR 
-      device_udt : "udt_mb_device";
+      common : "udt_mb_common";
       serial_number : DWord;
       raw_values { S7_HMI_Accessible := 'False'; S7_HMI_Visible := 'False'} : Struct
          temp { S7_HMI_Accessible := 'False'; S7_HMI_Visible := 'False'} : Int;
@@ -252,9 +251,9 @@ VERSION : 0.1
 BEGIN
 	// - Novus - RHT (Temperature transmitter)
 	// - http://www.novusautomation.com/downloads/Arquivos/v10x_b_manual_rht_wm-dm-p10_485_lcd_%20english.pdf
-	// - Example code, no test with equipment done.
+	// - Example code, no test with real equipment done.
 	
-	"mb_device_header"(device := #device_udt, mb := #mb);
+	"mb_device_header"(common := #common, mb := #mb);
 	
 	"mb_query"(unit := #unit,
 	           fc := #mb.c.read.holding_reg,
@@ -270,9 +269,9 @@ BEGIN
 	           data := #serial_number,
 	           mb := #mb);
 	
-	"mb_device_footer"(device := #device_udt, mb := #mb);
+	"mb_device_footer"(common := #common, mb := #mb);
 	
-	IF #device_udt.qComError THEN
+	IF #common.out.communication_error THEN
 	    #serial_number := 0;
 	    #raw_values.temp := 0;
 	    #raw_values.hum := 0;
@@ -295,7 +294,7 @@ VERSION : 0.1
    END_VAR
 
    VAR 
-      device_udt : "udt_mb_device";
+      common : "udt_mb_common";
       flow : Real;
       pressure : Real;
       totaliser : Struct
@@ -310,9 +309,9 @@ BEGIN
 	// - ABB - AquaMaster 3 - Electromagnetic flowmeter
 	// - COI/FET2XX/MOD/TBL–EN
 	// - https://library.e.abb.com/public/91eead459bb0d349c12577fc0033d2b5/COI_FET2XX_MOD_TBL-EN.pdf
-	// - Example code, no test with equipment done.
+	// - Example code, no test with real equipment done.
 	
-	"mb_device_header"(device := #device_udt, mb := #mb);
+	"mb_device_header"(common := #common, mb := #mb);
 	
 	"mb_query"(unit := #unit,
 	           fc := #mb.c.read.input_reg,
@@ -335,9 +334,9 @@ BEGIN
 	           data := #totaliser,
 	           mb := #mb);
 	
-	"mb_device_footer"(device := #device_udt, mb := #mb);
+	"mb_device_footer"(common := #common, mb := #mb);
 	
-	IF #device_udt.qComError THEN
+	IF #common.out.communication_error THEN
 	    #flow := 0;
 	    #pressure := 0;
 	END_IF;
@@ -363,21 +362,22 @@ VERSION : 0.1
 
 BEGIN
 	// hardware_id:     Setup the rtu-line in the hardware configurator
-	// baud:            bps
-	// parity:          Enable even parity. (Odd parity is not available)
-	// timeout:         
+	// baud:            bits per secound.
+	// parity:          Enable even parity. false=>no parity.
+	//                  (Odd parity is not available)
+	// timeout:         Timeout for each query.
 	// mb:              A udt that is the link between the controller and it's
 	//                  belonging queries inside the device block bellow.                 
 	#mb_master_ctrl(
 	    hardware_id := "Local~CB_1241_(RS485)", 
 	    baud := 9600, 
 	    parity := true, 
-	    timeout := T#500ms,
+	    timeout := T#500ms, 
 	    mb := #mb );
 	
 	                 
 	// In this rtu example there are 7 devices (units) connected to the
-	// modbus rtu bus. Each instance of the blocks bellow represent  one
+	// modbus rtu bus. Each instance of the blocks bellow represent one
 	// device on the bus. A "device block" has to be created for each
 	// spesific device. Becouse the library makes it possible to avoid
 	// global states, device bloks can be reused for all simular devices.
@@ -450,17 +450,17 @@ BEGIN
 	    timeout := T#1s,
 	    mb := #mb);
 	
-	#device_start_example(unit := 1,   // Device address. For tcp devices
+	#device_start_example(unit := 1,   // Device address. For tcp/ip devices
 	                                   // unit can usually be set to "1".
-	                      mb := #mb);  // Same udt as above.
+	                      mb := #mb);  // Same udt as for mb_client_ctrl above.
 	// Note that a device block can be used for both tcp and rtu. This of course
 	// require that the device has the hardware for both for TCP (Ethernet) and
 	// for RTU (RS-485, RS-422 and RS-232).
 	
 	// Read holding register 1234 from device with unit address 123. This is an
 	// example showing that a query can be independent from a device block.
-	// However all the features of the device header and footer will then not
-	// be available.
+	// However all the features of the device header and footer won't then be
+	// available.
 	"mb_query"(unit := 123,
 	           fc := #mb.c.read.holding_reg,
 	           d_addr := 1234,
@@ -468,10 +468,11 @@ BEGIN
 	           data := #resault_data_1,
 	           mb := #mb);
 	
-	"mb_log_words"(in := #mb.stat.status, log := #log);
-	// This is only for debugging. If a strange error occurred then look in to the
-	// log. The status coodes is decribed in tia-portal help journal. Look up
-	// MB_CLIENT, TCON, TSEND and TDISCON.
+	"mb_log_word"(in := #mb.stat.status, log := #log);
+	// This is only for debugging. If a strange error occurred then take a look
+	// a the log variable. The status coodes is decribed in tia-portal help
+	// journal. Look up MB_CLIENT, TCON, TSEND and TDISCON, to find the meaning
+	// of the error codes.
 	
 END_FUNCTION_BLOCK
 
@@ -596,9 +597,9 @@ VERSION : 0.1
    END_VAR
 
    VAR 
-      device_udt : "udt_mb_device";
+      common : "udt_mb_common";
       current : Array[1..3] of Real;
-      common : Struct
+      misc : Struct
          frequency : Real;   // unit: hz
          avg_voltage_Vph_n : Real;   // unit: V
          avg_voltage_Vph_ph : Real;   // unit: V
@@ -613,9 +614,9 @@ BEGIN
 	// - Siemens - PAC3200
 	// - http://w3.siemens.com.br/buildingtechnologies/br/documents/manual-sentron-pac3200.pdf
 	//   3.9.3, page 40
-	// - Example code, no test with equipment done.
+	// - Example code, no test with real equipment done.
 	
-	"mb_device_header"(device := #device_udt, mb := #mb);
+	"mb_device_header"(common := #common, mb := #mb);
 	
 	"mb_query"(unit := #unit,
 	           fc := #mb.c.read.holding_reg,
@@ -628,10 +629,14 @@ BEGIN
 	           fc := #mb.c.read.holding_reg,
 	           d_addr := 55,
 	           d_len := #mb.c.auto_len,
-	           data := #common,
+	           data := #misc,
 	           mb := #mb);
 	
-	"mb_device_footer"(device := #device_udt, mb := #mb);
+	"mb_device_footer"(common := #common, mb := #mb);
+	
+	IF #common.out.communication_error THEN
+	    UFILL_BLK(IN := 0, COUNT := 3, OUT => #current[1]);
+	END_IF;
 	
 END_FUNCTION_BLOCK
 
@@ -655,8 +660,8 @@ VERSION : 0.1
 BEGIN
 	// If a condition is require for a query to be executed and the condition
 	// changes state rapedly. Then the example bellow should be followed.
-	// If the condition only changes once a while, then this example can be
-	// ignored.
+	// If the condition only changes once a while, then the example bellow
+	// can be ignored.
 	
 	"mb_query"(unit := 123,
 	           fc := SEL(G := #condition_for_exec_query_1,

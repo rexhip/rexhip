@@ -44,7 +44,7 @@ Key features:
 // ====================================================================================
 // Device block for: ABB - AquaMaster 3 - Electromagnetic flow meter
 
-"mb_device_header"(common := #common_udt, mb := #mb);
+"mb_device_header"(common := #common, mb := #mb);
 
 // If Modicon convention addressing is preferred, then use #mb.c.mode.read for 
 // the fc-parameter. The function code will then be determine by the address range,
@@ -60,7 +60,7 @@ Key features:
 // The result will be stored in the connected variable of data. The variable can 
 // be any data types, including arrays and udt's.         
 
-"mb_device_footer"(common := #common_udt, mb := #mb);
+"mb_device_footer"(common := #common, mb := #mb);
 // ====================================================================================
 ```
 
@@ -69,7 +69,7 @@ Key features:
 // ====================================================================================
 // Device block for: Siemens - PAC3200
 
-"mb_device_header"(common := #common_udt, mb := #mb);
+"mb_device_header"(common := #common, mb := #mb);
 
 "mb_query"(unit := #unit,                   // - #unit is a input variable.
            fc := #mb.c.read.holding_reg,    // - Function code 3.
@@ -85,7 +85,12 @@ Key features:
            data := #frequency,
            mb := #mb);
 
-"mb_device_footer"(common := #common_udt, mb := #mb);
+"mb_device_footer"(common := #common, mb := #mb);
+
+if #common.out.communication_error then
+    #current := 0;
+end_if;
+
 // The #common_udt contains a log, flags, configuration and internal states.
 // Implementing the device header and footer isn't required, but give many benefits.
 // ====================================================================================

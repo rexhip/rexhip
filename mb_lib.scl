@@ -26,7 +26,7 @@ BEGIN
 	        #e := Serialize(SRC_VARIABLE := #data,
 	                        DEST_ARRAY => #tmp_buffer,
 	                        POS := #bytes);
-	        
+	          
 	    2:  // Write to buffer.
 	        #bytes := 0;
 	        #e := Serialize(SRC_VARIABLE := #data,

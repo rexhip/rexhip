@@ -136,7 +136,7 @@ BEGIN
 	// Rexhip - Modbus API for Siemens PLC's
 	// -----------------------------------------
 	// Author:   Ola Bjørnli
-	// Version:  0.6_rc3
+	// Version:  1.0.0
 	// License:  MIT-license
 	// Web:      http://github.com/olab84/rexhip
 	

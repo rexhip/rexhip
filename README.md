@@ -46,9 +46,8 @@ Key features:
 
 "mb_device_header"(common := #common, mb := #mb);
 
-// If Modicon convention addressing is preferred, then use #mb.c.mode.read for 
-// the fc-parameter. The function code will then be determine by the address range,
-// Eg. 40001 corresponds to the first holding register.
+// The library will take care of executing all the queryies, one by one. 
+// No need of any state machine, add as many mb_query as you need.
 
 "mb_query"(unit := #unit,                  // Station address.
            fc := #mb.c.read.input_reg,     // Function code.
@@ -56,6 +55,13 @@ Key features:
            d_len := 2,                     // Data length.
            data := #flow,                  // The data itself (inOut).
            mb := #mb);      // Same udt as on the controller.
+
+"mb_query"(unit := #unit,
+           fc := #mb.c.read.input_reg,
+           d_addr := 5025,
+           d_len := 2,
+           data := #pressure,
+           mb := #mb);
 
 // The result will be stored in the connected variable of data. The variable can 
 // be any data types, including arrays and udt's.         

@@ -580,11 +580,13 @@ BEGIN
 	
 	#tcon_ip_v4.InterfaceId := #interface;
 	#tcon_ip_v4.ID := #conn_id; 
+	#tcon_ip_v4.ConnectionType := 11;
+	#tcon_ip_v4.ActiveEstablished := true;
 	#tcon_ip_v4.RemoteAddress.ADDR := #ip_addr;
 	#tcon_ip_v4.RemotePort := #tcp_port;
+	
 	#mb_client.MB_Unit_ID := UINT_TO_BYTE(#mb.z.q.unit);
-	#mb_client.Rcv_Timeout := UINT_TO_REAL(
-	TIME_TO_UINT(#timeout)) * 0.001;
+	#mb_client.Rcv_Timeout := UINT_TO_REAL(TIME_TO_UINT(#timeout)) * 0.001;
 	#mb_client(REQ := NOT #mb_client.BUSY AND NOT #mb.z.run.insert
 	           AND NOT #mb_client.DISCONNECT,
 	           DISCONNECT := #conf.disconnect

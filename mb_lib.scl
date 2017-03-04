@@ -42,6 +42,7 @@ BEGIN
 	                      POS := #bytes);
 	END_CASE;
 	
+	
 END_FUNCTION
 
 FUNCTION "mb_device_header" : Void
@@ -109,6 +110,7 @@ BEGIN
 	#mb.z.run.qid_cnt := #common.z.header_qid;
 	
 	
+	
 END_FUNCTION
 
 FUNCTION "mb_query" : Void
@@ -137,7 +139,7 @@ VERSION : 1.0
 BEGIN
 	// Rexhip - Modbus API for Siemens PLC's
 	// -----------------------------------------
-	// Author:   Ola Bjørnli
+	// Author:   Ola BjÃ¸rnli
 	// Version:  1.0.2
 	// License:  MIT-license
 	// Web:      http://github.com/olab84/rexhip
@@ -290,6 +292,7 @@ BEGIN
 	// The buffer_handler read and write data to the buffer.
 	#mb.conf.buffer_handler := true;
 	
+	
 END_FUNCTION
 
 FUNCTION "mb_ctrl_end" : Void
@@ -335,6 +338,7 @@ BEGIN
 	END_IF;
 	#mb.z.run.qid_cnt := 0; // qid_cnt is incremented in every query.
 	#mb.z.com.did_cnt := 0; // did_cnt is incremented in every device header.
+	
 	
 	
 END_FUNCTION
@@ -476,6 +480,7 @@ BEGIN
 	END_IF;
 	#common.out.finnish := #tFinnish OR #mb.stat.query_above;
 	
+	
 END_FUNCTION
 
 FUNCTION_BLOCK "mb_client_ctrl"
@@ -575,6 +580,7 @@ BEGIN
 	           Q => #qError);
 	
 	
+	
 END_FUNCTION_BLOCK
 
 FUNCTION_BLOCK "mb_master_ctrl"
@@ -599,6 +605,7 @@ VERSION : 1.0
       conf : Struct
          parity : Bool := TRUE;
          mb_comm_load_req : Bool;
+         retries : USInt := 0;
       END_STRUCT;
       mb_comm_load {OriginalPartName := 'MB_COMM_LOAD'; LibVersion := '2.1'} : MB_COMM_LOAD;
       mb_master {OriginalPartName := 'MB_MASTER'; LibVersion := '2.2'} : MB_MASTER;
@@ -614,6 +621,7 @@ BEGIN
 	END_IF;
 	
 	// Initiate the hardware.
+	#mb_comm_load.RETRIES := #conf.retries;
 	#mb_comm_load(REQ := NOT #mb_comm_load.DONE AND NOT #mb_master.BUSY
 	              XOR #conf.mb_comm_load_req,
 	              "PORT" := #hardware_id,
@@ -642,6 +650,7 @@ BEGIN
 	#tof_error(IN := #mb.stat.error,
 	           PT := #tof_error.PT,
 	           Q => #qError);
+	
 	
 	
 END_FUNCTION_BLOCK
@@ -679,6 +688,7 @@ BEGIN
 	    EXIT;
 	  END_IF;
 	END_FOR;
+	
 	
 	
 END_FUNCTION

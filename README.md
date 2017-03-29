@@ -8,7 +8,7 @@ Modbus API For Siemens PLC's.
 The library extend on MB_MASTER and MB_CLIENT, the modbus blocks that comes along with TIA-portal. The library is not an attempt to reinvent the wheel, by doing what those blocks already do. Rather it's an attempt to expand the functionality of those existing blocks, and to create a common API for modbus devices.
 
 Key features:
- - Makes it easy to split the program in to reusable «device blocks» (interface blocks).
+ - Makes it easy to create and split a program in to reusable «device blocks» (interface blocks).
  - Device blocks can easily be reused and combined in new programs.
  - A clean API, which helps to cut engineering time.
  - Reduce idle time, by skipping queries that has led to recurring timeout before. Retries will be done occasionally.

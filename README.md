@@ -5,7 +5,7 @@ Modbus API For Siemens PLC's.
 - License:  MIT-license
 - Web:      https://github.com/olab84/rexhip
 
-The library extend on MB_MASTER and MB_CLIENT, the modbus blocks that comes along with TIA-portal. The library is not an attempt to reinvent the wheel, by doing what those blocks already do. Rather it's an attempt to expand the functionality of those existing blocks, and to create a common API for modbus devices.
+The library extend on MB_MASTER and MB_CLIENT, the modbus blocks that comes along with TIA-portal. The library is not an attempt to reinvent the wheel, by doing what those blocks already do. Rather it's an attempt to expand the functionality of those existing blocks, and to create a improved, common API for modbus devices.
 
 Key features:
  - Makes it easy to create and split a program in to reusable «device blocks» (interface blocks).
@@ -16,7 +16,7 @@ Key features:
  - Logging features for development and debugging.
 
 ```pascal
-// =========================================================
+//=========================================================
 // A modbus RTU example that illustrate the library. 
 // Support for modbus tcp is also included.
 
@@ -36,12 +36,12 @@ Key features:
 #siemens_PAC3200_instance_1(unit := 3, mb := #mb);
 #siemens_PAC3200_instance_2(unit := 4, mb := #mb);
 #siemens_PAC3200_instance_3(unit := 5, mb := #mb);
-// =========================================================
+//=========================================================
 ```
 
 
 ```pascal
-// ====================================================================================
+//=======================================================================
 // Device block for: ABB - AquaMaster 3 - Electromagnetic flow meter
 
 "mb_device_header"(common := #common, mb := #mb);
@@ -49,11 +49,11 @@ Key features:
 // The library will take care of executing all the queryies, one by one. 
 // No need of any state machine, add as many mb_query as you need.
 
-"mb_query"(unit := #unit,                  // Station address.
-           fc := #mb.c.read.input_reg,     // Function code.
-           d_addr := 5017,                 // Data address.
-           d_len := 2,                     // Data length.
-           data := #flow,                  // The data itself (inOut).
+"mb_query"(unit := #unit,               // Station address.
+           fc := #mb.c.read.input_reg,  // Function code.
+           d_addr := 5017,              // Data address.
+           d_len := 2,                  // Data length.
+           data := #flow,               // The data itself (inOut).
            mb := #mb);      // Same udt as on the controller.
 
 "mb_query"(unit := #unit,
@@ -63,26 +63,26 @@ Key features:
            data := #pressure,
            mb := #mb);
 
-// The result will be stored in the connected variable of data. The variable can 
-// be any data types, including arrays and udt's.         
+// The result will be stored in the connected variable of data. The 
+// variable can be any data types, including arrays and udt's.         
 
 "mb_device_footer"(common := #common, mb := #mb);
-// ====================================================================================
+//=======================================================================
 ```
 
 
 ```pascal
-// ====================================================================================
+//=======================================================================
 // Device block for: Siemens - PAC3200
 
 "mb_device_header"(common := #common, mb := #mb);
 
-"mb_query"(unit := #unit,                   // - #unit is a input variable.
-           fc := #mb.c.read.holding_reg,    // - Function code 3.
-           d_addr := 13,                    // - Start read at address 13.
-           d_len := #mb.c.auto_len,         // - Length is calculated automatically 
-           data := #current,                //   based on the size of "data". 		                   
-           mb := #mb);                      // - #mb is a inOut variable.
+"mb_query"(unit := #unit,                 // - #unit is a input variable.
+           fc := #mb.c.read.holding_reg,  // - Function code 3.
+           d_addr := 13,                  // - Start read at address 13.
+           d_len := #mb.c.auto_len,       // - Length is calculated automatically 
+           data := #current,              //   based on the size of "data". 		                   
+           mb := #mb);                    // - #mb is a inOut variable.
                                           
 "mb_query"(unit := #unit,                 
            fc := #mb.c.read.holding_reg, 
@@ -97,9 +97,10 @@ if #common.out.communication_error then
     #current := 0;
 end_if ;
 
-// The #common udt contains a log, flags, configuration and internal states.
-// Implementing the device header and footer isn't required, but give many benefits.
-// ====================================================================================
+// The #common udt contains a log, flags, configuration and internal 
+// states. Implementing the device header and footer isn't required, 
+// but give many benefits.
+//=======================================================================
 ```
    
 Requirements:

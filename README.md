@@ -22,20 +22,14 @@ Key features:
 
 #mb_master_ctrl(
     hardware_id := "Local~CB_1241_(RS485)", 
-    baud := 9600, // bits per seconds 
-    parity := true, // Enable even parity.
+    baud := 9600, // bits per seconds (even parity by default)
     timeout := T#500ms,       
     mb := #mb ); // A udt that comes along.
 
-// Instances of device blocks for ABB Aqua master. (interface blocks)
-// (unit = station address / device address)
-#abb_aquaMaster_3_instance_1(unit := 1, mb := #mb);
-#abb_aquaMaster_3_instance_2(unit := 2, mb := #mb);
-
 // Instances of device blocks for Siemens PAC3200. 
-#siemens_PAC3200_instance_1(unit := 3, mb := #mb);
-#siemens_PAC3200_instance_2(unit := 4, mb := #mb);
-#siemens_PAC3200_instance_3(unit := 5, mb := #mb);
+"siemens_PAC3200_DB1"(unit := 1, mb := #mb);
+"siemens_PAC3200_DB2"(unit := 2, mb := #mb);
+"siemens_PAC3200_DB3"(unit := 3, mb := #mb);
 //=========================================================
 ```
 
@@ -45,9 +39,6 @@ Key features:
 // Device block for: ABB - AquaMaster 3 - Electromagnetic flow meter
 
 "mb_device_header"(common := #common, mb := #mb);
-
-// The library will take care of executing all the queryies, one by one. 
-// No need of any state machine, add as many mb_query as you need.
 
 "mb_query"(unit := #unit,               // Station address.
            fc := #mb.c.read.input_reg,  // Function code.
@@ -63,9 +54,6 @@ Key features:
            data := #pressure,
            mb := #mb);
 
-// The result will be stored in the connected variable of data. The 
-// variable can be any data types, including arrays and udt's.         
-
 "mb_device_footer"(common := #common, mb := #mb);
 //=======================================================================
 ```
@@ -77,29 +65,31 @@ Key features:
 
 "mb_device_header"(common := #common, mb := #mb);
 
-"mb_query"(unit := #unit,                 // - #unit is a input variable.
-           fc := #mb.c.read.holding_reg,  // - Function code 3.
-           d_addr := 13,                  // - Start read at address 13.
-           d_len := #mb.c.auto_len,       // - Length is calculated automatically 
-           data := #current,              //   based on the size of "data". 		                   
-           mb := #mb);                    // - #mb is a inOut variable.
+// The library will take care of executing all the queries, one by one. 
+
+"mb_query"(unit := #unit,                // - #unit is a input variable.
+           fc := #mb.c.read.holding_reg, // - Function code 3.
+           d_addr := 13,                 // - Start read at address 13.
+           d_len := #mb.c.auto_len,      // - Length is calculated automatically 
+           data := #current,             //   based on the size of "data".
+           mb := #mb);                   // - #mb is a inOut variable.
                                           
 "mb_query"(unit := #unit,                 
            fc := #mb.c.read.holding_reg, 
            d_addr := 55,                  
            d_len := #mb.c.auto_len,       
-           data := #frequency,             // - data, can be any datatype, inclding
-           mb := #mb);                     //   arrays and udt's.
+           data := #frequency,             
+           mb := #mb);                     
 
+// The result will be stored in the connected variable of data. The 
+// variable can be any data types, including arrays and udt's.         		   
+		   
 "mb_device_footer"(common := #common, mb := #mb);
 
 if #common.out.communication_error then
     #current := 0;
 end_if ;
 
-// The #common udt contains a log, flags, configuration and internal 
-// states. Implementing the device header and footer isn't required, 
-// but give many benefits.
 //=======================================================================
 ```
    

@@ -362,18 +362,14 @@ VERSION : 0.1
 
 BEGIN
 	// hardware_id:     Setup the rtu-line in the hardware configurator
-	// baud:            bits per secound.
-	// parity:          Enable even parity. false=>no parity.
-	//                  (Odd parity is not available)
+	// baud:            bits per secound.	
 	// timeout:         Timeout for each query.
 	// mb:              A udt that is the link between the controller and it's
 	//                  belonging queries inside the device block bellow.                 
-	#mb_master_ctrl(
-	    hardware_id := "Local~CB_1241_(RS485)", 
-	    baud := 9600, 
-	    parity := true, 
-	    timeout := T#500ms, 
-	    mb := #mb );
+	#mb_master_ctrl(hardware_id := "Local~CB_1241_(RS485)", 
+	    		baud := 9600, 	    
+	    		timeout := T#500ms, 
+	    		mb := #mb );
 	
 	                 
 	// In this rtu example there are 7 devices (units) connected to the

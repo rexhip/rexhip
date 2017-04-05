@@ -20,28 +20,27 @@ VERSION : 1.0
 BEGIN
 	// This FC do 3 diffrent actions.
 	CASE #action OF
-	  1:  // Count bytes.
-	    #bytes := 0;
-	    #tmp_buffer := #buffer;
-	    #e := Serialize(SRC_VARIABLE := #data,
-	                    DEST_ARRAY => #tmp_buffer,
-	                    POS := #bytes);
-	    
-	  2:  // Write to buffer.
-	    #bytes := 0;
-	    #e := Serialize(SRC_VARIABLE := #data,
-	                    DEST_ARRAY => #tmp_buffer,
-	                    POS := #bytes);
-	    #buffer := #tmp_buffer;
-	    
-	  3:  // Read from buffer.
-	    #bytes := 0;
-	    #tmp_buffer := #buffer;
-	    #e := Deserialize(SRC_ARRAY := #tmp_buffer,
-	                      DEST_VARIABLE => #data,
-	                      POS := #bytes);
+	    1:  // Count bytes.
+	        #bytes := 0;
+	        #tmp_buffer := #buffer;
+	        #e := Serialize(SRC_VARIABLE := #data,
+	                        DEST_ARRAY => #tmp_buffer,
+	                        POS := #bytes);
+	        
+	    2:  // Write to buffer.
+	        #bytes := 0;
+	        #e := Serialize(SRC_VARIABLE := #data,
+	                        DEST_ARRAY => #tmp_buffer,
+	                        POS := #bytes);
+	        #buffer := #tmp_buffer;
+	        
+	    3:  // Read from buffer.
+	        #bytes := 0;
+	        #tmp_buffer := #buffer;
+	        #e := Deserialize(SRC_ARRAY := #tmp_buffer,
+	                          DEST_VARIABLE => #data,
+	                          POS := #bytes);
 	END_CASE;
-	
 	
 END_FUNCTION
 
@@ -83,21 +82,21 @@ BEGIN
 	//   this is to avoid a resualt from one query being intercepted by
 	//   another
 	IF #mb.z.q.qid > #mb.z.run.qid_cnt
-	  AND #mb.z.q.qid <= #common.z.header_qid
-	  AND (#mb.z.run.insert OR #mb.stat.done_or_error)
+	    AND #mb.z.q.qid <= #common.z.header_qid
+	    AND (#mb.z.run.insert OR #mb.stat.done_or_error)
 	THEN
-	  // Reset.
-	  #mb.z.run.insert := true;
-	  #mb.conf.buffer_handler := true;
-	  
-	  // At first the offset_qid points at the first query of this
-	  // device. When it has executed the offset will point at the
-	  // second query. When all queries has executed the offset will
-	  // be reset back to the first query. 
-	  #mb.z.q.qid := #common.z.header_qid
-	  + SEL(G := #common.conf.exec_all_quries,
-	        IN0 := #common.z.offset_qid,
-	        IN1 := 1);
+	    // Reset.
+	    #mb.z.run.insert := true;
+	    #mb.conf.buffer_handler := true;
+	    
+	    // At first the offset_qid points at the first query of this
+	    // device. When it has executed the offset will point at the
+	    // second query. When all queries has executed the offset will
+	    // be reset back to the first query. 
+	    #mb.z.q.qid := #common.z.header_qid
+	    + SEL(G := #common.conf.exec_all_quries,
+	          IN0 := #common.z.offset_qid,
+	          IN1 := 1);
 	END_IF;
 	
 	// - The code below is reduce the impact of setting a if-statement
@@ -108,6 +107,7 @@ BEGIN
 	                            IN1 := #mb.z.run.qid_cnt + 1,
 	                            IN2 := #common.z.header_qid);
 	#mb.z.run.qid_cnt := #common.z.header_qid;
+	
 	
 	
 	
@@ -139,8 +139,8 @@ VERSION : 1.0
 BEGIN
 	// Rexhip - Modbus API for Siemens PLC's
 	// -----------------------------------------
-	// Author:   Ola Bjørnli
-	// Version:  1.0.5
+	// Author:   Ola Bjornli
+	// Version:  1.0.6
 	// License:  MIT-license
 	// Web:      http://github.com/olab84/rexhip
 	
@@ -153,145 +153,144 @@ BEGIN
 	// when they are equal to each other. qid is reset back to "1"
 	// when all queryies has been executed.
 	IF #mb.z.run.qid_cnt <> #mb.z.q.qid THEN
-	  RETURN;
+	    RETURN;
 	ELSIF #fc = 0 THEN // fc 0 => skip query. (A fiktiv function code)
-	  IF #mb.z.run.insert OR #mb.stat.done_or_error THEN
-	    #mb.z.run.insert := true;
-	    #mb.z.q.qid := #mb.z.q.qid + 1;
-	    #mb.z.com.skip_cnt := #mb.z.com.skip_cnt + 1;
-	  END_IF;
-	  RETURN;
+	    IF #mb.z.run.insert OR #mb.stat.done_or_error THEN
+	        #mb.z.run.insert := true;
+	        #mb.z.q.qid := #mb.z.q.qid + 1;
+	        #mb.z.com.skip_cnt := #mb.z.com.skip_cnt + 1;
+	    END_IF;
+	    RETURN;
 	END_IF;
 	
 	// d_len=0 => Automatically calculate the length based on the
 	// size (bytes) of "#data".
 	IF #d_len = 0 AND #mb.conf.buffer_handler AND
-	  (#mb.z.run.insert OR #mb.stat.done_or_error)
+	    (#mb.z.run.insert OR #mb.stat.done_or_error)
 	THEN
-	  "mb_buffer_handler"(action := 1, // Count bytes.                        
-	                      data := #data,
-	                      bytes := #tBytes,
-	                      buffer := #mb.z.buffer);
-	  CASE #fc OF
-	    1, 2, 5, 15:
-	      #tLen := DINT_TO_UINT(#tBytes * 8); // Bits
-	    3, 4, 6, 16:
-	      #tLen := DINT_TO_UINT(#tBytes / 2); // Words
-	    200..202:
-	      CASE #d_addr OF
-	        1..9999, 10001..19999:
-	          #tLen := DINT_TO_UINT(#tBytes * 8); // Bits
-	        30001..39999, 30001..49999, 400001..465535:
-	          #tLen := DINT_TO_UINT(#tBytes / 2); // Words
-	      END_CASE;
-	  END_CASE;
-	ELSE
-	  #tLen := #d_len; // Words (16 bits)
-	  #tBytes := #d_len * 2;
-	END_IF;
-	
-	IF #mb.z.run.insert THEN // Insert query.
-	  #mb.z.run.mode := 0; // 0 => read (default)
-	  
-	  // mb_client and mb_master use modicon convention address.
-	  // Convertion in to Jbus adressing (direct adressing).
-	  CASE #fc OF
-	    1:  // Read output bits             
-	      #mb.z.run.data_addr := 1 + #d_addr;
-	    2:  // Read input bits            
-	      #mb.z.run.data_addr := 10001 + #d_addr;
-	    3:  // Read holding reg.            
-	      #mb.z.run.data_addr := 400001 + #d_addr;
-	    4:  // Read input word            
-	      #mb.z.run.data_addr := 30001 + #d_addr;
-	    5:  // Writing a single output bit
-	      #mb.z.run.mode := 1;
-	      #mb.z.run.data_addr := 1 + #d_addr;
-	    6:  // Writing a single holding register
-	      #mb.z.run.mode := 1;
-	      #mb.z.run.data_addr := 400001 + #d_addr;
-	    15: // Writing multiple output bits
-	      #mb.z.run.mode := 2;
-	      #mb.z.run.data_addr := 1 + #d_addr;
-	    16: // Writing multiple holding registers
-	      #mb.z.run.mode := 2;
-	      #mb.z.run.data_addr := 400001 + #d_addr;
-	    200..202: // Siemens mode 0-2 replaced by 200-202
-	      #mb.z.run.mode := #fc - 200;
-	      #mb.z.run.data_addr := #d_addr;
-	    ELSE
-	      ;
-	      // #mb.z.run.mode := #fc;
-	      // #mb.z.run.data_addr := #d_addr;
-	  END_CASE;
-	  
-	  // The params is transfered over to the udt. They are later
-	  // transfered from the udt to mb_master or mb_client.
-	  #mb.z.q.unit := #unit;
-	  #mb.z.q.fc := #fc;
-	  #mb.z.q.d_addr := #d_addr;
-	  #mb.z.q.d_len := #tLen;
-	  IF (#mb.z.run.mode = 1 OR #mb.z.run.mode = 2) // If it's a write query
-	    AND #mb.conf.buffer_handler
-	  THEN // Copy the content from "#data" to the buffer db.
-	    "mb_buffer_handler"(action := 2, // 2=write            
+	    "mb_buffer_handler"(action := 1, // Count bytes.                        
 	                        data := #data,
 	                        bytes := #tBytes,
 	                        buffer := #mb.z.buffer);
-	  END_IF;
-	  #mb.z.run.insert := false; // false while waiting for the resualt.
-	  #mb.z.com.insert_id := #mb.z.com.insert_id + 1;
-	  
-	  // If the query is finnished. (with or without error)  
+	    CASE #fc OF
+	        1, 2, 5, 15:
+	            #tLen := DINT_TO_UINT(#tBytes * 8); // Bits
+	        3, 4, 6, 16:
+	            #tLen := DINT_TO_UINT(#tBytes / 2); // Words
+	        200..202:
+	            CASE #d_addr OF
+	                1..9999, 10001..19999:
+	                    #tLen := DINT_TO_UINT(#tBytes * 8); // Bits
+	                30001..39999, 30001..49999, 400001..465535:
+	                    #tLen := DINT_TO_UINT(#tBytes / 2); // Words
+	            END_CASE;
+	    END_CASE;
+	ELSE
+	    #tLen := #d_len; // Words (16 bits)
+	    #tBytes := #d_len * 2;
+	END_IF;
+	
+	IF #mb.z.run.insert THEN // Insert query.
+	    #mb.z.run.mode := 0; // 0 => read (default)
+	    
+	    // mb_client and mb_master use modicon convention address.
+	    // Convertion in to Jbus adressing (direct adressing).
+	    CASE #fc OF
+	        1:  // Read output bits             
+	            #mb.z.run.data_addr := 1 + #d_addr;
+	        2:  // Read input bits            
+	            #mb.z.run.data_addr := 10001 + #d_addr;
+	        3:  // Read holding reg.            
+	            #mb.z.run.data_addr := 400001 + #d_addr;
+	        4:  // Read input word            
+	            #mb.z.run.data_addr := 30001 + #d_addr;
+	        5:  // Writing a single output bit
+	            #mb.z.run.mode := 1;
+	            #mb.z.run.data_addr := 1 + #d_addr;
+	        6:  // Writing a single holding register
+	            #mb.z.run.mode := 1;
+	            #mb.z.run.data_addr := 400001 + #d_addr;
+	        15: // Writing multiple output bits
+	            #mb.z.run.mode := 2;
+	            #mb.z.run.data_addr := 1 + #d_addr;
+	        16: // Writing multiple holding registers
+	            #mb.z.run.mode := 2;
+	            #mb.z.run.data_addr := 400001 + #d_addr;
+	        200..202: // Siemens mode 0-2 replaced by 200-202
+	            #mb.z.run.mode := #fc - 200;
+	            #mb.z.run.data_addr := #d_addr;
+	        ELSE
+	            ;
+	            // #mb.z.run.mode := #fc;
+	            // #mb.z.run.data_addr := #d_addr;
+	    END_CASE;
+	    
+	    // The params is transfered over to the udt. They are later
+	    // transfered from the udt to mb_master or mb_client.
+	    #mb.z.q.unit := #unit;
+	    #mb.z.q.fc := #fc;
+	    #mb.z.q.d_addr := #d_addr;
+	    #mb.z.q.d_len := #tLen;
+	    IF (#mb.z.run.mode = 1 OR #mb.z.run.mode = 2) // If it's a write query
+	        AND #mb.conf.buffer_handler
+	    THEN // Copy the content from "#data" to the buffer db.
+	        "mb_buffer_handler"(action := 2, // 2=write            
+	                            data := #data,
+	                            bytes := #tBytes,
+	                            buffer := #mb.z.buffer);
+	    END_IF;
+	    #mb.z.run.insert := false; // false while waiting for the resualt.
+	    #mb.z.com.insert_id := #mb.z.com.insert_id + 1;
+	    
+	    // If the query is finnished. (with or without error)  
 	ELSIF #mb.stat.done_or_error THEN
-	  
-	  // Make sure that the query resault really belong to this query.   
-	  IF #mb.z.q.unit = #unit
-	    AND #mb.z.q.fc = #fc
-	    AND #mb.z.q.d_addr = #d_addr
-	    AND #mb.z.q.d_len = #tLen
-	  THEN
-	    IF #mb.stat.done // Successfull query (no error)
-	      AND #mb.z.run.mode = 0 // If it's a read query
-	      AND #mb.conf.buffer_handler
+	    
+	    // Make sure that the query resault really belong to this query.   
+	    IF #mb.z.q.unit = #unit
+	        AND #mb.z.q.fc = #fc
+	        AND #mb.z.q.d_addr = #d_addr
+	        AND #mb.z.q.d_len = #tLen
 	    THEN
-	      // Copy the content from the buffer to "#data"
-	      "mb_buffer_handler"(action := 3, // 3=Read                
-	                          data := #data,
-	                          bytes := #tBytes,
-	                          buffer := #mb.z.buffer);
+	        IF #mb.stat.done // Successfull query (no error)
+	            AND #mb.z.run.mode = 0 // If it's a read query
+	            AND #mb.conf.buffer_handler
+	        THEN
+	            // Copy the content from the buffer to "#data"
+	            "mb_buffer_handler"(action := 3, // 3=Read                
+	                                data := #data,
+	                                bytes := #tBytes,
+	                                buffer := #mb.z.buffer);
+	        END_IF;
+	        #mb.stat.query_above := true;
+	        
+	        // Temperary store the d_addr for debugging. Picked up
+	        // inside mb_device_footer, and stored in the log.
+	        #mb.z.com.recived_d_addr := #d_addr;
+	        
+	        // recive_id is used inside device_header and device_footer.
+	        // if change between them, then it can be determined that the
+	        // device has receved an answeer from a query.
+	        #mb.z.com.recive_id := #mb.z.com.recive_id + 1;
+	        
+	        #mb.z.q.qid := #mb.z.q.qid + 1; // Move on to next query
+	        #mb.z.run.inc := false; // See bellow.
+	        
+	    ELSE // Different query, not the query that insert the query params.
+	        
+	        // The qid will be increased on second unsync query resualt, but
+	        // not on the first unsync query resualt.
+	        IF #mb.z.run.inc THEN
+	            #mb.z.q.qid := #mb.z.q.qid + 1;
+	        END_IF;
+	        #mb.z.run.inc := true;
+	        
+	        #mb.log.unsync := #mb.log.unsync + 1; // Logging.
 	    END_IF;
-	    #mb.stat.query_above := true;
-	    
-	    // Temperary store the d_addr for debugging. Picked up
-	    // inside mb_device_footer, and stored in the log.
-	    #mb.z.com.recived_d_addr := #d_addr;
-	    
-	    // recive_id is used inside device_header and device_footer.
-	    // if change between them, then it can be determined that the
-	    // device has receved an answeer from a query.
-	    #mb.z.com.recive_id := #mb.z.com.recive_id + 1;
-	    
-	    #mb.z.q.qid := #mb.z.q.qid + 1; // Move on to next query
-	    #mb.z.run.inc := false; // See bellow.
-	    
-	  ELSE // Different query, not the query that insert the query params.
-	    
-	    // The qid will be increased on second unsync query resualt, but
-	    // not on the first unsync query resualt.
-	    IF #mb.z.run.inc THEN
-	      #mb.z.q.qid := #mb.z.q.qid + 1;
-	    END_IF;
-	    #mb.z.run.inc := true;
-	    
-	    #mb.log.unsync := #mb.log.unsync + 1; // Logging.
-	  END_IF;
-	  #mb.z.run.insert := true; // Prepare for the next query.
+	    #mb.z.run.insert := true; // Prepare for the next query.
 	END_IF;
 	
 	// The buffer_handler read and write data to the buffer.
 	#mb.conf.buffer_handler := true;
-	
 	
 END_FUNCTION
 
@@ -315,31 +314,29 @@ BEGIN
 	
 	// If all queries has been executed, then start over again on the first query.
 	IF #mb.z.q.qid > #mb.z.run.qid_cnt THEN
-	  #mb.z.q.qid := 1;
-	  
-	  // The retry-id is the device that get to have retry to restoring
-	  // communication after the qComError flag is set for the device.
-	  // When one query loop has occurred the retry id is incremented. 
-	  #mb.z.com.did_retry := #mb.z.com.did_retry + 1;
-	  
-	  // retry_finished is set after one retry has taken place. 
-	  // The device that has the retry-token only has one try to make 
-	  // successfully query.
-	  #mb.z.com.retry_finished := false;
-	  IF #mb.z.com.did_retry > #mb.z.com.did_cnt THEN
-	    #mb.z.com.did_retry := 1;
-	  END_IF;
-	  
-	  // Device id
-	  #mb.z.com.did := #mb.z.com.did + 1;
-	  IF #mb.z.com.did > #mb.z.com.did_cnt THEN
-	    #mb.z.com.did := 1;
-	  END_IF;
+	    #mb.z.q.qid := 1;
+	    
+	    // The retry-id is the device that get to have retry to restoring
+	    // communication after the qComError flag is set for the device.
+	    // When one query loop has occurred the retry id is incremented. 
+	    #mb.z.com.did_retry := #mb.z.com.did_retry + 1;
+	    
+	    // retry_finished is set after one retry has taken place. 
+	    // The device that has the retry-token only has one try to make 
+	    // successfully query.
+	    #mb.z.com.retry_finished := false;
+	    IF #mb.z.com.did_retry > #mb.z.com.did_cnt THEN
+	        #mb.z.com.did_retry := 1;
+	    END_IF;
+	    
+	    // Device id
+	    #mb.z.com.did := #mb.z.com.did + 1;
+	    IF #mb.z.com.did > #mb.z.com.did_cnt THEN
+	        #mb.z.com.did := 1;
+	    END_IF;
 	END_IF;
 	#mb.z.run.qid_cnt := 0; // qid_cnt is incremented in every query.
 	#mb.z.com.did_cnt := 0; // did_cnt is incremented in every device header.
-	
-	
 	
 END_FUNCTION
 
@@ -363,90 +360,90 @@ BEGIN
 	// If skip is injected in to the query (fc=0), then the query
 	// bellow should only be exectued once, and not twice.
 	IF #mb.z.com.tmp_insert THEN
-	  #common.z.offset_qid := #common.z.offset_qid
-	  + INT_TO_UINT(#mb.z.com.skip_cnt);
-	  #mb.z.com.skip_cnt := 0;
+	    #common.z.offset_qid := #common.z.offset_qid
+	    + INT_TO_UINT(#mb.z.com.skip_cnt);
+	    #mb.z.com.skip_cnt := 0;
 	END_IF;
 	
 	// If device is disabled, then reset error flags.
 	IF #common.in.disable THEN
-	  #common.out.error := false;
-	  #common.out.communication_error := false;
-	  #common.z.timeout_cnt := 0;
-	ELSIF #mb.z.com.recive_id <> #common.z.recive_id THEN
-	  // If there is a query that bellong to this device that has
-	  // recvied a resault. (with or withour error)
-	  
-	  IF #mb.stat.done THEN // Logging successfully query        
-	    #common.log.done_cnt := #common.log.done_cnt + 1;
-	    #e := RD_LOC_T(#common.log.done_dtl);
-	    
-	    // One successfully query reset 
+	    #common.out.error := false;
 	    #common.out.communication_error := false;
 	    #common.z.timeout_cnt := 0;
+	ELSIF #mb.z.com.recive_id <> #common.z.recive_id THEN
+	    // If there is a query that bellong to this device that has
+	    // recvied a resault. (with or withour error)
 	    
-	  ELSIF #mb.stat.error THEN // Logging - failed query        
-	    #common.log.error_cnt := #common.log.error_cnt + 1;
-	    #e := RD_LOC_T(#common.log.error_dtl);
-	    #common.log.error_status := #mb.stat.status;
-	    #common.log.error_d_addr := #mb.z.com.recived_d_addr;
-	    #common.log.error_timeout := #mb.stat.timeout;
+	    IF #mb.stat.done THEN // Logging successfully query        
+	        #common.log.done_cnt := #common.log.done_cnt + 1;
+	        #e := RD_LOC_T(#common.log.done_dtl);
+	        
+	        // One successfully query reset 
+	        #common.out.communication_error := false;
+	        #common.z.timeout_cnt := 0;
+	        
+	    ELSIF #mb.stat.error THEN // Logging - failed query        
+	        #common.log.error_cnt := #common.log.error_cnt + 1;
+	        #e := RD_LOC_T(#common.log.error_dtl);
+	        #common.log.error_status := #mb.stat.status;
+	        #common.log.error_d_addr := #mb.z.com.recived_d_addr;
+	        #common.log.error_timeout := #mb.stat.timeout;
+	        
+	        // Increase timeout cnt. if it's a timeout error.
+	        // if it's not a timeout error then reset the cnt.        
+	        #common.z.timeout_cnt := SEL(G := #mb.stat.timeout,
+	                                     IN0 := 0, IN1 := MIN(IN1 := #common.z.timeout_cnt + 1,
+	                                                          IN2 := 254));
+	        
+	        // qComError is only set if x repeating timeout errors has
+	        // occurred.
+	        #common.out.communication_error := #common.z.timeout_cnt
+	        > #common.conf.max_repeating_timeouts;
+	        
+	        // A timeout error will not be displayed befor the qError
+	        // flag is set. Other ettor will be diplayed once.        
+	        #common.out.error := NOT #mb.stat.timeout
+	        OR #common.out.communication_error;
+	        
+	        // Temperary varable to make sure that the error flag is set
+	        // for at least one scan cycle.
+	        #tError := #common.out.error;
+	        
+	        // Record when the error occurred, this is to make the error
+	        // flag be on for a certain time. (configurable)
+	        #e := RD_SYS_T(#common.z.error_dtl);
+	    END_IF;
 	    
-	    // Increase timeout cnt. if it's a timeout error.
-	    // if it's not a timeout error then reset the cnt.        
-	    #common.z.timeout_cnt := SEL(G := #mb.stat.timeout,
-	                                 IN0 := 0, IN1 := MIN(IN1 := #common.z.timeout_cnt + 1,
-	                                                      IN2 := 254));
+	    // - If it's this devices that has the retry-token, and a retry has
+	    //   been executed. Then set the retry_finished flag.
+	    // - The retry-token will be passed on to the next device with
+	    //   communication problems (qComError) when the query loop has reach
+	    //   the end. (Inside the controller)
+	    // - The purpose of the flag is make sure that a retry is only done
+	    //   once for each query loop revolution.
+	    #mb.z.com.retry_finished := #mb.z.com.did_retry = #mb.z.com.did_cnt
+	    AND #mb.stat.timeout;
 	    
-	    // qComError is only set if x repeating timeout errors has
-	    // occurred.
-	    #common.out.communication_error := #common.z.timeout_cnt
-	    > #common.conf.max_repeating_timeouts;
-	    
-	    // A timeout error will not be displayed befor the qError
-	    // flag is set. Other ettor will be diplayed once.        
-	    #common.out.error := NOT #mb.stat.timeout
-	    OR #common.out.communication_error;
-	    
-	    // Temperary varable to make sure that the error flag is set
-	    // for at least one scan cycle.
-	    #tError := #common.out.error;
-	    
-	    // Record when the error occurred, this is to make the error
-	    // flag be on for a certain time. (configurable)
-	    #e := RD_SYS_T(#common.z.error_dtl);
-	  END_IF;
-	  
-	  // - If it's this devices that has the retry-token, and a retry has
-	  //   been executed. Then set the retry_finished flag.
-	  // - The retry-token will be passed on to the next device with
-	  //   communication problems (qComError) when the query loop has reach
-	  //   the end. (Inside the controller)
-	  // - The purpose of the flag is make sure that a retry is only done
-	  //   once for each query loop revolution.
-	  #mb.z.com.retry_finished := #mb.z.com.did_retry = #mb.z.com.did_cnt
-	  AND #mb.stat.timeout;
-	  
-	  // Only one query for each device for each loop is allowed to be
-	  // executed. offset_qid which one. offset_qid is incread by one a
-	  // query has executed given no communication problems.
-	  #common.z.offset_qid := #common.z.offset_qid
-	  + BOOL_TO_UINT(NOT #mb.stat.timeout);
+	    // Only one query for each device for each loop is allowed to be
+	    // executed. offset_qid which one. offset_qid is incread by one a
+	    // query has executed given no communication problems.
+	    #common.z.offset_qid := #common.z.offset_qid
+	    + BOOL_TO_UINT(NOT #mb.stat.timeout);
 	END_IF;
 	
 	// If all queries for this device has been executed, then reset offset_qid.
 	IF #common.z.offset_qid > #mb.z.run.qid_cnt - #common.z.header_qid THEN
-	  #common.z.offset_qid := 1;
+	    #common.z.offset_qid := 1;
 	END_IF;
 	
 	// Error flags handeling. If qError has been set, then there is a tof-timer
 	// that keep it high for a certain time. The time can be configured with
 	// "device.conf.tof_qErrror". The flag will be on for at least one scan cycle.
 	IF #common.out.error THEN
-	  #e := RD_SYS_T(#rd_sys_t);
-	  #common.out.error := #tError OR #common.out.communication_error
-	  OR #common.conf.errror_flag_puls_length <> 0
-	  AND #rd_sys_t < #common.z.error_dtl + #common.conf.errror_flag_puls_length;
+	    #e := RD_SYS_T(#rd_sys_t);
+	    #common.out.error := #tError OR #common.out.communication_error
+	    OR #common.conf.errror_flag_puls_length <> 0
+	    AND #rd_sys_t < #common.z.error_dtl + #common.conf.errror_flag_puls_length;
 	END_IF;
 	
 	// If the retry-token point at this device, and there is no communication
@@ -464,24 +461,92 @@ BEGIN
 	// - If qComError is set, and isn't this device turn to try again.  
 	// - If the device is not enabled. (skip all queries)
 	IF #mb.z.com.recive_id <> #common.z.recive_id
-	  AND (NOT #common.conf.exec_all_quries OR #mb.stat.timeout)
-	  
-	  OR #mb.z.com.insert_id <> #common.z.insert_id
-	  AND (#common.out.communication_error
-	  AND (#mb.z.com.did_retry <> #mb.z.com.did_cnt
-	  OR #mb.z.com.retry_finished)
-	  // (retry_finished will be reset in the controller)
-	  OR #common.in.disable)
+	    AND (NOT #common.conf.exec_all_quries OR #mb.stat.timeout)
+	    
+	    OR #mb.z.com.insert_id <> #common.z.insert_id
+	    AND (#common.out.communication_error
+	    AND (#mb.z.com.did_retry <> #mb.z.com.did_cnt
+	    OR #mb.z.com.retry_finished)
+	    // (retry_finished will be reset in the controller)
+	    OR #common.in.disable)
 	THEN
-	  // Reset            
-	  #mb.z.run.insert := true;
-	  #mb.z.q.qid := #mb.z.run.qid_cnt + 1;
-	  #tFinnish := true;
+	    // Reset            
+	    #mb.z.run.insert := true;
+	    #mb.z.q.qid := #mb.z.run.qid_cnt + 1;
+	    #tFinnish := true;
 	END_IF;
 	#common.out.finnish := #tFinnish OR #mb.stat.query_above;
 	
 	
+	
 END_FUNCTION
+
+FUNCTION_BLOCK "mb_master_ctrl"
+{ S7_Optimized_Access := 'TRUE' }
+VERSION : 1.0
+   VAR_INPUT 
+      hardware_id : PORT;   // hardware id
+      baud : UDInt := 9600;
+      timeout : Time := T#500MS;
+   END_VAR
+
+   VAR_OUTPUT 
+      qError : Bool;
+   END_VAR
+
+   VAR_IN_OUT 
+      mb : "udt_mb";   // udt mb
+   END_VAR
+
+   VAR 
+      conf : Struct
+         parity : UInt := 2;   // 0=no-parity, 1=odd, 2=even.
+         mb_comm_load_req : Bool;
+         retries : USInt := 0;
+      END_STRUCT;
+      mb_comm_load {OriginalPartName := 'MB_COMM_LOAD'; LibVersion := '2.1'} : MB_COMM_LOAD;
+      mb_master {OriginalPartName := 'MB_MASTER'; LibVersion := '2.2'} : MB_MASTER;
+      tof_error {OriginalPartName := 'IEC_TIMER'; LibVersion := '1.0'} : TOF_TIME;
+   END_VAR
+
+
+BEGIN
+	// Initiate the hardware.
+	#mb_comm_load.RETRIES := #conf.retries;
+	#mb_comm_load(REQ := NOT #mb_comm_load.DONE AND NOT #mb_master.BUSY
+	              XOR #conf.mb_comm_load_req,
+	              "PORT" := #hardware_id,
+	              BAUD := #baud,
+	              PARITY := #conf.parity,
+	              RESP_TO := TIME_TO_UINT(#timeout),
+	              MB_DB := #mb_master);
+	
+	// The core master block.
+	#mb_master(REQ := #mb_comm_load.DONE AND NOT #mb_master.BUSY
+	           AND NOT #mb.z.run.insert,
+	           MB_ADDR := #mb.z.q.unit,
+	           MODE := #mb.z.run.mode,
+	           DATA_ADDR := #mb.z.run.data_addr,
+	           DATA_LEN := #mb.z.q.d_len,
+	           DONE => #mb.stat.done,
+	           ERROR => #mb.stat.error,
+	           STATUS => #mb.stat.status,
+	           DATA_PTR := #mb.z.buffer);
+	
+	// Timeout error (Handled different from other errors)
+	#mb.stat.timeout := #mb_master.ERROR
+	AND #mb_master.STATUS = 16#80C8;
+	
+	// --------------------------------------------------
+	"mb_ctrl_end"(#mb);
+	#tof_error(IN := #mb.stat.error,
+	           PT := #tof_error.PT,
+	           Q => #qError);
+	
+	
+	
+	
+END_FUNCTION_BLOCK
 
 FUNCTION_BLOCK "mb_client_ctrl"
 { S7_Optimized_Access := 'TRUE' }
@@ -551,19 +616,19 @@ BEGIN
 	
 	// Timeout handeling.
 	IF #mb_client.DONE OR #mb_client.ERROR THEN
-	  #mb.stat.timeout := #mb.stat.error
-	  AND (#mb.stat.status = 16#818C // blocked_proc_timeout or rcv_timeout
-	  OR #mb.stat.status = 16#80C8 // No response from the server
-	  OR #timeout_state = 2); // Reconnect after disconnect.
-	  
-	  #timeout_state := 0; // Reset
+	    #mb.stat.timeout := #mb.stat.error
+	    AND (#mb.stat.status = 16#818C // blocked_proc_timeout or rcv_timeout
+	    OR #mb.stat.status = 16#80C8 // No response from the server
+	    OR #timeout_state = 2); // Reconnect after disconnect.
+	    
+	    #timeout_state := 0; // Reset
 	ELSE
-	  CASE #timeout_state OF
-	    0: // Normal opperation (no ton_timeout)
-	      #timeout_state := BOOL_TO_SINT(#ton_timeout_q);
-	    1: // Disconnect and reconnect mb_client.
-	      #timeout_state := 2;
-	  END_CASE;
+	    CASE #timeout_state OF
+	        0: // Normal opperation (no ton_timeout)
+	            #timeout_state := BOOL_TO_SINT(#ton_timeout_q);
+	        1: // Disconnect and reconnect mb_client.
+	            #timeout_state := 2;
+	    END_CASE;
 	END_IF;
 	
 	// If a new download has taken place, and this block is re-initialize,
@@ -578,74 +643,6 @@ BEGIN
 	#tof_error(IN := #mb.stat.error,
 	           PT := #tof_error.PT,
 	           Q => #qError);
-	
-	
-	
-END_FUNCTION_BLOCK
-
-FUNCTION_BLOCK "mb_master_ctrl"
-{ S7_Optimized_Access := 'TRUE' }
-VERSION : 1.0
-   VAR_INPUT 
-      hardware_id : PORT;   // hardware id
-      baud : UDInt := 9600;      
-      timeout : Time := T#500MS;
-   END_VAR
-
-   VAR_OUTPUT 
-      qError : Bool;
-   END_VAR
-
-   VAR_IN_OUT 
-      mb : "udt_mb";   // udt mb
-   END_VAR
-
-   VAR 
-      conf : Struct
-         parity : UInt := 2;   // 0=no-parity, 1=odd, 2=even.          
-         mb_comm_load_req : Bool;
-         retries : USInt := 0;
-      END_STRUCT;
-      mb_comm_load {OriginalPartName := 'MB_COMM_LOAD'; LibVersion := '2.1'} : MB_COMM_LOAD;
-      mb_master {OriginalPartName := 'MB_MASTER'; LibVersion := '2.2'} : MB_MASTER;
-      tof_error {OriginalPartName := 'IEC_TIMER'; LibVersion := '1.0'} : TOF_TIME;
-   END_VAR
-
-
-BEGIN		
-	// Initiate the hardware.
-	#mb_comm_load.RETRIES := #conf.retries;
-	#mb_comm_load(REQ := NOT #mb_comm_load.DONE AND NOT #mb_master.BUSY
-	              XOR #conf.mb_comm_load_req,
-	              "PORT" := #hardware_id,
-	              BAUD := #baud,
-	              PARITY := #conf.parity,
-		      RESP_TO := TIME_TO_UINT(#timeout),
-	              MB_DB := #mb_master);
-	
-	// The core master block.
-	#mb_master(REQ := #mb_comm_load.DONE AND NOT #mb_master.BUSY
-	           AND NOT #mb.z.run.insert,
-	           MB_ADDR := #mb.z.q.unit,
-	           MODE := #mb.z.run.mode,
-	           DATA_ADDR := #mb.z.run.data_addr,
-	           DATA_LEN := #mb.z.q.d_len,
-	           DONE => #mb.stat.done,
-	           ERROR => #mb.stat.error,
-	           STATUS => #mb.stat.status,
-	           DATA_PTR := #mb.z.buffer);
-	
-	// Timeout error (Handled different from other errors)
-	#mb.stat.timeout := #mb_master.ERROR
-	AND #mb_master.STATUS = 16#80C8;
-	
-	// --------------------------------------------------
-	"mb_ctrl_end"(#mb);
-	#tof_error(IN := #mb.stat.error,
-	           PT := #tof_error.PT,
-	           Q => #qError);
-	
-	
 	
 END_FUNCTION_BLOCK
 
@@ -682,6 +679,7 @@ BEGIN
 	    EXIT;
 	  END_IF;
 	END_FOR;
+	
 	
 	
 	

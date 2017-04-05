@@ -1,4 +1,4 @@
-Modbus API For Siemens PLC's.
+Rexhip - Modbus API For Siemens PLC's.
 ---------------------------------------------
 
 - Author:   Ola Bjørnli
@@ -22,7 +22,7 @@ Key features:
 
 #mb_master_ctrl(
     hardware_id := "Local~CB_1241_(RS485)", 
-    baud := 9600, // bits per seconds (even parity by default)
+    baud := 9600, // bits per seconds (Even parity by default)
     timeout := T#500ms,       
     mb := #mb ); // A udt that comes along.
 
@@ -36,43 +36,18 @@ Key features:
 
 ```pascal
 //=======================================================================
-// Device block for: ABB - AquaMaster 3 - Electromagnetic flow meter
-
-"mb_device_header"(common := #common, mb := #mb);
-
-"mb_query"(unit := #unit,               // Station address.
-           fc := #mb.c.read.input_reg,  // Function code.
-           d_addr := 5017,              // Data address.
-           d_len := 2,                  // Data length.
-           data := #flow,               // The data itself (inOut).
-           mb := #mb);      // Same udt as on the controller.
-
-"mb_query"(unit := #unit,
-           fc := #mb.c.read.input_reg,
-           d_addr := 5025,
-           d_len := 2,
-           data := #pressure,
-           mb := #mb);
-
-"mb_device_footer"(common := #common, mb := #mb);
-//=======================================================================
-```
-
-
-```pascal
-//=======================================================================
 // Device block for: Siemens - PAC3200
 
 "mb_device_header"(common := #common, mb := #mb);
 
 // The library will take care of executing all the queries, one by one. 
 
-"mb_query"(unit := #unit,                // - #unit is a input variable.
-           fc := #mb.c.read.holding_reg, // - Function code 3.
-           d_addr := 13,                 // - Start read at address 13.
-           d_len := #mb.c.auto_len,      // - Length is calculated automatically 
-           data := #current,             //   based on the size of "data".
-           mb := #mb);                   // - #mb is a inOut variable.
+"mb_query"(unit := #unit,                // Station address.
+           fc := #mb.c.read.holding_reg, // Function code 3.
+           d_addr := 13,                 // Start read at address 13.
+           d_len := 1,                   // Data length.
+           data := #current,             //   
+           mb := #mb);                   // A inOut variable.
                                           
 "mb_query"(unit := #unit,                 
            fc := #mb.c.read.holding_reg, 
@@ -109,4 +84,3 @@ Quick starter guide:
 ```
 The software is not affiliated with Siemens AG.
 ```  
-

@@ -140,7 +140,7 @@ BEGIN
 	// Rexhip - Modbus API for Siemens PLC's
 	// -----------------------------------------
 	// Author:   Ola Bjørnli
-	// Version:  1.0.4
+	// Version:  1.0.5
 	// License:  MIT-license
 	// Web:      http://github.com/olab84/rexhip
 	
@@ -588,8 +588,7 @@ FUNCTION_BLOCK "mb_master_ctrl"
 VERSION : 1.0
    VAR_INPUT 
       hardware_id : PORT;   // hardware id
-      baud : UDInt := 9600;
-      parity : Bool := TRUE;   // enable even parity. false=no parity.
+      baud : UDInt := 9600;      
       timeout : Time := T#500MS;
    END_VAR
 
@@ -603,7 +602,7 @@ VERSION : 1.0
 
    VAR 
       conf : Struct
-         parity : Bool := TRUE;
+         parity : UInt := 2;   // 0=no-parity, 1=odd, 2=even.          
          mb_comm_load_req : Bool;
          retries : USInt := 0;
       END_STRUCT;
@@ -613,20 +612,15 @@ VERSION : 1.0
    END_VAR
 
 
-BEGIN
-	// If for some reason odd parity need to be used then conf.parity can
-	// be set false, and set directly at mb_comm_load. 0=none, 1=odd, 2=even.
-	IF #conf.parity THEN
-	  #mb_comm_load.PARITY := SEL(G := #parity, IN0 := 0, IN1 := 2);
-	END_IF;
-	
+BEGIN		
 	// Initiate the hardware.
 	#mb_comm_load.RETRIES := #conf.retries;
 	#mb_comm_load(REQ := NOT #mb_comm_load.DONE AND NOT #mb_master.BUSY
 	              XOR #conf.mb_comm_load_req,
 	              "PORT" := #hardware_id,
 	              BAUD := #baud,
-	              RESP_TO := TIME_TO_UINT(#timeout),
+	              PARITY := #conf.parity,
+		      RESP_TO := TIME_TO_UINT(#timeout),
 	              MB_DB := #mb_master);
 	
 	// The core master block.

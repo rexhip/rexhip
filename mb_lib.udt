@@ -1,4 +1,4 @@
-﻿TYPE "udt_mb_common"
+TYPE "udt_mb_common"
 VERSION : 0.1
    STRUCT
       in : Struct   // Inputs
@@ -11,7 +11,7 @@ VERSION : 0.1
          finnish : Bool;   // qid is handed over to next device.
       END_STRUCT;
       conf : Struct   // Configuration
-         errror_flag_puls_length { S7_SetPoint := 'True'} : Time := T#2s;   // Length of the errror_flag puls
+         errror_flag_puls_length { S7_SetPoint := 'True'} : Time := T#2S;   // Length of the errror_flag puls
          max_repeating_timeouts { S7_SetPoint := 'True'} : USInt := 2;   // before communication_error flag is set
          exec_all_quries { S7_SetPoint := 'True'} : Bool;   // Execute all queries in the device block for each loop.
       END_STRUCT;
@@ -61,7 +61,7 @@ VERSION : 0.1
          auto_len : UInt := 0;   // 0 - Length will be callculated automatically.
       END_STRUCT;
       conf : Struct   // Configuration
-         buffer_handler : Bool := true;   // enable buffer handler
+         buffer_handler : Bool := TRUE;   // enable buffer handler
       END_STRUCT;
       log : Struct   // Logging
          unsync : USInt;
@@ -90,7 +90,7 @@ VERSION : 0.1
             mode : USInt := 0;   // from fc
             data_addr : UDInt;   // from d_addr
             inc : Bool;   // inc. qid if a unsync resualt
-            insert : Bool := true;   // insert query param
+            insert : Bool := TRUE;   // insert query param
          END_STRUCT;
          com : Struct   // tmp. storate device header and footer.
             did_cnt : UInt;   // Device id cnt
@@ -108,4 +108,3 @@ VERSION : 0.1
 
 END_TYPE
 
- 

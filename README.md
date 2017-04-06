@@ -17,25 +17,27 @@ Key features:
 
 ```pascal
 //=========================================================
+
 // A complete modbus RTU example that illustrate the library. 
 // Support for modbus tcp is also included.
 
-#mb_master_ctrl(
-    hardware_id := "Local~CB_1241_(RS485)", 
-    baud := 9600, // bits per seconds (Even parity by default)
-    timeout := T#500ms,       
-    mb := #mb ); // A udt that comes along.
+"mb_master_ctrl"(hardware_id := "Local~CB_1241_(RS485)", 
+                 baud := 9600, // bps (Even parity by default)
+                 timeout := T#500ms,       
+                 mb := #mb ); // A udt that comes along.
 
 // Instances of device blocks for Siemens PAC3200. 
 "siemens_PAC3200_DB1"(unit := 1, mb := #mb);
 "siemens_PAC3200_DB2"(unit := 2, mb := #mb);
 "siemens_PAC3200_DB3"(unit := 3, mb := #mb);
+
 //=========================================================
 ```
 
 
 ```pascal
 //=======================================================================
+
 // Device block for: Siemens - PAC3200
 
 "mb_device_header"(common := #common, mb := #mb);
@@ -44,7 +46,7 @@ Key features:
 
 "mb_query"(unit := #unit,                // Station address.
            fc := #mb.c.read.holding_reg, // Function code 3.
-           d_addr := 13,                 // Start read at address 13.
+           d_addr := 13,                 // Read address 13.
            d_len := 1,                   // Data length.
            data := #current,             //   
            mb := #mb);                   // A inOut variable.

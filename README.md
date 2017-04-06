@@ -22,7 +22,7 @@ Key features:
 // Support for modbus tcp is also included.
 
 "mb_master_ctrl"(hardware_id := "Local~CB_1241_(RS485)", 
-                 baud := 9600, // bps (Even parity by default)
+                 baud := 9600, // bps
                  timeout := T#500ms,       
                  mb := #mb ); // A udt that comes along.
 

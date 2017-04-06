@@ -17,7 +17,7 @@ Key features:
 
 ```pascal
 //=========================================================
-// A modbus RTU example that illustrate the library. 
+// A complete modbus RTU example that illustrate the library. 
 // Support for modbus tcp is also included.
 
 #mb_master_ctrl(

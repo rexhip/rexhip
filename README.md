@@ -12,8 +12,8 @@ Key features:
  - Free under the MIT-license.
 
 ```pascal
-// A complete modbus RTU example that illustrate the library. 
-// Support for modbus TCP is also included.
+// A simple modbus RTU example. 
+// (Support for modbus TCP is also included)
 
 "mb_master_ctrl"(hardware_id := "Local~CB_1241_(RS485)", 
                  baud := 9600, // bps

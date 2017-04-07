@@ -51,8 +51,6 @@ Key features:
 // one that is increased for each call of mb_query, and one 
 // other that is increased each time a query finishes. However 
 // this is all taken care of behined the scenes. 
-
-There should be one query for each seq
 ```
    
 Requirements:

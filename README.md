@@ -12,7 +12,6 @@ Key features:
  - MIT-license
 
 ```pascal
-//================================================================
 // A complete modbus RTU example that illustrate the library. 
 // Support for modbus TCP is also included.
 
@@ -24,13 +23,10 @@ Key features:
 // Instances of device blocks for Siemens PAC3200. 
 "siemens_PAC3200_DB1"(unit := 1, mb := #mb);
 "siemens_PAC3200_DB2"(unit := 2, mb := #mb);
-
-//================================================================
 ```
 
 
 ```pascal
-//================================================================
 // Device block for: Siemens - PAC3200
 
 "mb_query"(unit := #unit,                // Station address.
@@ -57,7 +53,6 @@ Key features:
 // this is all taken care of behined the scenes. 
 
 There should be one query for each seq
-//================================================================
 ```
    
 Requirements:

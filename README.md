@@ -32,7 +32,7 @@ Key features:
 "mb_query"(unit := #unit,                // Station address.
            fc := #mb.c.read.holding_reg, // Function code 3.
            d_addr := 13,                 // Read address 13.
-           d_len := 1,                   // Data length.
+           d_len := 6,                   // Data length.
            data := #resault_data_1,      //   
            mb := #mb);                   // Same udt as above.
 

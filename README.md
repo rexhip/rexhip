@@ -9,7 +9,7 @@ Key features:
  - Reduce idle time, by skipping queries that has led to recurring timeout before. Retries will be done occasionally.
  - Logging features for development and debugging.
  - The library extend on MB_MASTER and MB_CLIENT, the modbus blocks that comes along with TIA-portal.
- - MIT-license
+ - Free under the MIT-license
 
 ```pascal
 // A complete modbus RTU example that illustrate the library. 

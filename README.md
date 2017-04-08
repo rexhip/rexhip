@@ -21,8 +21,8 @@ Key features:
                  mb := #mb ); // A udt that comes along.
 
 // Instances of device blocks for Siemens PAC3200. 
-"siemens_PAC3200_DB1"(unit := 1, mb := #mb);
-"siemens_PAC3200_DB2"(unit := 2, mb := #mb);
+"siemens_PAC3200_1"(unit := 1, mb := #mb);
+"siemens_PAC3200_2"(unit := 2, mb := #mb);
 ```
 
 

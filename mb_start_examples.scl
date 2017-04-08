@@ -302,7 +302,8 @@ VERSION : 0.1
 BEGIN
 	// hardware_id:     Can be found inside the hardware configuration.
 	// baud:            bits per secound. (parity is even by default)
-	// timeout:         Timeout for each query.
+	// timeout:         Rule of thumb when setting the timeout:
+	//                  Timeout [ms] = 3500000 / buad_rate
 	// mb:              A udt that is the link between the controller and it's
 	//                  belonging queries inside the device block bellow.                 
 	#mb_master_ctrl(hardware_id := "Local~CB_1241_(RS485)",

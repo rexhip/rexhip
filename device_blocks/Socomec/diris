@@ -1,0 +1,169 @@
+FUNCTION_BLOCK "Socomec_diris"
+{ S7_Optimized_Access := 'TRUE' }
+VERSION : 0.1
+   VAR_INPUT 
+      unit : USInt;
+   END_VAR
+
+   VAR_OUTPUT 
+      data : Struct
+         hour_meter : Real;
+         voltage_L1_L2 : Real;
+         voltage_L2_L3 : Real;
+         voltage_L3_L1 : Real;
+         voltage_L1_N : Real;
+         voltage_L2_N : Real;
+         voltage_L3_N : Real;
+         frequency : Real;
+         current_L1 : Real;   // A
+         current_L2 : Real;   // A
+         current_L3 : Real;   // A
+         neutral_current : Real;
+         sum_active_power : Real;
+         sum_reactive_power : Real;
+         sum_apparent_power : Real;
+         sum_power_factor : Real;   // -: leading and + : lagging
+         power_active_L1 : Real;
+         power_active_L2 : Real;
+         power_active_L3 : Real;
+         power_reactive_L1 : Real;
+         power_reactive_L2 : Real;
+         power_reactive_L3 : Real;
+         power_apparent_L1 : Real;
+         power_apparent_L2 : Real;
+         power_apparent_L3 : Real;
+         power_factor_L1 : Real;
+         power_factor_L2 : Real;
+         power_factor_L3 : Real;
+      END_STRUCT;
+   END_VAR
+
+   VAR_IN_OUT 
+      mb : "udt_mb";
+   END_VAR
+
+   VAR 
+      common : "udt_mb_common";
+      query_1 : Struct
+         hour_meter : DWord;
+         voltage_L1_L2 : DWord;
+         voltage_L2_L3 : DWord;
+         voltage_L3_L1 : DWord;
+         voltage_L1_N : DWord;
+         voltage_L2_N : DWord;
+         voltage_L3_N : DWord;
+         frequency : DWord;
+         current_L1 : DWord;
+         current_L2 : DWord;
+         current_L3 : DWord;
+         neutral_current : DWord;
+         sum_active_power : DWord;
+         sum_reactive_power : DWord;
+         sum_apparent_power : DWord;
+         sum_power_factor : DWord;   // -: leading and + : lagging
+         power_active_L1 : DWord;
+         power_active_L2 : DWord;
+         power_active_L3 : DWord;
+         power_reactive_L1 : DWord;
+         power_reactive_L2 : DWord;
+         power_reactive_L3 : DWord;
+         power_apparent_L1 : DWord;
+         power_apparent_L2 : DWord;
+         power_apparent_L3 : DWord;
+         power_factor_L1 : DWord;
+         power_factor_L2 : DWord;
+         power_factor_L3 : DWord;
+      END_STRUCT;
+      query_2_temperature : DWord;
+   END_VAR
+
+
+BEGIN
+	// Socomec Diris A40/A41
+	
+	// Doc:
+	// https://www.socomec.com/files/live/sites/systemsite/files/SCP/6_gestion_energie/diris/diris_a40/536181B_GB_Ethernet.pdf
+	
+	"mb_device_header"(common := #common, mb := #mb);
+	
+	"mb_query"(unit := #unit,
+	           fc := #mb.c.read.holding_reg,
+	           d_addr := 50512,
+	           d_len := #mb.c.auto_len,
+	           data := #query_1,
+	           mb := #mb);
+	
+	"mb_query"(unit := #unit,
+	           fc := #mb.c.read.holding_reg,
+	           d_addr := 51457,
+	           d_len := #mb.c.auto_len,
+	           data := #query_2_temperature,
+	           mb := #mb);
+	
+	"mb_device_footer"(common := #common, mb := #mb);
+	
+	IF #common.out.communication_error THEN
+	    #query_1.hour_meter := 0;
+	    #query_1.voltage_L1_L2 := 0;
+	    #query_1.voltage_L2_L3 := 0;
+	    #query_1.voltage_L3_L1 := 0;
+	    #query_1.voltage_L1_N := 0;
+	    #query_1.voltage_L2_N := 0;
+	    #query_1.voltage_L3_N := 0;
+	    #query_1.frequency := 0;
+	    #query_1.current_L1 := 0;
+	    #query_1.current_L2 := 0;
+	    #query_1.current_L3 := 0;
+	    #query_1.neutral_current := 0;
+	    #query_1.sum_active_power := 0;
+	    #query_1.sum_reactive_power := 0;
+	    #query_1.sum_apparent_power := 0;
+	    #query_1.sum_power_factor := 0;
+	    #query_1.power_active_L1 := 0;
+	    #query_1.power_active_L2 := 0;
+	    #query_1.power_active_L3 := 0;
+	    #query_1.power_reactive_L1 := 0;
+	    #query_1.power_reactive_L2 := 0;
+	    #query_1.power_reactive_L3 := 0;
+	    #query_1.power_apparent_L1 := 0;
+	    #query_1.power_apparent_L2 := 0;
+	    #query_1.power_apparent_L3 := 0;
+	    #query_1.power_factor_L1 := 0;
+	    #query_1.power_factor_L2 := 0;
+	    #query_1.power_factor_L3 := 0;
+	    
+	    #query_2_temperature := 0;
+	END_IF;
+	
+	#data.hour_meter := DWORD_TO_REAL(#query_1.hour_meter) / 100;
+	#data.voltage_L1_L2 := DWORD_TO_REAL(#query_1.voltage_L1_L2) / 100;
+	#data.voltage_L2_L3 := DWORD_TO_REAL(#query_1.voltage_L2_L3) / 100;
+	#data.voltage_L3_L1 := DWORD_TO_REAL(#query_1.voltage_L3_L1) / 100;
+	#data.voltage_L1_N := DWORD_TO_REAL(#query_1.voltage_L1_N) / 100;
+	#data.voltage_L2_N := DWORD_TO_REAL(#query_1.voltage_L2_N) / 100;
+	#data.voltage_L3_N := DWORD_TO_REAL(#query_1.voltage_L3_N) / 100;
+	#data.frequency := DWORD_TO_REAL(#query_1.frequency) / 100;
+	#data.current_L1 := DWORD_TO_REAL(#query_1.current_L1) / 1000;
+	#data.current_L2 := DWORD_TO_REAL(#query_1.current_L2) / 1000;
+	#data.current_L3 := DWORD_TO_REAL(#query_1.current_L3) / 1000;
+	#data.neutral_current := DWORD_TO_REAL(#query_1.neutral_current) / 100;
+	#data.sum_active_power := DWORD_TO_REAL(#query_1.sum_active_power) / 100;
+	#data.sum_reactive_power := DWORD_TO_REAL(#query_1.sum_reactive_power) / 100;
+	#data.sum_apparent_power := DWORD_TO_REAL(#query_1.sum_apparent_power) / 100;
+	#data.sum_power_factor := DWORD_TO_REAL(#query_1.sum_power_factor) / 1000;
+	#data.power_active_L1 := DWORD_TO_REAL(#query_1.power_active_L1) / 100;
+	#data.power_active_L2 := DWORD_TO_REAL(#query_1.power_active_L2) / 100;
+	#data.power_active_L3 := DWORD_TO_REAL(#query_1.power_active_L3) / 100;
+	#data.power_reactive_L1 := DWORD_TO_REAL(#query_1.power_reactive_L1) / 100;
+	#data.power_reactive_L2 := DWORD_TO_REAL(#query_1.power_reactive_L2) / 100;
+	#data.power_reactive_L3 := DWORD_TO_REAL(#query_1.power_reactive_L3) / 100;
+	#data.power_apparent_L1 := DWORD_TO_REAL(#query_1.power_apparent_L1) / 100;
+	#data.power_apparent_L2 := DWORD_TO_REAL(#query_1.power_apparent_L2) / 100;
+	#data.power_apparent_L3 := DWORD_TO_REAL(#query_1.power_apparent_L3) / 100;
+	#data.power_factor_L1 := DWORD_TO_REAL(#query_1.power_factor_L1) / 1000;
+	#data.power_factor_L2 := DWORD_TO_REAL(#query_1.power_factor_L2) / 1000;
+	#data.power_factor_L3 := DWORD_TO_REAL(#query_1.power_factor_L3) / 1000;
+	
+	
+END_FUNCTION_BLOCK
+

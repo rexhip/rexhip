@@ -81,6 +81,8 @@ VERSION : 0.1
 BEGIN
 	// Socomec Diris A40/A41
 	
+	// Warning: The block is NOT tested !
+	
 	// Doc:
 	// https://www.socomec.com/files/live/sites/systemsite/files/SCP/6_gestion_energie/diris/diris_a40/536181B_GB_Ethernet.pdf
 	

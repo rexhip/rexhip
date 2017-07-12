@@ -62,7 +62,8 @@ BEGIN
 	
 	// Parameters to the device.
 	// Read out the parameters first, to make sure that they are not overwritten.
-	IF #read_done THEN  
+	// comment in, to enable write.
+	(*IF #read_done THEN  
 	    #query_2_write.one_point_calibration_field := REAL_TO_INT(#param.one_point_calibration_field * 10);
 	    #query_2_write.control_mode := #param.control_mode; // 0=Off,1=P,2=PI
 	    #query_2_write.setpoint := REAL_TO_INT(#param.setpoint * 10);
@@ -89,7 +90,8 @@ BEGIN
 	    #param.setpoint := INT_TO_REAL(#query_2_write.setpoint) / 10;
 	    #param.proportional_band := INT_TO_REAL(#query_2_write.proportional_band) / 10;
 	    #param.integration_time := INT_TO_REAL(#query_2_write.integration_time) / 10;
-	END_IF;
+	END_IF; //*)
+	
 	
 	"mb_device_footer"(common := #common, mb := #mb);
 	

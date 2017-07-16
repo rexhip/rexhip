@@ -10,7 +10,7 @@
            data := #tmp_var,
            mb := #mb);                  
 
-#value := SWAP(tmp_var);
+#value := SWAP(#tmp_var);
 ```
  
 ```pascal 
@@ -21,5 +21,5 @@
            data := #tmp_var,
            mb := #mb);                  
  
-$value := SWAP_WORD(tmp_var);
+#value := SWAP_WORD(#tmp_var);
 ```

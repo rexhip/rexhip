@@ -23,7 +23,8 @@ else // read the register before write to the same one.
              d_len := 1,
              data := #static_var,
              mb := #mb);
-             
+  
+  // Has query above been executed successfully?
   if #mb.stat.query_above and #mb.stat.done then
       #static_write := true; 
   end_if;

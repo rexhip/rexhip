@@ -3,7 +3,7 @@
 // other bits, bellow is an example how that can be achieved.
 
 
-if #static_read_done then
+if #static_write then
   
   // Manupulating only bit 5 and 11
   #static_var.X5 := __TRUE_OR_FALSE__ ;
@@ -11,20 +11,20 @@ if #static_read_done then
   
   "mb_query"(unit := __UNIT__,               
              fc := #mb.c.write.holding_reg,
-             d_addr := __REGISTER__,    
+             d_addr := __REGISTER__,
              d_len := 1,      
              data := #static_var,
              mb := #mb); 
 else
-  "mb_query"(unit := __UNIT__,               
+  "mb_query"(unit := __UNIT__,         
              fc := #mb.c.read.holding_reg,
-             d_addr := __REGISTER__,    
-             d_len := 1,      
+             d_addr := __REGISTER__,
+             d_len := 1,
              data := #static_var,
-             mb := #mb);   
+             mb := #mb);
              
   if #mb.stat.query_above and #mb.stat.done then
-      #static_var := true;
+      #static_write := true; 
   end_if;
 
 end_if;

@@ -1,5 +1,5 @@
 ```pascal
-// Sometimes only one bit in a word need to be manupulated, without touching the 
+// Sometimes only some bits in a word need to be manupulated, without touching the 
 // other bits, bellow is an example how that can be achieved.
 
 

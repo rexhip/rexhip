@@ -13,7 +13,7 @@ Key features:
 
 ```pascal
 // A simple modbus RTU example. 
-// (Support for modbus TCP is also included)
+// (Support for modbus TCP is also available)
 
 "mb_master_ctrl"(hardware_id := "Local~CB_1241_(RS485)", 
                  baud := 9600, // bps

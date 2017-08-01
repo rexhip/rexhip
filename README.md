@@ -63,7 +63,3 @@ Quick starter guide:
  - Localise "External Source files" in the tree structure and import the files inside the CORE folder of the downloaded zip-file.
  - Select the imported files, right click them and choose "Generate blocks from source".
  - Continue read the generated "README" FC, and study the start examples.
-
-```
-The software is not affiliated with Siemens AG.
-```  

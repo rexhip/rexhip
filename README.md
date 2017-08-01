@@ -63,7 +63,6 @@ Quick starter guide:
  - Localise "External Source files" in the tree structure. Inside the downloaded zip file, the following files should be imported: 
    mb_lib.scl and mb_start_examples.scl
  - Select all the imported files, right click them and choose "Generate blocks from source".
- - Compile once more to get rid of all the errors.
  - Continue read the generated "README" FC, and study the start examples.
 
 ```

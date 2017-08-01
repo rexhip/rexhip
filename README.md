@@ -5,7 +5,7 @@ Author:   Ola Bjørnli
 Key features:
  - Makes it easy to create and split a program in to reusable «device blocks» (interface blocks).
  - Device blocks can easily be reused and combined in new programs.
- - A clean API, which helps to cut engineering time.
+ - A clean API helps to cut engineering time.
  - Reduce idle time, by skipping queries that has led to recurring timeout before. Retries will be done occasionally.
  - Logging features for development and debugging.
  - The library extend on MB_MASTER and MB_CLIENT, the modbus blocks that comes along with TIA-portal.
@@ -60,7 +60,7 @@ Requirements:
 Quick starter guide:
  - Download the latest release. (https://github.com/olab84/rexhip/releases)
  - Start a new project in TIA-portal, and then add new PLC.
- - Localise "External Source files" in the tree structure. Inside the core directory of the downloaded zip file, the following files should be imported: mb_lib.scl and mb_start_examples.scl
+ - Localise "External Source files" in the tree structure and import the files inside the CORE folder of the downloaded zip-file.
  - Select the imported files, right click them and choose "Generate blocks from source".
  - Continue read the generated "README" FC, and study the start examples.
 

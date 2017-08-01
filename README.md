@@ -60,9 +60,8 @@ Requirements:
 Quick starter guide:
  - Download the latest release. (https://github.com/olab84/rexhip/releases)
  - Start a new project in TIA-portal, and then add new PLC.
- - Localise "External Source files" in the tree structure. Inside the downloaded zip file, the following files should be imported: 
-   mb_lib.scl and mb_start_examples.scl
- - Select all the imported files, right click them and choose "Generate blocks from source".
+ - Localise "External Source files" in the tree structure. Inside the core directory of the downloaded zip file, the following files should be imported: mb_lib.scl and mb_start_examples.scl
+ - Select the imported files, right click them and choose "Generate blocks from source".
  - Continue read the generated "README" FC, and study the start examples.
 
 ```

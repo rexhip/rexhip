@@ -1,7 +1,7 @@
 ```pascal
-// For some modbus devices, when two regiser is combined in to one,
-// the dats is stored as little endian, not big endian like Siemens 
-// PLC do. To solve this the swap function need to be utilize.
+// For some modbus devices, when two regisers are combined into one,
+// the data is stored as little endian, not big endian like Siemens 
+// PLC does. To solve this, the SWAP function needs to be utilized.
 
 "mb_query"(unit := #unit,               
            fc := #mb.c.read.holding_reg,
@@ -14,10 +14,10 @@
 ```
  
 ```pascal 
-// For other devices when two registeres are combined, the least significant 
+// For other device, when two registers are combined, the least significant 
 // word is stored first and the most significant word is stored in the 
-// following register. In those situation the swap_word function need to 
-// be used.
+// following register. When the above situation is present, the SWAP_WORD 
+// function needs to be used.
 
 "mb_query"(unit := #unit,               
            fc := #mb.c.read.holding_reg,
@@ -30,11 +30,11 @@
 ```
 
 ```pascal 
-// The most confustion situation is when both swap and swap_word 
+// The most confusing situation is when both SWAP and SWAP_WORD 
 // need to be used.
 
 #value := SWAP( SWAP_WORD( #tmp_var) );
 ```
 
-How the data is stored in a device should be described the
+How the data is stored in a device is usually described the
 datasheet of the device.

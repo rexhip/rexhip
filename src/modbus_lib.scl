@@ -1,3 +1,115 @@
+TYPE "udt_mb_common"
+VERSION : 0.1
+   STRUCT
+      in : Struct   // Inputs
+         unit : USInt;   // (not in use)
+         disable : Bool;   // Skip all queries and reset
+      END_STRUCT;
+      out : Struct   // Outputs
+         error : Bool;   // All errors, including communication errors
+         communication_error : Bool;   // only communication errors
+         finnish : Bool;   // qid is handed over to next device.
+      END_STRUCT;
+      conf : Struct   // Configuration
+         errror_flag_puls_length { S7_SetPoint := 'True'} : Time := T#2S;   // Length of the errror_flag puls
+         max_repeating_timeouts { S7_SetPoint := 'True'} : USInt := 2;   // before communication_error flag is set
+         exec_all_quries { S7_SetPoint := 'True'} : Bool;   // Execute all queries in the device block for each loop.
+      END_STRUCT;
+      log : Struct   // Logging for development and debugging.
+         done_cnt : UDInt;   // Successfully queries counter for this device
+         done_dtl {OriginalPartName := 'DTL'; LibVersion := '1.0'} : DTL;   // DTL for last successfully querie
+         error_cnt : UDInt;   // Failed queries counter for this device
+         error_dtl {OriginalPartName := 'DTL'; LibVersion := '1.0'} : DTL;   // DTL for last failed querie
+         error_status : Word;   // Status code from mb_master or mb_client
+         error_timeout : Bool;   // For the last failed querie
+         error_d_addr : UDInt;   // d_addr for last failed querie; handy for troubleshooting
+      END_STRUCT;
+      z : Struct   // Internal states.
+         header_qid : UInt;   // qid value at device header
+         timeout_cnt : USInt;   // Repeating timeout errors
+         error_dtl {OriginalPartName := 'DTL'; LibVersion := '1.0'} : DTL;   // DTL of last failed querie, in system time
+         offset_qid : UInt := 1;   // Device query id.
+         insert_id : USInt;   // snap shot of insert_id in mb at header
+         recive_id : USInt;   // snap shot of recive_id in mb at header
+      END_STRUCT;
+   END_STRUCT;
+
+END_TYPE
+
+TYPE "udt_mb"
+VERSION : 0.1
+   STRUCT
+      c : Struct   // Constants
+         read : Struct   // Read: 1, 2, 3, 4
+            output_bits { S7_HMI_Accessible := 'False'; S7_HMI_Visible := 'False'} : USInt := 1;   // 1 - (coils)
+            input_bits { S7_HMI_Accessible := 'False'; S7_HMI_Visible := 'False'} : USInt := 2;   // 2 - (discrete inputs)
+            holding_reg { S7_HMI_Accessible := 'False'; S7_HMI_Visible := 'False'} : USInt := 3;   // 3
+            input_reg { S7_HMI_Accessible := 'False'; S7_HMI_Visible := 'False'} : USInt := 4;   // 4
+         END_STRUCT;
+         write : Struct   // Write: 5, 6, 15, 16
+            single_output_bit { S7_HMI_Accessible := 'False'; S7_HMI_Visible := 'False'} : USInt := 5;   // 5 - (coil) (when len. is eq. to 1)
+            single_holding_reg { S7_HMI_Accessible := 'False'; S7_HMI_Visible := 'False'} : USInt := 6;   // 6 (when len. is eq. to 1)
+            output_bits { S7_HMI_Accessible := 'False'; S7_HMI_Visible := 'False'} : USInt := 15;   // 15 - (coils)
+            holding_reg { S7_HMI_Accessible := 'False'; S7_HMI_Visible := 'False'} : USInt := 16;   // 16
+         END_STRUCT;
+         mode : Struct   // Modicon convention addressing. (eg: hold.reg. start at 40001)
+            read { S7_HMI_Accessible := 'False'; S7_HMI_Visible := 'False'} : USInt := 200;   // Mode 0
+            write_single { S7_HMI_Accessible := 'False'; S7_HMI_Visible := 'False'} : USInt := 201;   // Mode 1 (fc: 5, 6) (when len. is eq. to 1)
+            write { S7_HMI_Accessible := 'False'; S7_HMI_Visible := 'False'} : USInt := 202;   // Mode 2 (fc: 15, 16)
+         END_STRUCT;
+         skip_query { S7_HMI_Accessible := 'False'; S7_HMI_Visible := 'False'} : USInt := 0;   // 0
+         auto_len : UInt := 0;   // 0 - Length will be callculated automatically.
+      END_STRUCT;
+      conf : Struct   // Configuration
+         buffer_handler : Bool := TRUE;   // enable buffer handler
+      END_STRUCT;
+      log : Struct   // Logging
+         unsync : USInt;
+      END_STRUCT;
+      stat : Struct   // Status of last executed query
+         done : Bool;   // Successfull
+         error : Bool;   // Error, including timeout error
+         done_or_error : Bool;   // Done, error or timeout
+         timeout : Bool;   // Only timeout error
+         exception : Bool;   // error except timeout
+         done_or_exception : Bool;   // Done or error, except timeout
+         query_above : Bool;   // Refer to the query above in the code.
+         status : Word;   // status word of mb_master or mb_client
+      END_STRUCT;
+      z : Struct   // Internal states.
+         buffer : Array[0..250] of Byte;   // Buffer
+         q : Struct   // Query params
+            qid : UInt := 1;   // query id
+            unit : UInt := 1;   // Station address
+            "fc" : UInt := 3;   // Function code
+            d_addr : UDInt;   // Data address
+            d_len : UInt := 1;   // Data length
+         END_STRUCT;
+         run : Struct   // Constantly changing variables
+            qid_cnt : UInt;   // Query id cnt. increase for each query, reset in controller. One loop each scan
+            mode : USInt := 0;   // from fc
+            data_addr : UDInt;   // from d_addr
+            inc : Bool;   // inc. qid if a unsync resualt
+            insert : Bool := TRUE;   // insert query param
+         END_STRUCT;
+         com : Struct   // tmp. storate device header and footer.
+            did_cnt : UInt;   // Device id cnt
+            did_retry : UInt := 1;   // Retry device id, qComError
+            retry_finished : Bool;
+            insert_id : USInt;
+            recive_id : USInt;   // toggle when recived
+            recived_d_addr : UDInt;
+            did : UInt;
+            skip_cnt : Int;
+            tmp_insert : Bool;
+         END_STRUCT;
+      END_STRUCT;
+   END_STRUCT;
+
+END_TYPE
+
+
+
 FUNCTION "mb_buffer_handler" : Void
 { S7_Optimized_Access := 'FALSE' }
 VERSION : 1.0
@@ -476,17 +588,16 @@ BEGIN
 	    #tFinnish := true;
 	END_IF;
 	#common.out.finnish := #tFinnish OR #mb.stat.query_above;
-	
-	
-	
+			
 END_FUNCTION
 
+
 FUNCTION_BLOCK "mb_master_ctrl"
-{ S7_Optimized_Access := 'TRUE' }
+{ S7_Optimized_Access := 'FALSE' }
 VERSION : 1.0
    VAR_INPUT 
       hardware_id : PORT;   // hardware id
-      baud : UDInt := 9600;
+      baud : UDInt := 19200;
       timeout : Time := T#500MS;
    END_VAR
 
@@ -507,6 +618,11 @@ VERSION : 1.0
       mb_comm_load {OriginalPartName := 'MB_COMM_LOAD'; LibVersion := '2.1'} : MB_COMM_LOAD;
       mb_master {OriginalPartName := 'MB_MASTER'; LibVersion := '2.2'} : MB_MASTER;
       tof_error {OriginalPartName := 'IEC_TIMER'; LibVersion := '1.0'} : TOF_TIME;
+      buffer { ExternalAccessible := 'False'; ExternalVisible := 'False'; ExternalWritable := 'False'} : Array[0..250] of Byte;
+   END_VAR
+
+   VAR_TEMP 
+      c : Int;
    END_VAR
 
 
@@ -521,6 +637,15 @@ BEGIN
 	              RESP_TO := TIME_TO_UINT(#timeout),
 	              MB_DB := #mb_master);
 	
+	IF NOT #mb.z.run.insert // A new query has been inserted in to the #mb udt
+	    AND NOT #mb_master.BUSY // The inserted query is not allready in process.
+	THEN
+	    CASE #mb.z.run.mode OF
+	        1,2: // A write query
+	            #buffer := #mb.z.buffer;
+	    END_CASE;
+	END_IF;
+	
 	// The core master block.
 	#mb_master(REQ := #mb_comm_load.DONE AND NOT #mb_master.BUSY
 	           AND NOT #mb.z.run.insert,
@@ -531,7 +656,14 @@ BEGIN
 	           DONE => #mb.stat.done,
 	           ERROR => #mb.stat.error,
 	           STATUS => #mb.stat.status,
-	           DATA_PTR := #mb.z.buffer);
+	           DATA_PTR := #buffer );
+	
+	IF NOT #mb_master.BUSY THEN
+	    CASE #mb.z.run.mode OF
+	        0: // A read query
+	            #mb.z.buffer := #buffer;
+	    END_CASE;
+	END_IF;
 	
 	// Timeout error (Handled different from other errors)
 	#mb.stat.timeout := #mb_master.ERROR
@@ -543,10 +675,8 @@ BEGIN
 	           PT := #tof_error.PT,
 	           Q => #qError);
 	
-	
-	
-	
 END_FUNCTION_BLOCK
+
 
 FUNCTION_BLOCK "mb_client_ctrl"
 { S7_Optimized_Access := 'TRUE' }

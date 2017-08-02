@@ -2,8 +2,10 @@ How to read bits in a holding register
 
 ```pascal
 VAR 
-  // Defind the bits in the word, make notice that msb is before lsb.
+  // Defind the bits in the word, make notice that msb is defined before lsb.
   // (msb => most significant byte, lsb => least significant byte)
+  // Bits that are not in use, also need to be defined to create the 
+  // corret offset.
   status : Struct
      b8 : Bool;
      b9 : Bool;

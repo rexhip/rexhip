@@ -34,14 +34,14 @@ END_VAR
            data := #status, // Read the whole word
            mb := #mb);
 
-// Later in the program when one a bits need to be read, then a
-// bit can be referred to directly. Eg. #status.b11_ready, for the ready 
-// bit in this example
+// Later in the program when a bits need to be read, then a bit 
+// can be referred to directly. Eg. #status.b11_ready, for the 
+// ready bit in this example
 
 IF #status.b11_ready THEN
     // Do something.	    
 END_IF;
 
-// Same tecnicke can be used when a word need to be written to 
+// Same technique can be used when a word need to be written to 
 // a holding register.
 ```

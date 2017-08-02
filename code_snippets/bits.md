@@ -35,7 +35,7 @@ END_VAR
            mb := #mb);
 
 // Later in the program when one a bits need to be read, then a
-// bit can refer to diretly. Eg. #status.b11_ready, for the ready 
+// bit can be referred to directly. Eg. #status.b11_ready, for the ready 
 // bit in this example
 
 IF #status.b11_ready THEN

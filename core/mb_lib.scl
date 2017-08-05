@@ -763,7 +763,7 @@ BEGIN
 	    AND (#mb.z.com.did_retry <> #mb.z.com.did_cnt
 	    OR #mb.z.com.retry_finished)
 	    // (retry_finished will be reset in the controller)
-	    OR #common.in.disable)
+	    OR #common.in.disable AND (#mb.stat.done_or_error OR #mb.z.run.insert) )
 	THEN
 	    // Reset            
 	    #mb.z.run.insert := true;

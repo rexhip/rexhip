@@ -2,12 +2,12 @@
 // To get information about when a particular query has executed the 
 // query_above boolian can be used.
 
-"mb_query"(unit:=_uint_in_,
-           fc:=_usint_in_,
-           d_addr:=_udint_in_,
-           d_len:=_uint_in_,
-           data:=_variant_inout_,
-           mb:=_block_udt_inout_);
+"mb_query"(unit := 123,
+           fc := #mb.c.write.holding_reg,
+           d_addr := 456,
+           d_len := #mb.c.auto_len,
+           data := #query_1,
+           mb := #mb);
 
 IF #mb.stat.query_above THEN
     // This if-statement has to be put after the particular query, 
@@ -22,11 +22,12 @@ IF #mb.stat.query_above THEN
         ; // Some other action if communication problems.
     
     ELSIF #mb.stat.error THEN
-        ; // And some action if other error problem.
+        ; // Or some action if other error problem.
         
         // #mb.stat.status , gives more information about the error
         // The error codes can be looked up in the help-manual,
-        // check mb_master or mb_client.
+        // check MB_MASTER for mosbus rtu, and for modbus tcp
+        // check MB_CLIENT, TCON, TDISCON, TSEND and TRCV.
         
     END_IF;    
 

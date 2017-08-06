@@ -42,6 +42,6 @@ IF #status.b11_ready THEN
     // Do something.	    
 END_IF;
 
-// Same technique can be used when a word need to be written to 
+// Same technique can be used when a bit-word need to be written to 
 // a holding register.
 ```

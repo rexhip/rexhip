@@ -1,4 +1,5 @@
 ```pascal
+
 // To get information about when a particular query has executed the 
 // query_above boolian can be used.
 

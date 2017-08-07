@@ -134,7 +134,6 @@ BEGIN
 	
 	// Open the block to see the example.
 	
-	
 	"start_example_mb_rtu_DB"();
 	
 	

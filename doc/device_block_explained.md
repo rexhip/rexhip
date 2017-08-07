@@ -104,7 +104,9 @@
 // the "footer" is implemented then the "header" is also nedded, else the
 // library will not work. No query should go before the "header" or after
 // the "footer".
+
 "mb_device_footer"(common := #common, mb := #mb);
+
 // Benefits of the header and the fotter :
 //  - Logging capacities: Inside the device-udt there is logging of
 //    successfully and failed queries, which is helpful

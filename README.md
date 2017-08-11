@@ -1,4 +1,4 @@
-Rexhip - Improved modbus API for Siemens PLC's.
+Rexhip - An improved modbus API for Siemens PLC's.
 ---------------------------------------------
 Author:   Ola Bjørnli
 

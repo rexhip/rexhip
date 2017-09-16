@@ -1,4 +1,4 @@
-﻿FUNCTION_BLOCK "Keller_pressure_transmitters"
+﻿FUNCTION_BLOCK "keller_pressure_transmitters"
 { S7_Optimized_Access := 'TRUE' }
 VERSION : 0.1
    VAR_INPUT 

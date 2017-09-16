@@ -1,4 +1,4 @@
-FUNCTION_BLOCK "DanfossAquaDrive"
+﻿FUNCTION_BLOCK "DanfossAquaDrive"
 TITLE = Danfoss AQUA-drive FC 202
 { S7_Optimized_Access := 'TRUE' }
 VERSION : 0.1
@@ -128,3 +128,4 @@ BEGIN
 	"mb_station_footer"(station := #s, mb_query := #mb_query);
 	
 END_FUNCTION_BLOCK
+

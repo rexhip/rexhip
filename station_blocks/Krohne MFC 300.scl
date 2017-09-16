@@ -1,4 +1,4 @@
-FUNCTION_BLOCK "Krohne MFC 300"
+﻿FUNCTION_BLOCK "Krohne MFC 300"
 TITLE = Krohne MFC 300
 { S7_Optimized_Access := 'TRUE' }
 AUTHOR : OlaBjornli
@@ -73,3 +73,4 @@ BEGIN
 	"mb_station_footer"(station := #s, mb_query := #mb_query);
 	
 END_FUNCTION_BLOCK
+

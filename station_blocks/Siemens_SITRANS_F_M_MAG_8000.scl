@@ -1,0 +1,36 @@
+FUNCTION_BLOCK "Siemens_SITRANS_F_M_MAG_8000"
+{ S7_Optimized_Access := 'TRUE' }
+VERSION : 0.1
+   VAR_INPUT 
+      mb_addr : UInt;
+   END_VAR
+
+   VAR_IN_OUT 
+      mb_query : "mb_query";
+   END_VAR
+
+   VAR 
+      s : "mb_station_udt";
+      flow : Struct
+         velocity : Real;   // mm/s
+         flow : Real;
+      END_STRUCT;
+      totalizer : Array[1..3] of UDInt;
+   END_VAR
+
+
+BEGIN
+	// Siemens - SITRANS F M MAG 8000
+	// https://cache.industry.siemens.com/dl/files/509/54091509/
+	// att_100244/v1/A5E03409989_01_MAG8000_MODBUS_AOM_OI_.pdf
+	
+	"mb_station_header"(station := #s, mb_query := #mb_query);
+	#mb_query.mb_addr := #mb_addr;
+	
+	#mb_query.mode := #mb_query.c.read.holding_reg;
+	#mb_query(data_addr := 2999, data_ptr := #flow);
+	#mb_query(data_addr := 3016, data_ptr := #totalizer);
+	
+	"mb_station_footer"(station := #s, mb_query := #mb_query);
+	
+END_FUNCTION_BLOCK

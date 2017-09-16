@@ -17,7 +17,7 @@ Key features:
 
 "mb_master_ctrl"(hardware_id := "Local~CB_1241_(RS485)", 
                  baud := 19200, // bps                
-                 mb_query := #mb_query ); // A FB that comes along.
+                 mb_query := #mb_query ); 
 
 // Instances of device blocks for Siemens PAC3200. 
 "siemens_PAC3200_1"(mb_addr := 1, mb_query := #mb_query);
@@ -27,21 +27,23 @@ Key features:
 ```pascal
 // Device block for: Siemens - PAC3200
 
-#mb_query(mb_addr := #mb_addr,                  // Station address.
-          mode := #mb_query.c.read.holding_reg, // Function code 3.
-          data_addr := 13,                      // Read address 13.          
+#mb_query(mb_addr := #mb_addr,                  
+          mode := #mb_query.c.read.holding_reg, 
+          data_addr := 13,                      
           data_ptr := #resault_data_1);                   
-
-// The result will be stored in the connected variable of data_ptr. 
-// The variable can be any data types, including arrays and udt's.
-// Length will be calculated automatically. 
 
 #mb_query(mb_addr := #mb_addr,                 
           mode := #mb_query.c.read.holding_reg, 
           data_addr := 55,                            
           data_ptr := #resault_data_2);
-
-// The library will take care of executing the queries, one by one. 
+		  
+// - The result will be stored in the connected variable 
+//   of data_ptr. 
+// - The variable can be any data types, including arrays 
+//   and udt's.
+// - Length will be calculated automatically. 
+// - The library will take care of executing the queries, 
+//   one by one. 
 ```
    
 Requirements:

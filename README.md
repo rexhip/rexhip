@@ -48,7 +48,7 @@ Requirements:
  - Software: TIA-portal: v14, sp1, Upd 2
  - Hardware: S7-1200: fw >= 4.2   
              S7-1500: fw >= 2.0   (currently only modbus tcp)
--(For older fw. use v1 "_old_version_v1")
+ - (For older fw. use v1 "_old_version_v1")
    
 Quick starter guide:
  - Download the latest release. (https://github.com/olab84/rexhip/releases)

@@ -1,0 +1,60 @@
+﻿FUNCTION_BLOCK "vega_vegabar_81"
+{ S7_Optimized_Access := 'TRUE' }
+VERSION : 0.1
+   VAR_INPUT 
+      mb_addr : UInt;
+   END_VAR
+
+   VAR_OUTPUT 
+      device_ok : Bool;
+   END_VAR
+
+   VAR_IN_OUT 
+      mb_query : "mb_query";
+   END_VAR
+
+   VAR 
+      s : "mb_station_udt";
+      data : Struct
+         "_" : Byte;
+         invalid_measurement : Array[1..4] of Bool;
+         "__" : Array[1..4] of Bool;
+         "___" : Word;
+         data : Array[1..4] of Real;
+      END_STRUCT;
+   END_VAR
+
+
+BEGIN
+	// Vega - VEGABAR 81
+	
+	"mb_station_header"(station := #s, mb_query := #mb_query);
+	
+	#mb_query.mb_addr := #mb_addr;
+	
+	#mb_query(mode := #mb_query.c.read.holding_reg,
+	          data_addr := 2000,
+	          data_ptr := #data);
+	
+	"mb_station_footer"(station := #s, mb_query := #mb_query);
+	
+	(*
+	Unit Code Measurement Unit
+	32 Degree Celsius
+	33 Degree Fahrenheit
+	40 US Gallon
+	41 Liters
+	42 Imperial Gallons
+	43 Cubic Meters
+	44 Feet
+	45 Meters
+	46 Barrels
+	47 Inches
+	48 Centimeters
+	49 Millimeters
+	111 Cubic Yards
+	112 Cubic Feet
+	113 Cubic Inches
+	*)
+END_FUNCTION_BLOCK
+

@@ -3,10 +3,10 @@ Rexhip - An improved modbus API for Siemens PLC's.
 Author:   Ola Bjørnli
 
 Key features:
- - Makes it easy to create and split a program in to reusable «device blocks» (interface blocks).
- - Device blocks can easily be reused and combined in new programs.
- - A clean API helps to cut engineering time.
- - Reduce idle time, by skipping queries that has led to recurring timeout before. Retries will be done occasionally.
+ - Makes it easy to create and split a program in to reusable «station blocks» (interface blocks).
+ - Station blocks can easily be reused and combined in new programs.
+ - A clean API, helps to cut engineering time.
+ - Reduce idle time, by skipping queries that has led to recurring timeouts before. Retries will be done occasionally.
  - Logging features for development and debugging.
  - The library extend on MB_MASTER and MB_CLIENT, the modbus blocks that comes along with TIA-portal.
  - Free under the MIT-license.
@@ -16,50 +16,43 @@ Key features:
 // (Support for modbus TCP is also available)
 
 "mb_master_ctrl"(hardware_id := "Local~CB_1241_(RS485)", 
-                 baud := 9600, // bps
-                 timeout := T#500ms,       
-                 mb := #mb ); // A udt that comes along.
+                 baud := 19200, // bps                
+                 mb_query := #mb_query ); // A FB that comes along.
 
 // Instances of device blocks for Siemens PAC3200. 
-"siemens_PAC3200_1"(unit := 1, mb := #mb);
-"siemens_PAC3200_2"(unit := 2, mb := #mb);
+"siemens_PAC3200_1"(mb_addr := 1, mb_query := #mb_query);
+"siemens_PAC3200_2"(mb_addr := 2, mb_query := #mb_query);
 ```
-
 
 ```pascal
 // Device block for: Siemens - PAC3200
 
-"mb_query"(unit := #unit,                // Station address.
-           fc := #mb.c.read.holding_reg, // Function code 3.
-           d_addr := 13,                 // Read address 13.
-           d_len := 6,                   // Data length.
-           data := #resault_data_1,      //   
-           mb := #mb);                   // Same udt as above.
+#mb_query(mb_addr := #mb_addr,                  // Station address.
+          mode := #mb_query.c.read.holding_reg, // Function code 3.
+          data_addr := 13,                      // Read address 13.          
+          data_ptr := #resault_data_1);                   
 
-// The result will be stored in the connected variable of data. 
-// The variable can be any data types, including arrays and udt's
+// The result will be stored in the connected variable of data_ptr. 
+// The variable can be any data types, including arrays and udt's.
+// Length will be calculated automatically. 
 
-"mb_query"(unit := #unit,                 
-           fc := #mb.c.read.holding_reg, 
-           d_addr := 55,                  
-           d_len := #mb.c.auto_len,       
-           data := #resault_data_2,             
-           mb := #mb);
+#mb_query(mb_addr := #mb_addr,                 
+          mode := #mb_query.c.read.holding_reg, 
+          data_addr := 55,                            
+          data_ptr := #resault_data_2);
 
-// The library will take care of executing the queries, one by 
-// one. This is achieved by two counters inside the "mb-udt", 
-// one that is increased for each call of mb_query, and one 
-// other that is increased each time a query finishes. However 
-// this is all taken care of behined the scenes. 
+// The library will take care of executing the queries, one by one. 
 ```
    
 Requirements:
- - Software: TIA-portal: v13, sp1, upd8 (or later)
- - Hardware: S7-1200 or S7-1500. (S7-1200 firmware version >= 4.1.3)
-
+ - Software: TIA-portal: v14, sp1, Upd 2
+ - Hardware: S7-1200: fw >= 4.2   
+             S7-1500: fw >= 2.0   (currently only modbus tcp)
+             (For older fw. use v1 "_old_version_v1")
+   
 Quick starter guide:
  - Download the latest release. (https://github.com/olab84/rexhip/releases)
  - Start a new project in TIA-portal, and then add new PLC.
- - Localise "External Source files" in the tree structure and import the files inside the CORE folder of the downloaded zip-file.
+ - Localise "External Source files" in the tree structure and import the files inside the lib-folder of the downloaded zip-file.
  - Select the imported files, right click them and choose "Generate blocks from source".
- - Continue read the generated "README" FC, and study the start examples.
+ - Study the start examples and customize the code to your modbus application.

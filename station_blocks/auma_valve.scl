@@ -1,0 +1,67 @@
+﻿FUNCTION_BLOCK "auma_valve"
+{ S7_Optimized_Access := 'TRUE' }
+VERSION : 0.1
+   VAR_INPUT 
+      mb_addr : UInt;
+   END_VAR
+
+   VAR_IN_OUT 
+      mb_query : "mb_query";
+   END_VAR
+
+   VAR 
+      s : "mb_station_udt";
+      read : Struct
+         status : Struct
+            torque_sw_closed : Bool;
+            torque_sw_open : Bool;
+            limit_sw_closed : Bool;
+            limit_sw_open : Bool;
+            sel_sw_local : Bool;
+            sel_sw_remote : Bool;
+            phase_fault : Bool;
+            therminal_fault : Bool;
+            falt : Bool;
+            warning : Bool;
+            running_close : Bool;
+            running_open : Bool;
+            not_ready_remote : Bool;
+            setpoint_reached : Bool;
+            end_p_clossed : Bool;
+            end_p_open : Bool;
+         END_STRUCT;
+         "Actual position" : UInt;
+      END_STRUCT;
+      write : Struct
+         cmd : Struct
+            byte_2 : Byte;
+            open : Bool;
+            close : Bool;
+            use_setpoint : Bool;
+            reset : Bool;
+            b4 : Bool;
+            b5 : Bool;
+            b6 : Bool;
+            b7 : Bool;
+         END_STRUCT;
+         setpoint : UInt;
+      END_STRUCT;
+   END_VAR
+
+
+BEGIN
+	// Web: http://www1.auma.com/uploads/media/sp_import2/handbuecher/
+	//      steuerungen/hb_ac2_modbus_geraeteintegration_en.pdf
+	
+	"mb_station_header"(station := #s, mb_query := #mb_query);
+	
+	#mb_query.mb_addr := #mb_addr;
+	#mb_query.data_addr := 16#03E8;
+	
+	#mb_query(mode := #mb_query.c.read.input_reg, data_ptr := #read); // p.10
+	#mb_query(mode := #mb_query.c.write.holding_reg, data_ptr := #write); // p.29
+	
+	"mb_station_footer"(station := #s, mb_query := #mb_query);
+	
+END_FUNCTION_BLOCK
+

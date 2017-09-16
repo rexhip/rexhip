@@ -1,0 +1,75 @@
+FUNCTION_BLOCK "Krohne MFC 300"
+TITLE = Krohne MFC 300
+{ S7_Optimized_Access := 'TRUE' }
+AUTHOR : OlaBjornli
+FAMILY : modbus
+VERSION : 0.1
+//Coriolise flow meter
+   VAR_INPUT 
+      mb_addr : UInt;
+   END_VAR
+
+   VAR_IN_OUT 
+      mb_query : "mb_query";
+   END_VAR
+
+   VAR 
+      s : "mb_station_udt";
+      basic_data : Struct
+         "Flow Velocity" : Real;   // [m/s]
+         "Volume Flow" : Real;   // [m3/s]
+         "Mass Flow" : Real;   // [kg/s]
+         Temperature : Real;   // [K]
+         Density : Real;   // [kg/m3]
+         "Concentration 1" : Real;
+         "Concentration 2 or Diagnosis 3" : Real;
+         "Concentration Flow 1" : Real;
+         "Concentration Flow 2" : Real;
+         "Diagnosis 1" : Real;
+         "Diagnosis 2" : Real;
+         "Display Channel 1" : Real;
+         "Display Channel 2" : Real;
+         "Operating time" : Real;   // [s]
+      END_STRUCT;
+      settings : Struct
+         "Counter 1 Function" : UInt;
+         "Counter 1 Measurement" : UInt;
+         "Counter 2 Function" : UInt;
+         "Counter 2 Measurement" : UInt;
+         "Counter 3 Function" : UInt;
+         "Counter 3 Measurement" : UInt;
+      END_STRUCT;
+   END_VAR
+
+
+BEGIN
+	// Web: http://cdn.krohne.com/dlc/AD_MFC300_Modbus_en_091124_4000744801_R01.pdf
+	
+	// Warning: code has not been tested !
+	
+	// #settings :
+	//    Counter Function:
+	//       1 = Sum Counter
+	//       2 = + Counter
+	//       3 = - Counter
+	//       0 = Off
+	//    Counter Measurement:
+	//       21 = Volume Flow [m3]
+	//       22 = Mass Flow [kg]
+	//       27 = Concentration Flow 1 []
+	//       28 = Concentration Flow 2 []
+	
+	"mb_station_header"(station := #s, mb_query := #mb_query);
+	#mb_query.mb_addr := #mb_addr;
+	
+	#mb_query(mode := #mb_query.c.mode.read,
+	          data_addr := 30001, // 30000 + 1 (error in datasheet),,,,,
+	          data_ptr := #basic_data);
+	
+	#mb_query(mode := #mb_query.c.mode.write,
+	          data_addr := 40001, // 40000 + 1,,
+	          data_ptr := #settings);
+	
+	"mb_station_footer"(station := #s, mb_query := #mb_query);
+	
+END_FUNCTION_BLOCK

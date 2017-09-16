@@ -1,12 +1,14 @@
 ```pascal
-// For some modbus devices, when two registers are combined into one,
+// For some modbus devices, when two regisers are combined into one,
 // the data is stored as little endian, not big endian like Siemens 
 // PLC does. To solve this, the SWAP function needs to be utilized.
 
-#mb_query(mb_addr := #mb_addr,               
-          mode := #mb_query.c.read.holding_reg,
-          data_addr := 123,               
-          data_ptr := #static_tmp_var);                  
+"mb_query"(unit := #unit,               
+           fc := #mb.c.read.holding_reg,
+           d_addr := 123,    
+           d_len := 1,      
+           data := #static_tmp_var,
+           mb := #mb);                  
 
 #value := SWAP(#static_tmp_var);
 ```
@@ -17,10 +19,12 @@
 // following register. When the above situation is present, the SWAP_WORD 
 // function needs to be used.
 
-#mb_query(mb_addr := #mb_addr,               
-          mode := #mb_query.c.read.holding_reg,
-          data_addr := 123,               
-          data_ptr := #static_tmp_var);                  
+"mb_query"(unit := #unit,               
+           fc := #mb.c.read.holding_reg,
+           d_addr := 123,    
+           d_len := 2,      
+           data := #static_tmp_var,
+           mb := #mb);                  
  
 #value := SWAP_WORD(#static_tmp_var);
 ```
@@ -33,4 +37,4 @@
 ```
 
 How the data is stored in a device is usually described the
-data sheet of the device.
+datasheet of the device.

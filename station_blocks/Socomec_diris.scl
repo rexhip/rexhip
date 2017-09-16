@@ -1,0 +1,110 @@
+﻿FUNCTION_BLOCK "Socomec_diris"
+TITLE = Socomec Diris A40/A41
+{ S7_Optimized_Access := 'TRUE' }
+VERSION : 0.1
+   VAR_INPUT 
+      mb_addr : USInt;
+   END_VAR
+
+   VAR_OUTPUT 
+      data : Struct
+         hour_meter : Real;
+         voltage_L_L : Array[1..3] of Real;   // 1->L1-L2, 2->L2-L3, 3->L3-L1
+         voltage_L_N : Array[1..3] of Real;
+         frequency : Real;
+         current : Array[1..3] of Real;
+         neutral_current : Real;
+         sum_active_power : Real;
+         sum_reactive_power : Real;
+         sum_apparent_power : Real;
+         sum_power_factor : Real;   // -: leading and + : lagging
+         power_active : Array[1..3] of Real;
+         power_reactive : Array[1..3] of Real;
+         power_apparent : Array[1..3] of Real;
+         power_factor : Array[1..3] of Real;
+      END_STRUCT;
+   END_VAR
+
+   VAR_IN_OUT 
+      mb_query : "mb_query";
+   END_VAR
+
+   VAR 
+      s : "mb_station_udt";
+      query_1 : Struct
+         hour_meter : DWord;
+         voltage_L_L : Array[1..3] of DWord;   // 1->L1-L2, 2->L2-L3, 3->L3-L1
+         voltage_L_N : Array[1..3] of DWord;
+         frequency : DWord;
+         current : Array[1..3] of DWord;
+         neutral_current : DWord;
+         sum_active_power : DWord;
+         sum_reactive_power : DWord;
+         sum_apparent_power : DWord;
+         sum_power_factor : DWord;   // -: leading and + : lagging
+         power_active : Array[1..3] of DWord;
+         power_reactive : Array[1..3] of DWord;
+         power_apparent : Array[1..3] of DWord;
+         power_factor : Array[1..3] of DWord;
+      END_STRUCT;
+      query_2_temperature : DWord;
+   END_VAR
+
+   VAR_TEMP 
+      j : Int;
+   END_VAR
+
+
+BEGIN
+	// https://www.socomec.com/files/live/sites/systemsite/files/SCP/
+	// 6_gestion_energie/diris/diris_a40/536181B_GB_Ethernet.pdf
+	
+	"mb_station_header"(station := #s, mb_query := #mb_query);
+	#mb_query.mb_addr := #mb_addr;
+	
+	#mb_query.mode := #mb_query.c.read.holding_reg;
+	#mb_query(data_addr := 50512, data_ptr := #query_1);
+	#mb_query(data_addr := 51457, data_ptr := #query_2_temperature);
+	
+	"mb_station_footer"(station := #s, mb_query := #mb_query);
+	
+	IF #s.out.error_comm THEN
+	    FOR #j := 1 TO 3 DO
+	        #data.voltage_L_L[#j] := 0;
+	        #data.voltage_L_N[#j] := 0;
+	        #data.current[#j] := 0;
+	        #data.power_active[#j] := 0;
+	        #data.power_reactive[#j] := 0;
+	        #data.power_apparent[#j] := 0;
+	        #data.power_factor[#j] := 0;
+	    END_FOR;
+	    #data.hour_meter := 0;
+	    #data.frequency := 0;
+	    #data.neutral_current := 0;
+	    #data.sum_active_power := 0;
+	    #data.sum_reactive_power := 0;
+	    #data.sum_apparent_power := 0;
+	    #data.sum_power_factor := 0;
+	END_IF;
+	
+	FOR #j := 1 TO 3 DO
+	    #data.voltage_L_L[#j] := DWORD_TO_REAL(#query_1.voltage_L_L[#j]) / 100;
+	    #data.voltage_L_N[#j] := DWORD_TO_REAL(#query_1.voltage_L_N[#j]) / 100;
+	    #data.current[#j] := DWORD_TO_REAL(#query_1.current[#j]) / 1000;
+	    #data.power_active[#j] := DWORD_TO_REAL(#query_1.power_active[#j]) / 100;
+	    #data.power_reactive[#j] := DWORD_TO_REAL(#query_1.power_reactive[#j]) / 100;
+	    #data.power_apparent[#j] := DWORD_TO_REAL(#query_1.power_apparent[#j]) / 100;
+	    #data.power_factor[#j] := DWORD_TO_REAL(#query_1.power_factor[#j]) / 1000;
+	END_FOR;
+	#data.hour_meter := DWORD_TO_REAL(#query_1.hour_meter) / 100;
+	#data.frequency := DWORD_TO_REAL(#query_1.frequency) / 100;
+	#data.neutral_current := DWORD_TO_REAL(#query_1.neutral_current) / 100;
+	#data.sum_active_power := DWORD_TO_REAL(#query_1.sum_active_power) / 100;
+	#data.sum_reactive_power := DWORD_TO_REAL(#query_1.sum_reactive_power) / 100;
+	#data.sum_apparent_power := DWORD_TO_REAL(#query_1.sum_apparent_power) / 100;
+	#data.sum_power_factor := DWORD_TO_REAL(#query_1.sum_power_factor) / 1000;
+	
+	#query_2_temperature := 0;
+	
+END_FUNCTION_BLOCK
+

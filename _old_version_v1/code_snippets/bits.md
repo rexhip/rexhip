@@ -27,10 +27,12 @@ VAR
 END_VAR
 
 // A normal query.
-#mb_query(mb_addr := mb_addr,         
-          mode := #mb_query.c.read.holding_reg,
-          data_addr := __REGISTER__,          
-          data_ptr := #status); // Read the whole word         
+"mb_query"(unit := __UNIT__,         
+           fc := #mb.c.read.holding_reg,
+           d_addr := __REGISTER__,
+           d_len := 1,
+           data := #status, // Read the whole word
+           mb := #mb);
 
 // Later in the program when a bits need to be read, then a bit 
 // can be referred to directly. Eg. #status.b11_ready, for the 

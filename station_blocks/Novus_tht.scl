@@ -1,4 +1,4 @@
-﻿FUNCTION_BLOCK "example_novus_tht"
+FUNCTION_BLOCK "Novus_tht"
 { S7_Optimized_Access := 'TRUE' }
 VERSION : 0.1
    VAR_INPUT 

@@ -3,6 +3,8 @@ FUNCTION_BLOCK "Siemens_Sinamics_G120"
 VERSION : 0.1
    VAR_INPUT 
       mb_addr : UInt;
+      stop : Bool;
+      ref : Real;
    END_VAR
 
    VAR_IN_OUT 
@@ -27,7 +29,7 @@ VERSION : 0.1
             x03_Fault_present : Bool;
             x04_No_coast_down_active : Bool;   //  (OFF2 inactive)
             x05_No_fast_stop_active : Bool;   // (OFF3 inactive)
-            "x06_ Power_on_inhibit_active" : Bool;
+            x06_power_on_inhibit_active : Bool;
             x07_Alarm_present : Bool;
          END_STRUCT;
          actual : Int;
@@ -36,20 +38,20 @@ VERSION : 0.1
          ctw : Struct
             x08 : Bool;
             x09 : Bool;
-            x10_Control_via_PLC : Bool := true;
+            x10_control_via_PLC : Bool := true;
             x11_reversal : Bool;
             x12 : Bool;
             x13_Motorized_potentiometer_setpoint_raise : Bool;
             x14_Motorized_potentiometer_setpoint_lower : Bool;
-            "x15_" : Bool;
+            x15 : Bool;
             x00_R_TRIG_ON : Bool;   // 0 = OFF1 (braking with ramp-function generator, then pulse cancllation &ready-to-power-up)
             x01_No_OFF2 : Bool := true;   // enable is possible. 0 = OFF2 (immediate pulse cancellation and power-on inhibit)
             x02_No_OFF3 : Bool := true;   // enable is possible. 0 = OFF3 braking with the OFF3 ramp p1135, then pulse cancellation andpower-on inhibit)
             x03_Enable_operation : Bool := true;   //  (pulses can be enabled) 0 = Inhibit operation (cancel pulses)
             x04_Operating_condition : Bool;   // (the ramp-function generator can be enabled)0 = Inhibit ramp-function generator (set the ramp-function generator output tozero)
             x05_Enable_the_ramp_function_generator : Bool;   // 0 = Stop the ramp-function generator (freeze the ramp-function generatoroutput)
-            x06_Enable_setpoint : Bool := true;   // 0 = Inhibit setpoint (set the ramp-function generator input to zero)
-            x07_R_TRIG_Acknowledge_faults : Bool;
+            x06_enable_setpoint : Bool := true;   // 0 = Inhibit setpoint (set the ramp-function generator input to zero)
+            x07_R_TRIG_acknowledge_faults : Bool;
          END_STRUCT;
          setpoint : Int;
       END_STRUCT;
@@ -68,7 +70,12 @@ BEGIN
 	#mb_query.mode := #mb_query.c.read.holding_reg;
 	#mb_query(data_addr := 40110, data_ptr := #read);
 	
+	// ------------ WRITE
 	#mb_query.mode := #mb_query.c.write.holding_reg;
+	
+	#write.ctw.x00_R_TRIG_ON := NOT #stop AND NOT #read.stw.x07_Alarm_present
+	AND #read.stw.x01_Ready_to_operate AND #read.stw.x00_Ready_to_power_up;
+	#write.setpoint := REAL_TO_INT(#ref);
 	#mb_query(data_addr := 40100, data_ptr := #write);
 	
 	"mb_station_footer"(station := #s, mb_query := #mb_query);

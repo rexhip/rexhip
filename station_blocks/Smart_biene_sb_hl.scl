@@ -1,0 +1,74 @@
+FUNCTION_BLOCK "Smart_biene_sb_hl"
+{ S7_Optimized_Access := 'TRUE' }
+VERSION : 0.1
+   VAR_INPUT 
+      mb_addr : UInt;
+   END_VAR
+
+   VAR_IN_OUT 
+      mb_query : "mb_query";
+   END_VAR
+
+   VAR 
+      s : "mb_station_udt";
+      data : Struct
+         "Min measuring range" : Word;
+         "Max measuring range" : Word;
+         "Pressure Value" : Word;
+         "High Pressure" : Word;
+         "Low Pressure" : Word;
+         stat : Word;
+         model : String[12];
+         serial : String[12];
+         unit : Int;
+      END_STRUCT;
+      a : Struct
+         x08 : Bool;
+         x09 : Bool;
+         x10 : Bool;
+         x11 : Bool;
+         x12 : Bool;
+         x13 : Bool;
+         x14 : Bool;
+         x15 : Bool;
+         x00 : Bool;
+         x01 : Bool;
+         x02 : Bool;
+         x03 : Bool;
+         x04 : Bool;
+         x05 : Bool;
+         x06 : Bool;
+         x07 : Bool;
+      END_STRUCT;
+   END_VAR
+
+
+BEGIN
+	// Smart Biene - SB-HL - Hydrostatic Level Transmitter
+	// 
+	// Web: http://smartbiene.com/images/pdf/hydrostatic-level/
+	//      Hydrostatic%20level-SP-HL-01-ModbusRTU.pdf
+	
+	"mb_station_header"(station := #s, mb_query := #mb_query);
+	#mb_query.mb_addr := #mb_addr;
+	
+	#mb_query.mode := #mb_query.c.read.holding_reg;
+	#mb_query(data_addr := 0, data_ptr := #data);
+	
+	"mb_station_footer"(station := #s, mb_query := #mb_query);
+	
+	(*
+	Unit:
+	0-mbar
+	1-bar
+	2-PSI
+	3-KPa
+	4-MPa
+	5-Kg/cm2
+	6-mmHg
+	7-mmH2O
+	8-inHg
+	9-inH2O 
+	*)
+END_FUNCTION_BLOCK
+

@@ -1,0 +1,167 @@
+FUNCTION_BLOCK "Abb_ach_400_ac_drives"
+{ S7_Optimized_Access := 'TRUE' }
+VERSION : 0.1
+   VAR_INPUT 
+      mb_addr : UInt;
+   END_VAR
+
+   VAR_IN_OUT 
+      mb_query : "mb_query";
+   END_VAR
+
+   VAR 
+      s : "mb_station_udt";
+      read1 : Struct
+         sw : Struct   // page 111, tabel 23
+            x08_actual_eq_ref : Bool;   // (= is within tolerance limits)
+            x09_drive_control_remote : Bool;
+            x10_supervision_limit : Bool;   // The value of first supervised parameter equals to or is greater than supervision limit. Refer toGroup 32 Supervision.
+            x11_ext2_selected : Bool;   // 0 = ext1 selected
+            x12_run : Bool;   //  Enable signal received
+            x13 : Bool;
+            x14 : Bool;
+            x15 : Bool;
+            x00_rdy_to_sw_on : Bool;
+            x01_rdy_to_operate : Bool;
+            x02_opr_enabled : Bool;
+            x03_falut : Bool;
+            x04_OFF2_inactive : Bool;
+            x05_OFF3_inactive : Bool;
+            x06_switch_on_innhibited : Bool;
+            x07_alarm : Bool;   // See the Diagnostics section for a list of relevant alarms
+         END_STRUCT;
+      END_STRUCT;
+      read2 : Struct
+         speed : Int;   // rpm
+         output_freq : Int;   // 0.1 Hz
+         current : Int;   // 0.1 A
+         torque : Int;   // 0.1 %
+         power : Int;   // 0.1 kW
+         dc_bus_voltage : Int;   // 0.1 V
+         output_voltage : Int;   // 0.1 V
+         ACH400_temp : Int;   // 0.1 °C | Displays the temperature of the ACH 400 heatsink in degrees Centigrade
+         ext_ref_1 : Int;   // 0.1 Hz
+         ext_ref_2 : Int;   // 0.1 %
+         ctrl_location : Int;   // 0 - 2
+         run_time : UInt;   // h
+         kWh_cnt : UInt;   //  kWh
+         appl_blk_output : UInt;
+         digital_input : Struct
+            x08 : Bool;
+            x09 : Bool;
+            x10 : Bool;
+            x11 : Bool;
+            x12 : Bool;
+            x13 : Bool;
+            x14 : Bool;
+            x15 : Bool;
+            x00_in_1 : Bool;
+            x01_in_2 : Bool;
+            x02_in_3 : Bool;
+            x03_in_4 : Bool;
+            x04 : Bool;
+            x05 : Bool;
+            x06 : Bool;
+            x07 : Bool;
+         END_STRUCT;
+         analog_in_1 : UInt;   // 0.1 %
+         analog_in_2 : UInt;   // 0.1 %
+      END_STRUCT;
+      read3 : Struct
+         fault_word_1 : Struct
+            x08_Motor_overtemperature : Bool;
+            x09_Panel_loss : Bool;
+            x10_Parameters_inconsistent : Bool;
+            x11_DC_bus_ripple_too_large : Bool;
+            x12_Motor_stall : Bool;
+            x13_Serial_communication_loss : Bool;
+            x14_External_fault : Bool;
+            x15_Output_ground_fault : Bool;
+            x00_Overcurrent : Bool;
+            x01_DC_overvoltage : Bool;
+            x02_ACH_400_overtemperature : Bool;
+            x03_Fault_current : Bool;
+            x04_Output_overload : Bool;
+            x05_DC_undervoltage : Bool;
+            x06_Analog_input_1_fault : Bool;
+            x07_Analog_input_2_fault : Bool;
+         END_STRUCT;
+         fault_word_2 : Struct
+            x08_hw_err : Bool;
+            x09_hw_err : Bool;
+            x10_hw_err : Bool;
+            x11_hw_err : Bool;
+            x12_hw_err : Bool;
+            x13_hw_err : Bool;
+            x14_hw_err : Bool;
+            x15_hw_err : Bool;
+            x00_Underload : Bool;
+            x01 : Bool;
+            x02_DDCS_link : Bool;
+            x03 : Bool;
+            x04 : Bool;
+            x05 : Bool;
+            x06 : Bool;
+            x07 : Bool;
+         END_STRUCT;
+      END_STRUCT;
+      "_" : Bool;
+      write1 : Struct
+         cw : Struct   // page 109, tabel 21
+            x08 : Bool;
+            x09 : Bool;
+            x10 : Bool;
+            x11_sel_ext_2 : Bool;   // Select external control location 1
+            x12 : Bool;
+            x13 : Bool;
+            x14 : Bool;
+            x15 : Bool;
+            x00_start : Bool := true;
+            x01_no_cost_stop : Bool := true;   // Emergency OFF, coast to stop.Enter OFF2 ACTIVE; proceed to SWITCH-ON INHIBITED
+            x02_no_ramp_stop : Bool := true;   // Emergency stop. Drive ramps to stop according to parameter 2205 DECELER TIME 2. Enter
+            x03_operation_enable : Bool := true;
+            x04 : Bool;
+            x05_no_ramp_generator : Bool := true;
+            x06_no_force_ramp_generator_input2zero : Bool;   // Force Ramp Function Generator input to zero
+            x07_fault_reset : Bool;   // (enter SWITCH-ON INHIBITED)
+         END_STRUCT;
+         ref_1 : Int;
+         ref_2 : Int;
+      END_STRUCT;
+      write2 : Struct
+         keypad_ref_sel : UInt;
+         ext1_ext2_sel : UInt;
+         ext1_sel : UInt;
+         ext1_sel_min : UInt;   // 0 - 250 Hz
+         ext1_sel_max : UInt := 50;   // 0 - 250 Hz
+      END_STRUCT;
+      write3 : Struct   // Communication fault function
+         comm_fault_func : UInt := 1;   // 1=FAULT(cost), 2=CONST SP 7, 3=LAST SPEED
+      END_STRUCT;
+   END_VAR
+
+
+BEGIN
+	// Abb - ACH 400 - AC Drives 
+	// 
+	// Web: https://www.ccontrols.com/support/dp/ACH402_US_04_Web.pdf
+	
+	// Warning: This code is not tested with real equipment.
+	
+	"mb_station_header"(station := #s, mb_query := #mb_query);
+	#mb_query.mb_addr := #mb_addr;
+	
+	#mb_query.mode := #mb_query.c.read.holding_reg;
+	#mb_query(data_addr := 3, data_ptr := #read1);   // 40004
+	#mb_query(data_addr := 102, data_ptr := #read2); // 103
+	#mb_query(data_addr := 304, data_ptr := #read3); // 305 - 1 
+	
+	#mb_query.mode := #mb_query.c.write.holding_reg;
+	#mb_query(data_addr := 0, data_ptr := #write1); // 40001
+	// #mb_query(data_addr := 1100, data_ptr := #write2); // 1101 - 1
+	#mb_query(data_addr := 5003, data_ptr := #write3); // 5004 - 1
+	
+	"mb_station_footer"(station := #s, mb_query := #mb_query);
+	
+END_FUNCTION_BLOCK
+

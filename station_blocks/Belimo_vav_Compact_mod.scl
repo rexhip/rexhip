@@ -1,0 +1,62 @@
+FUNCTION_BLOCK "Belimo_vav_Compact_mod"
+{ S7_Optimized_Access := 'TRUE' }
+VERSION : 0.1
+   VAR_INPUT 
+      mb_addr : UInt;
+      sp : Real;   // setpoint
+      sp_backup : Real;
+   END_VAR
+
+   VAR_OUTPUT 
+      qPos : Real;
+   END_VAR
+
+   VAR_IN_OUT 
+      mb_query : "mb_query";
+   END_VAR
+
+   VAR 
+      s : "mb_station_udt";
+      read : Struct
+         position : Int;
+      END_STRUCT;
+      write_1 : Struct
+         setpoint : Int;
+      END_STRUCT;
+      write_2 : Struct
+         bus_fail_position : Int;
+      END_STRUCT;
+   END_VAR
+
+
+BEGIN
+	// Belimo - VAV-Compact MOD 
+	// LMV-D3-MOD 5  Nm 2   W 4 VA (max. 5 A @ 5 ms) Approx. 500 g
+	// NMV-D3-MOD 10 Nm 3.5 W 6 VA (max. 5 A @ 5 ms) Approx. 700 g
+	// https://www.micromatic.no/globalassets/inriver/
+	// resources/ko1070_0_5_1.pdf
+	
+	"mb_station_header"(station := #s, mb_query := #mb_query);
+	#mb_query.mb_addr := #mb_addr;
+	
+	#mb_query.mode := #mb_query.c.read.holding_reg;
+	#mb_query(data_addr := 4, data_ptr := #read);
+	#qPos := INT_TO_REAL(#read.position) * 0.01;
+	
+	#mb_query.mode := #mb_query.c.write.holding_reg;
+	#write_1.setpoint := REAL_TO_INT(#sp) * 100;
+	#mb_query(data_addr := 0, data_ptr := #write_1);
+	#write_2.bus_fail_position := REAL_TO_INT(#sp_backup) * 100;
+	#mb_query(data_addr := 108, data_ptr := #write_2);
+	
+	"mb_station_footer"(station := #s, mb_query := #mb_query);
+	
+	(*
+	Bus fail position:
+	0 Last setpoint (no bus monitoring)
+	1 Fast close if time is exceeded
+	2 Fast open if time is exceeded	
+	*)
+	
+END_FUNCTION_BLOCK
+

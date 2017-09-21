@@ -1,0 +1,151 @@
+FUNCTION_BLOCK "Yaskawa_e7_drive"
+{ S7_Optimized_Access := 'TRUE' }
+VERSION : 0.1
+   VAR_INPUT 
+      mb_addr : UInt;
+   END_VAR
+
+   VAR_IN_OUT 
+      mb_query : "mb_query";
+   END_VAR
+
+   VAR 
+      s : "mb_station_udt";
+      read1 : Struct
+         stat : Struct
+            x08 : Bool;
+            x09 : Bool;
+            x10 : Bool;
+            x11 : Bool;
+            x12 : Bool;
+            x13 : Bool;
+            x14 : Bool;
+            x15 : Bool;
+            x00_run : Bool;
+            x01 : Bool;
+            x02 : Bool;
+            x03_reset_signal : Bool;
+            x04_speed_agree : Bool;
+            x05_inverter_ready : Bool;
+            x06_minor_fault : Bool;
+            x07_major_fault : Bool;
+            a : Struct
+               x08 : Bool;
+               x09 : Bool;
+               x10 : Bool;
+               x11 : Bool;
+               x12 : Bool;
+               x13 : Bool;
+               x14 : Bool;
+               x15 : Bool;
+               x00 : Bool;
+               x01 : Bool;
+               x02 : Bool;
+               x03 : Bool;
+               x04 : Bool;
+               x05 : Bool;
+               x06 : Bool;
+               x07 : Bool;
+            END_STRUCT;
+         END_STRUCT;
+      END_STRUCT;
+      read2 : Struct
+         fault_contents_1 : Struct
+            x08_inverter_overheat : Bool;
+            x09_inverter_overheat_warning : Bool;
+            x10_motor_overload : Bool;
+            x11_inverter_overload : Bool;
+            x12_overtorque_1 : Bool;
+            x13_overtorque_2 : Bool;
+            x14_braking_resistor_fault : Bool;
+            x15_braking_resistor_overheat : Bool;
+            x00_fuse : Bool;
+            x01_main_circuit_undervoltage : Bool;
+            x02_control_circuit_undervoltage : Bool;
+            x03_mc_error : Bool;
+            x04 : Bool;
+            x05_ground_fault : Bool;
+            x06_over_current : Bool;
+            x07_overvoltage : Bool;
+            a : Struct
+               x08 : Bool;
+               x09 : Bool;
+               x10 : Bool;
+               x11 : Bool;
+               x12 : Bool;
+               x13 : Bool;
+               x14 : Bool;
+               x15 : Bool;
+               x00 : Bool;
+               x01 : Bool;
+               x02 : Bool;
+               x03 : Bool;
+               x04 : Bool;
+               x05 : Bool;
+               x06 : Bool;
+               x07 : Bool;
+            END_STRUCT;
+         END_STRUCT;
+      END_STRUCT;
+      read3_data : Struct
+         "Output Frequency" : Word;   // 0.01Hz
+         "Output Current" : Word;   // 0.1A
+         "Output Voltage" : Word;   // 0.1Vac
+         "DC Bus Voltage" : Word;   // Vdc
+         "Output Power" : Word;   // 0.1kW
+      END_STRUCT;
+      "_" : Bool;
+      write1 : Struct
+         cmd : Struct
+            x08 : Bool;
+            x09 : Bool;
+            x10 : Bool;
+            x11 : Bool;
+            x12 : Bool;
+            x13 : Bool;
+            x14 : Bool;
+            x15 : Bool;
+            x00_run : Bool := true;
+            x01_reverse : Bool;
+            x02_external_fault : Bool;
+            x03_fault_reset : Bool;
+            x04_ComNet : Bool := true;
+            x05_ComCtrl : Bool := true;
+            x06 : Bool;
+            x07 : Bool;
+         END_STRUCT;
+         freq_ref : Int;
+      END_STRUCT;
+      write2_max_frequency : UInt := 50;   // 0.1 Hz
+      write3 : Struct
+         ref_source : Int := 2;   // 0=Operator, 1=Terminals, 2=Serial Com, 3=Option PCB
+         run_source : Int := 2;   // 0=Operator, 1=Terminals, 2=Serial Com, 3=Option PCB
+         stopp_method : Int := 0;   // 0=Ramp to Stop, 1=Coast to Stop, 2=DCInj to Stop, 3=Coast w/Timer (C1-09)
+      END_STRUCT;
+   END_VAR
+
+
+BEGIN
+	// Yaskawa - E7 Drive
+	// Models: CIMR-E7U* 
+	// Web: https://www.ccontrols.com/support/dp/TME711.pdf
+	
+	// Warning: This code is not tested with real equipment.
+	
+	"mb_station_header"(station := #s, mb_query := #mb_query);
+	#mb_query.mb_addr := #mb_addr;
+	
+	#mb_query.mode := #mb_query.c.read.holding_reg;
+	#mb_query(data_addr := 16#10, data_ptr := #read1);
+	#mb_query(data_addr := 16#14, data_ptr := #read2);
+	#mb_query(data_addr := 16#41, data_ptr := #read3_data);
+	
+	#mb_query.mode := #mb_query.c.write.holding_reg;
+	#mb_query(data_addr := 16#303, data_ptr := #write2_max_frequency);
+	#mb_query(data_addr := 16#180, data_ptr := #write3);
+	#mb_query(data_addr := 16#1, data_ptr := #write1);
+	
+	"mb_station_footer"(station := #s, mb_query := #mb_query);
+	
+END_FUNCTION_BLOCK
+

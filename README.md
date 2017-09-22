@@ -19,21 +19,13 @@ Key features:
                  baud := 19200, // bps                
                  mb_query := #mb_query ); 
 
-// Instances of device blocks for Siemens PAC3200. 
-"siemens_PAC3200_1"(mb_addr := 1, mb_query := #mb_query);
-"siemens_PAC3200_2"(mb_addr := 2, mb_query := #mb_query);
-```
-
-```pascal
-// Device block for: Siemens - PAC3200
-
 #mb_query(mb_addr := #mb_addr,                  
-          mode := #mb_query.c.read.holding_reg, 
+          mode := #mb_query.c.read.input_reg, 
           data_addr := 13,                      
           data_ptr := #resault_data_1);                   
 
 #mb_query(mb_addr := #mb_addr,                 
-          mode := #mb_query.c.read.holding_reg, 
+          mode := #mb_query.c.write.holding_reg, 
           data_addr := 55,                            
           data_ptr := #resault_data_2);
 		  

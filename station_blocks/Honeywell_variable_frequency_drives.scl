@@ -1,0 +1,103 @@
+FUNCTION_BLOCK "Honeywell_variable_frequency_drives"
+{ S7_Optimized_Access := 'TRUE' }
+VERSION : 0.1
+   VAR_INPUT 
+      mb_addr : UInt := 255;
+   END_VAR
+
+   VAR_IN_OUT 
+      mb_query : "mb_query";
+   END_VAR
+
+   VAR 
+      s : "mb_station_udt";
+      r : Struct
+         stw : Struct
+            x24 : Bool;
+            x25 : Bool;
+            x26 : Bool;
+            x27 : Bool;
+            x28 : Bool;
+            x29_control_place : Bool := false;
+            x30_control_place : Bool := false;
+            x31_control_place : Bool := true;
+            x16 : Bool;
+            x17 : Bool;
+            x18 : Bool;
+            x19 : Bool;
+            x20 : Bool;
+            x21 : Bool;
+            x22 : Bool;
+            x23 : Bool;
+            x08 : Bool;
+            x09 : Bool;
+            x10 : Bool;
+            x11 : Bool;
+            x12 : Bool;
+            x13 : Bool;
+            x14 : Bool;
+            x15 : Bool;
+            x00_Ready : Bool;
+            x01_Running : Bool;
+            x02_Counterclockwise : Bool;
+            x03_Faulted : Bool;
+            x04_Alarm : Bool;
+            x05_AtReference : Bool;
+            x06_ZeroSpeed : Bool;
+            x07_FluxReady : Bool;
+         END_STRUCT;
+         d1_Output_Frequency : DInt;   // 0,01 Hz
+         d2_Motor_Speed : DInt;   // 1 rpm
+         d3_Motor_Current : DInt;   // 0,1 A
+         d4_Motor_Torque : DInt;   // 0,1 %
+         d5_Motor_Power : DInt;   // 0,1 %
+         d6_Motor_Voltage : DInt;   // 0,1 V
+         d7_DC_link_voltage : DInt;   // 1 V
+         d8_Active_Fault_Code : DInt;
+      END_STRUCT;
+      w : Struct
+         ctw : Struct
+            x08 : Bool;
+            x09 : Bool;
+            x10 : Bool;
+            x11 : Bool;
+            x12 : Bool;
+            x13 : Bool;
+            x14 : Bool;
+            x15 : Bool;
+            x00 : Bool;
+            x01_start : Bool := true;
+            x02_Reverse : Bool;
+            x03_Reset_faults : Bool;
+            x04 : Bool;
+            x05 : Bool;
+            x06 : Bool;
+            x07 : Bool;
+         END_STRUCT;
+         "__" : Word;
+         speed_ref : UInt;   //  0…10000 %
+      END_STRUCT;
+   END_VAR
+
+
+BEGIN
+	// Honeywell - Variable frequency drives
+	// 
+	// Web: https://customer.honeywell.com/resources/techlit/
+	//      TechLitDocuments/62-0000s/62-0351.pdf
+	
+	"mb_station_header"(station := #s, mb_query := #mb_query);
+	#mb_query.mb_addr := #mb_addr;
+	
+	#mb_query(mode := #mb_query.c.read.holding_reg,
+	          data_addr := 2151,
+	          data_ptr := #r);
+	
+	#mb_query(mode := #mb_query.c.write.holding_reg,
+	          data_addr := 2001,
+	          data_ptr := #w);
+	
+	"mb_station_footer"(station := #s, mb_query := #mb_query);
+	
+END_FUNCTION_BLOCK
+

@@ -1,0 +1,52 @@
+FUNCTION_BLOCK "onicon_F5100"
+{ S7_Optimized_Access := 'TRUE' }
+VERSION : 0.1
+   VAR_INPUT 
+      mb_addr : USInt;
+   END_VAR
+
+   VAR_IN_OUT 
+      mb_query : "mb_query";
+   END_VAR
+
+   VAR 
+      s : "mb_station_udt";
+      reset : Bool;
+      query1 { ExternalAccessible := 'False'; ExternalVisible := 'False'; ExternalWritable := 'False'} : Struct
+         flow_total { ExternalAccessible := 'False'; ExternalVisible := 'False'; ExternalWritable := 'False'} : UDInt;
+      END_STRUCT;
+      query2 { ExternalAccessible := 'False'; ExternalVisible := 'False'; ExternalWritable := 'False'} : Struct
+         flow_rate { ExternalAccessible := 'False'; ExternalVisible := 'False'; ExternalWritable := 'False'} : Real;
+         temperature { ExternalAccessible := 'False'; ExternalVisible := 'False'; ExternalWritable := 'False'} : Real;
+      END_STRUCT;
+   END_VAR
+
+
+BEGIN
+	// Onicon - F-5100
+	// http://www.onicon.com/pdfs/0669-7-F-5100-MOD-Network-Interface-Installation-Guide-09-15.pdf
+	
+	"mb_station_header"(station := #s, mb_query := #mb_query);
+	#mb_query.mb_addr:= #mb_addr;
+	
+	#mb_query.data_addr := 312; // 313 - 1
+	IF #reset THEN
+	    #query1.flow_total := 0;
+	    #mb_query(mode := #mb_query.c.write.holding_reg,
+	              data_ptr := #query1.flow_total);
+	    IF #mb_query.stat.query_above AND #mb_query.stat.done THEN
+	        #reset := false;
+	    END_IF;
+	ELSE
+	    #mb_query(mode:= #mb_query.c.read.holding_reg,
+	              data_ptr := #query1);
+	END_IF;
+	
+	#mb_query(mode := #mb_query.c.read.holding_reg,
+	          data_addr := 578, // 579 - 1,
+	          data_ptr := #query2);
+	
+	"mb_station_footer"(station := #s, mb_query := #mb_query);
+	
+END_FUNCTION_BLOCK
+

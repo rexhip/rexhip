@@ -1,14 +1,13 @@
-﻿FUNCTION_BLOCK "Socomec_diris"
-TITLE = Socomec Diris A40/A41
+FUNCTION_BLOCK "Socomec_diris"
 { S7_Optimized_Access := 'TRUE' }
 VERSION : 0.1
    VAR_INPUT 
       mb_addr : USInt;
+      old_mapping : Bool;
    END_VAR
 
    VAR_OUTPUT 
       data : Struct
-         hour_meter : Real;
          voltage_L_L : Array[1..3] of Real;   // 1->L1-L2, 2->L2-L3, 3->L3-L1
          voltage_L_N : Array[1..3] of Real;
          frequency : Real;
@@ -32,22 +31,21 @@ VERSION : 0.1
    VAR 
       s : "mb_station_udt";
       query_1 : Struct
-         hour_meter : DWord;
-         voltage_L_L : Array[1..3] of DWord;   // 1->L1-L2, 2->L2-L3, 3->L3-L1
-         voltage_L_N : Array[1..3] of DWord;
-         frequency : DWord;
-         current : Array[1..3] of DWord;
-         neutral_current : DWord;
-         sum_active_power : DWord;
-         sum_reactive_power : DWord;
-         sum_apparent_power : DWord;
-         sum_power_factor : DWord;   // -: leading and + : lagging
-         power_active : Array[1..3] of DWord;
-         power_reactive : Array[1..3] of DWord;
-         power_apparent : Array[1..3] of DWord;
-         power_factor : Array[1..3] of DWord;
+         voltage_L_L : Array[1..3] of DInt;   // 1->L1-L2, 2->L2-L3, 3->L3-L1
+         voltage_L_N : Array[1..3] of DInt;
+         frequency : DInt;
+         current : Array[1..3] of DInt;
+         neutral_current : DInt;
+         sum_active_power : DInt;
+         sum_reactive_power : DInt;
+         sum_apparent_power : DInt;
+         sum_power_factor : DInt;   // -: leading and + : lagging
+         power_active : Array[1..3] of DInt;
+         power_reactive : Array[1..3] of DInt;
+         power_apparent : Array[1..3] of DInt;
+         power_factor : Array[1..3] of DInt;
       END_STRUCT;
-      query_2_temperature : DWord;
+      query_2_temperature : DInt;
    END_VAR
 
    VAR_TEMP 
@@ -56,55 +54,61 @@ VERSION : 0.1
 
 
 BEGIN
+	// Socomec Diris A40/A41 - Power meter
 	// https://www.socomec.com/files/live/sites/systemsite/files/SCP/
 	// 6_gestion_energie/diris/diris_a40/536181B_GB_Ethernet.pdf
+	
+	// old_mapping:
+	// http://www.ferrazshawmutsales.com/pdfs/cdr_27038_RS485_JBus-ModBus.pdf
 	
 	"mb_station_header"(station := #s, mb_query := #mb_query);
 	#mb_query.mb_addr := #mb_addr;
 	
 	#mb_query.mode := #mb_query.c.read.holding_reg;
-	#mb_query(data_addr := 50512, data_ptr := #query_1);
-	#mb_query(data_addr := 51457, data_ptr := #query_2_temperature);
+	
+	#mb_query(data_addr := SEL(G := #old_mapping, IN0 := 50514, IN1 := 768),
+	          data_ptr := #query_1);
+	
+	IF NOT #old_mapping THEN
+	    #mb_query(data_addr := 51457, data_ptr := #query_2_temperature);
+	END_IF;
 	
 	"mb_station_footer"(station := #s, mb_query := #mb_query);
 	
-	IF #s.out.error_comm THEN
+	(* IF #s.out.error_comm THEN
 	    FOR #j := 1 TO 3 DO
-	        #data.voltage_L_L[#j] := 0;
-	        #data.voltage_L_N[#j] := 0;
-	        #data.current[#j] := 0;
-	        #data.power_active[#j] := 0;
-	        #data.power_reactive[#j] := 0;
-	        #data.power_apparent[#j] := 0;
-	        #data.power_factor[#j] := 0;
+	        #query_1.voltage_L_L[#j] := 0;
+	        #query_1.voltage_L_N[#j] := 0;
+	        #query_1.current[#j] := 0;
+	        #query_1.power_active[#j] := 0;
+	        #query_1.power_reactive[#j] := 0;
+	        #query_1.power_apparent[#j] := 0;
+	        #query_1.power_factor[#j] := 0;
 	    END_FOR;
-	    #data.hour_meter := 0;
-	    #data.frequency := 0;
-	    #data.neutral_current := 0;
-	    #data.sum_active_power := 0;
-	    #data.sum_reactive_power := 0;
-	    #data.sum_apparent_power := 0;
-	    #data.sum_power_factor := 0;
-	END_IF;
+	    #query_1.frequency := 0;
+	    #query_1.neutral_current := 0;
+	    #query_1.sum_active_power := 0;
+	    #query_1.sum_reactive_power := 0;
+	    #query_1.sum_apparent_power := 0;
+	    #query_1.sum_power_factor := 0;
+	    
+	    #query_2_temperature := 0;
+	END_IF; // *)
 	
 	FOR #j := 1 TO 3 DO
-	    #data.voltage_L_L[#j] := DWORD_TO_REAL(#query_1.voltage_L_L[#j]) / 100;
-	    #data.voltage_L_N[#j] := DWORD_TO_REAL(#query_1.voltage_L_N[#j]) / 100;
-	    #data.current[#j] := DWORD_TO_REAL(#query_1.current[#j]) / 1000;
-	    #data.power_active[#j] := DWORD_TO_REAL(#query_1.power_active[#j]) / 100;
-	    #data.power_reactive[#j] := DWORD_TO_REAL(#query_1.power_reactive[#j]) / 100;
-	    #data.power_apparent[#j] := DWORD_TO_REAL(#query_1.power_apparent[#j]) / 100;
-	    #data.power_factor[#j] := DWORD_TO_REAL(#query_1.power_factor[#j]) / 1000;
+	    #data.voltage_L_L[#j] := DINT_TO_REAL(#query_1.voltage_L_L[#j]) / 100;
+	    #data.voltage_L_N[#j] := DINT_TO_REAL(#query_1.voltage_L_N[#j]) / 100;
+	    #data.current[#j] := DINT_TO_REAL(#query_1.current[#j]) / 1000;
+	    #data.power_active[#j] := DINT_TO_REAL(#query_1.power_active[#j]) / 100;
+	    #data.power_reactive[#j] := DINT_TO_REAL(#query_1.power_reactive[#j]) / 100;
+	    #data.power_apparent[#j] := DINT_TO_REAL(#query_1.power_apparent[#j]) / 100;
+	    #data.power_factor[#j] := DINT_TO_REAL(#query_1.power_factor[#j]) / 1000;
 	END_FOR;
-	#data.hour_meter := DWORD_TO_REAL(#query_1.hour_meter) / 100;
-	#data.frequency := DWORD_TO_REAL(#query_1.frequency) / 100;
-	#data.neutral_current := DWORD_TO_REAL(#query_1.neutral_current) / 100;
-	#data.sum_active_power := DWORD_TO_REAL(#query_1.sum_active_power) / 100;
-	#data.sum_reactive_power := DWORD_TO_REAL(#query_1.sum_reactive_power) / 100;
-	#data.sum_apparent_power := DWORD_TO_REAL(#query_1.sum_apparent_power) / 100;
-	#data.sum_power_factor := DWORD_TO_REAL(#query_1.sum_power_factor) / 1000;
-	
-	#query_2_temperature := 0;
+	#data.frequency := DINT_TO_REAL(#query_1.frequency) / 100;
+	#data.neutral_current := DINT_TO_REAL(#query_1.neutral_current) / 100;
+	#data.sum_active_power := DINT_TO_REAL(#query_1.sum_active_power) / 100;
+	#data.sum_reactive_power := DINT_TO_REAL(#query_1.sum_reactive_power) / 100;
+	#data.sum_apparent_power := DINT_TO_REAL(#query_1.sum_apparent_power) / 100;
+	#data.sum_power_factor := DINT_TO_REAL(#query_1.sum_power_factor) / 1000;
 	
 END_FUNCTION_BLOCK
-

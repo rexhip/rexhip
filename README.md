@@ -30,9 +30,8 @@ Key features:
           data_ptr := #resault_data_2);
 		  
 // - The result will be stored in the connected variable 
-//   of data_ptr. 
-// - The variable can be any data types, including arrays 
-//   and udt's.
+//   of data_ptr. The variable can be any data types, 
+//   including arrays and udt's.
 // - Length will be calculated automatically. 
 // - The library will take care of executing the queries, 
 //   one by one. 

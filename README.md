@@ -15,9 +15,9 @@ Key features:
 // A simple modbus RTU example. 
 // (Support for modbus TCP is also available)
 
-"mb_master_ctrl"(hardware_id := "Local~CB_1241_(RS485)", 
-                 baud := 19200, // bps                
-                 mb_query := #mb_query ); 
+#mb_master_ctrl(hardware_id := "Local~CB_1241_(RS485)", 
+                baud := 19200, // bps                
+                mb_query := #mb_query ); 
 
 #mb_query(mb_addr := #mb_addr,                  
           mode := #mb_query.c.read.input_reg, 

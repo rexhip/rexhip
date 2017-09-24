@@ -36,7 +36,7 @@ VERSION : 0.1
 
 
 BEGIN
-	// - Siemens - PAC3200
+	// - Siemens - PAC3200 - Power meter
 	// - http://w3.siemens.com.br/buildingtechnologies/br/
 	//   documents/manual-sentron-pac3200.pdf
 	//   3.9.3, page 40
@@ -44,15 +44,10 @@ BEGIN
 	"mb_station_header"(station := #s, mb_query := #mb_query);
 	#mb_query.mb_addr := #mb_addr; // Device address.
 	
-	// Queries bellow: Read holding registers
 	#mb_query.mode := #mb_query.c.read.holding_reg;
-	
 	#mb_query(data_addr := 1, data_ptr := #query_1);
 	#mb_query(data_addr := 55, data_ptr := #query_2);
 	#mb_query(data_addr := 64012, data_ptr := #query_3);
-	
-	// - Each query reading one section of holding registers.
-	// - Data length is automatically calculated.
 	
 	"mb_station_footer"(station := #s, mb_query := #mb_query);
 	

@@ -49,3 +49,5 @@ Quick starter guide:
  - Localise "External Source files" in the tree structure and import the files inside the lib-folder of the downloaded zip-file.
  - Select the imported files, right click them and choose "Generate blocks from source".
  - Study the start examples and customize the code it for your modbus application.
+ 
+ ![visitor statistics](http://piwik.laboxro.com/piwik.php?idsite=6&rec=1)

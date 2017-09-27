@@ -50,4 +50,4 @@ Quick starter guide:
  - Select the imported files, right click them and choose "Generate blocks from source".
  - Study the start examples and customize the code it for your modbus application.
  
- ![.](http://piwik.laboxro.com/piwik.php?idsite=6&rec=1)
+ ![.](http://p.sn7.no/piwik.php?idsite=2&rec=1)

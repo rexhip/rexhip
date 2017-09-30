@@ -78,6 +78,8 @@ BEGIN
 	// Siemens - SED2-MODBUS2 - Variable Frequency Drive
 	// Modbus RTU Interface Module for SED2 
 	// 
+	// This station block also work for Sinamics v20 inverter
+	//
 	// Web: https://www.downloads.siemens.com/download-center/
 	//      Download.aspx?pos=download&fct=getasset&id1=A6V10073869
 	

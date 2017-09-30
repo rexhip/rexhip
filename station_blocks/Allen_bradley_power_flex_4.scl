@@ -87,7 +87,7 @@ BEGIN
 	#write.cmd.x04_Forward := NOT #reverse;
 	#write.cmd.x05_Reverse := #reverse;
 	
-	#mb_query.mode := #mb_query.c.write.holding_reg;
+	#mb_query.mode := #mb_query.c.write.single_holding_reg;
 	#mb_query(data_addr := 8192, data_ptr := #write.cmd);
 	#mb_query(data_addr := 8193, data_ptr := #write.ref);
 	

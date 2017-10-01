@@ -1,0 +1,81 @@
+FUNCTION_BLOCK "Phoenix_Contact_UPS"
+{ S7_Optimized_Access := 'TRUE' }
+VERSION : 0.1
+   VAR_INPUT 
+      mb_addr : UInt;
+   END_VAR
+
+   VAR_IN_OUT 
+      mb_query : "mb_query";
+   END_VAR
+
+   VAR 
+      s : "mb_station_udt";
+      r1 : Struct
+         remote : Word;
+         BatteryMode : Word;
+         ShutdownEvent : Word;
+         BatteryCharging : Word;
+      END_STRUCT;
+      r2 : Struct
+         OutputVoltage_mV : UInt;
+      END_STRUCT;
+      r3 : Struct
+         SocStateOfCharge : UInt;   // [%]
+         SocResidualBackupTimeM : UInt;   // Minute
+      END_STRUCT;
+      r4 : Struct
+         BatteryVoltage_mV : UInt;
+         BatteryTemperature : UInt;   // Kelvin
+         OutputVoltage2_mV : UInt;
+         SocResidualBackupTimeS : UInt;
+         BatteryNomCapacityWs : UInt;
+      END_STRUCT;
+      r5 : Struct
+         BatteryDischaCurrent : UInt;
+         BatteryDetectedUnits : UInt;
+         BatteryNomCapacitymAh : UInt;
+         BatteryInstalledType : UInt;
+      END_STRUCT;
+      r6_Alarm : Struct
+         x08 : Bool;
+         x09_no_battery : Bool;
+         x10_inconsistent_technology : Bool;
+         x11_overload_cutoff : Bool;
+         "x12_Low_battery_(Voltage)" : Bool;
+         "x13_Low_battery_(Charge)" : Bool;
+         "x14_Low_battery_(Time)" : Bool;
+         x15 : Bool;
+         "x00_End_of_life_(SOH)" : Bool;
+         x01 : Bool;
+         x02 : Bool;
+         x03 : Bool;
+         "x04_End_of_life_(Resitance)" : Bool;
+         "x05_Endof_life_(Resitance)" : Bool;
+         "x06_End_of_life_(Time)" : Bool;
+         "x07_End_of_life_(Voltage)" : Bool;
+      END_STRUCT;
+   END_VAR
+
+
+BEGIN
+	// Phoenix Contact - UPS
+	// QUINT UPS-IQ, TRIO-UPS
+	// Web: https://media.digikey.com/pdf/Data%20Sheets/
+	//      Phoenix%20Contact%20PDFs/2320461_Ds.pdf
+	
+	"mb_station_header"(station := #s, mb_query := #mb_query);
+	#mb_query.mb_addr := #mb_addr;
+	
+	#mb_query.mode := #mb_query.c.read.holding_reg;
+	#mb_query(data_addr := 29696, data_ptr := #r1);
+	#mb_query(data_addr := 29745, data_ptr := #r2);
+	#mb_query(data_addr := 29749, data_ptr := #r3);
+	#mb_query(data_addr := 29792, data_ptr := #r4);
+	#mb_query(data_addr := 29798, data_ptr := #r5);
+	#mb_query(data_addr := 29840, data_ptr := #r6_Alarm);
+	
+	"mb_station_footer"(station := #s, mb_query := #mb_query);
+	
+END_FUNCTION_BLOCK
+

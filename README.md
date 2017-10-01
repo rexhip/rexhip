@@ -8,7 +8,7 @@ Key features:
  - Reduce idle time, by skipping queries that has led to recurring timeouts. (Retries will be done occasionally)
  - Logging features for development and debugging.
  - The library extend on MB_MASTER and MB_CLIENT, the modbus blocks that comes along with TIA-portal.
- - The software uses little memory and cpu-time, important for S7-1200.
+ - The software use little memory and cpu-time, important for S7-1200.
  - Free under the MIT-license.
 
 ```pascal

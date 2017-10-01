@@ -1,6 +1,5 @@
 Rexhip - An improved modbus API for Siemens PLC's.
----------------------------------------------
-Author:   Ola Bjørnli
+---------------------------------------------------
 
 Key features:
  - Makes it easy to create and split a program in to reusable «station blocks» (interface blocks).
@@ -49,5 +48,7 @@ Quick starter guide:
  - Localise "External Source files" in the tree structure and import the files inside the lib-folder of the downloaded zip-file.
  - Select the imported files, right click them and choose "Generate blocks from source".
  - Study the start examples and customize the code it for your modbus application.
+ 
+ Author:   Ola Bjørnli
  
  ![.](http://p.sn7.no/piwik.php?idsite=2&rec=1)

@@ -1,4 +1,4 @@
-Rexhip - Extended modbus API for Siemens PLC's.
+Rexhip - Extended modbus library for Siemens PLC's.
 ---------------------------------------------------
 
 Key features:
@@ -49,6 +49,8 @@ Quick starter guide:
  - Select the imported files, right click them and choose "Generate blocks from source".
  - Study the start examples and customize the code it for your modbus application.
  
+ ```
  Author:   Ola Bjørnli
+ ```
  
  ![.](http://p.sn7.no/piwik.php?idsite=2&rec=1)

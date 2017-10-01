@@ -5,7 +5,7 @@ Key features:
  - Makes it easy to create and split a program in to reusable «station blocks» (interface blocks).
  - Station blocks can easily be reused and combined in new programs.
  - A clean API, helps to cut engineering time.
- - Reduce idle time, by skipping queries that has led to recurring timeouts before. Retries will be done occasionally.
+ - Reduce idle time, by skipping queries that has led to recurring timeouts. (Retries will be done occasionally)
  - Logging features for development and debugging.
  - The library extend on MB_MASTER and MB_CLIENT, the modbus blocks that comes along with TIA-portal.
  - Free under the MIT-license.

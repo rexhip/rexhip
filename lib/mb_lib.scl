@@ -739,7 +739,7 @@ BEGIN
 	// If device blocks are executeded in diffrent order, a wide wind
 	// up effect will occur, (in same OB) this will prevent that.
 	IF #mb_query.z.s.reset THEN
-	    #station.z.offset_qid := #mb_query.z.run.qid_cnt;
+	    #station.z.header_qid := #mb_query.z.run.qid_cnt + 1;
 	END_IF;
 	
 	// Device id cnt. The first device has id "1". Increased in every
@@ -776,8 +776,8 @@ BEGIN
 	// - The code below is reduce the impact of setting a if-statement
 	//   around queries, by setting the qid_cnt to a fixed value at this 
 	//   point.
-	// - mb_device_header will occupy one query-id.
-	#station.z.header_qid :=
+	// - mb_device_header will occupy one query-id.		
+	#station.z.header_qid :=	           
 	MAX(IN1 := #mb_query.z.run.qid_cnt + 1,
 	    IN2 := #station.z.header_qid);
 	#mb_query.z.run.qid_cnt := #station.z.header_qid;

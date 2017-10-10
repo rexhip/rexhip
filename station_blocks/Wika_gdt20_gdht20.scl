@@ -1,0 +1,94 @@
+FUNCTION_BLOCK "Wika_GDT20_GDHT20"
+{ S7_Optimized_Access := 'TRUE' }
+VERSION : 0.1
+   VAR_INPUT 
+      mb_addr : UInt;
+   END_VAR
+
+   VAR_IN_OUT 
+      mb_query : "mb_query";
+   END_VAR
+
+   VAR 
+      s : "mb_station_udt";
+      data : Struct
+         pressure_bar : Real;
+         pressure_MPa : Real;
+         pressure_Pa : Real;
+         pressure_kPa : Real;
+         pressure_psi : Real;
+         "pressure_N_cm²" : Real;
+         Temperature_C : Real;
+         Temperature_K : Real;
+         Temperature_F : Real;
+         gas_density_g_l : Real;
+         gas_density_kg_m3 : Real;
+         "Pressure_standardised_to 20_C" : Real;
+         Humidity_Atmosphere_frost_point : Real;
+         Humidity_Atmosphere_dew_point : Real;
+         Humidity_Tank_pressure_frost_point : Real;
+         Humidity_Tank_pressure_dew_point_1 : Real;
+      END_STRUCT;
+      tag : String[16];
+      alarm : Struct
+         x08_Failure_humidity_sensor : Bool;   // (only model GDHT-20)
+         x09_Communication_error_humidity_sensor : Bool;   // (only model GDHT-20)
+         x10_Re_occurring_Modbus_communication_error : Bool;   // Re-occurring Modbus® communication error
+         x11 : Bool;
+         x12 : Bool;
+         x13 : Bool;
+         x14 : Bool;
+         x15 : Bool;
+         x00_Pressure_below_lower_limit : Bool;   // Pressure signal below the lower limit value (< 0 bar)
+         x01_Pressure_above_upper_limit : Bool;
+         x02_Pressure_sensor_failure : Bool;
+         x03_Temperature_below_lower_limit : Bool;   // Temperature signal below the lower limit value (< -40 °C)
+         x04_Temperature_above_upper_limit : Bool;
+         x05_Communication_error_pressure_temperature_sensor : Bool;
+         x06_Pressure_density_below_lower_limit : Bool;   // Pressure density below the lower limit value (liquefaction of SF6 gas)
+         x07_Gas_density_above_upper_limit : Bool;   // Gas density above the upper limit value (> 80 g/l)
+      END_STRUCT;
+      reset_alarm : Bool;
+   END_VAR
+
+   VAR_TEMP 
+      "int" : Int;
+   END_VAR
+
+
+BEGIN
+	// Wika - GDT-20, GDHT-20 (GDT-20, GDHT-20)
+	// Pressure / temperature / Gas density / Humidity 
+	// http://en-co.wika.de/upload/OI_GDT_GDHT_20_en_de_67032.pdf
+	
+	"mb_station_header"(station := #s, mb_query := #mb_query);
+	#mb_query.mb_addr := #mb_addr;
+	
+	#mb_query.mode := #mb_query.c.read.holding_reg;
+	#mb_query(data_addr := 0, data_ptr := #data);
+	#mb_query(data_addr := 113, data_ptr := #tag);
+	#mb_query(data_addr := 200,data_ptr := #alarm);
+	
+	IF #reset_alarm THEN
+	    #int := 1;
+	    #mb_query(mode := #mb_query.c.write.holding_reg,
+	              data_addr := 201,
+	              data_ptr := #int);
+	    IF #mb_query.stat.query_above AND #mb_query.stat.done THEN
+	        #reset_alarm := false;
+	    END_IF;
+	END_IF;
+	
+	"mb_station_footer"(station := #s, mb_query := #mb_query);
+	
+	
+	(*
+	Circular connector M12 x 1 (5-pin):
+	1 C Reference potential RS-485 common
+	2 UB Voltage supply (DC 17 ... 30 V)
+	3 GND Ground
+	4 A Signal RS-485
+	5 B Signal RS-485
+	*)
+END_FUNCTION_BLOCK
+

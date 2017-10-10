@@ -1,0 +1,45 @@
+FUNCTION_BLOCK "SensorsONE_DCT_531"
+{ S7_Optimized_Access := 'TRUE' }
+VERSION : 0.1
+   VAR_INPUT 
+      mb_addr : UInt;
+   END_VAR
+
+   VAR_IN_OUT 
+      mb_query : "mb_query";
+   END_VAR
+
+   VAR 
+      s : "mb_station_udt";
+      data : Struct
+         serial_number : UDInt;
+         date_last_calibration : UDInt;
+         upper_range_pressure : Real;
+         lower_range_pressure : Real;
+         actual_pressure : Real;
+         max_pressure : Real;
+         min_pressure : Real;
+         upper_range_temperature : Real;
+         lower_range_temperature : Real;
+         actual_temperature : Real;
+         max_temperature : Real;
+         min_temperature : Real;
+      END_STRUCT;
+   END_VAR
+
+
+BEGIN
+	// SensorsONE - DCT 531
+	// 
+	// https://www.sensorsone.com/dct-531-modbus-rtu-rs485-pressure-sensor/
+	
+	"mb_station_header"(station := #s, mb_query := #mb_query);
+	#mb_query.mb_addr := #mb_addr;
+	
+	#mb_query.mode := #mb_query.c.read.input_reg;
+	#mb_query(data_addr := 0, data_ptr := #data);
+	
+	"mb_station_footer"(station := #s, mb_query := #mb_query);
+	
+END_FUNCTION_BLOCK
+

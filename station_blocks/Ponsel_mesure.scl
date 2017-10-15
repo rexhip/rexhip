@@ -1,0 +1,176 @@
+FUNCTION_BLOCK "Ponsel_mesure"
+{ S7_Optimized_Access := 'TRUE' }
+VERSION : 0.1
+   VAR_INPUT 
+      mb_addr : UInt;
+      minimum_measurement_interval : Time := T#60s;
+      compensate_enable : Bool;
+      compensate : Array[1..2] of Real;
+   END_VAR
+
+   VAR_OUTPUT 
+      measurement_ok : Bool;
+   END_VAR
+
+   VAR_IN_OUT 
+      mb_query : "mb_query";
+      start_measurement : Bool;
+   END_VAR
+
+   VAR 
+      s : "mb_station_udt";
+      data1 : Struct
+         value : Array[0..4] of Real;
+         compensate_temperature : Real;
+         compensate : Array[1..2] of Real;
+         "_" : Word;
+         status : Array[0..4] of Struct
+            x08_StmGamme0 : Bool;
+            x09_StmGamme1 : Bool;
+            x10_StmGamme2 : Bool;
+            x11 : Bool;
+            x12 : Bool;
+            x13 : Bool;
+            x14 : Bool;
+            x15 : Bool;
+            x00_Stm0 : Bool;
+            x01_Stm1 : Bool;
+            x02_Stm2 : Bool;
+            x03_StmTemp : Bool;   // At least one parameter coefficient uses a temporary calibration standard (configuration during calibration)
+            x04_StmHF : Bool;   // At least one parameter coefficient is outside calibration limits
+            x05_StmCU : Bool;   // All parameter coefficients use default coefficient
+            x06_StmHIST : Bool;   // All parameter coefficients use history coefficient
+            x07_StmME : Bool;   // Dry weight is missing in at least one parameter coefficient (measurement under way)
+         END_STRUCT;
+         Compensates_3 : Real;
+      END_STRUCT;
+      data2 : Struct
+         Description : String[16];
+         serial_number : String[16];   // (addr 0x0D10)
+         Software_version : UInt;
+         Hardware_version : UInt;
+      END_STRUCT;
+      state : Int;
+      "timer" {OriginalPartName := 'IEC_TIMER'; LibVersion := '1.0'} : TON_TIME;
+      timer_in : Bool;
+      timer_q : Bool;
+      first_measurement : Bool := true;
+   END_VAR
+
+   VAR_TEMP 
+      "int" : Int;
+      c : Int;
+      e : Bool;
+   END_VAR
+
+
+BEGIN
+	// Ponsel mesure
+	// Dissolved oxygen (OPTOD), Conductivity (C4E, CTZ), pH_Redox, Turbi    
+	// 
+	// http://www.ponsel-web.com/cbx/_ftp/datasheet_digisens_optod-titanium2014.pdf
+	// http://www.ponsel-web.com/cbx/_ftp/datasheet_digisens_optod.pdf
+	// ftp://ftpponsel.aqualabo-intra.net/Public/CAPTEUR%20NUMERIQUE%20DIGITAL%20SENSORS/doc_English/USER%20MANUAL/USER_MANUAL_C4E.pdf
+	
+	"mb_station_header"(station := #s, mb_query := #mb_query);
+	#mb_query.mb_addr := #mb_addr;
+	#mb_query.mode := #mb_query.c.read.holding_reg;
+	#timer(IN := #timer_in, PT := #timer.PT, Q => #timer_q);
+	#timer_in := false;
+	CASE #state OF
+	    1:  // Compensate
+	        IF #compensate_enable THEN
+	            #mb_query(data_addr := 16#5f,
+	                      mode := #mb_query.c.write.holding_reg,
+	                      data_ptr := #compensate);
+	            #state += BOOL_TO_INT(#mb_query.stat.query_above
+	                                  AND #mb_query.stat.done);
+	        ELSE
+	            #state += 1;
+	        END_IF;
+	    2:  // Start meassurement
+	        #int := 16#f;
+	        #mb_query(data_addr := 16#01,
+	                  mode := #mb_query.c.write.holding_reg,
+	                  data_ptr := #int);
+	        #state += BOOL_TO_INT(#mb_query.stat.query_above
+	                              AND #mb_query.stat.done);
+	    3:  // Read wait-time
+	        #mb_query(data_addr := 16#A4, data_ptr := #timer.PT);
+	        #state += BOOL_TO_INT(#mb_query.stat.query_above
+	                              AND #mb_query.stat.done);
+	    4:  // Timer (wait for obtain measurements)
+	        #timer_in := true;
+	        #state += BOOL_TO_INT(#timer_q);
+	    5:  // Get data
+	        #mb_query(data_addr := 16#0053, data_ptr := #data1);
+	        #state += BOOL_TO_INT(#mb_query.stat.query_above
+	                              AND #mb_query.stat.done);
+	        // All measurement ok ?
+	        FOR #c := 0 TO 4 DO
+	            #e := #e
+	            OR NOT #data1.status[#c].x00_Stm0
+	            OR NOT #data1.status[#c].x01_Stm1
+	            OR NOT #data1.status[#c].x02_Stm2;
+	        END_FOR;
+	        #measurement_ok := NOT #e;
+	    6:  // Description, Serial number, sw and hw version.
+	        #mb_query(data_addr := 16#0D00, data_ptr := #data2);
+	        #state += BOOL_TO_INT(#mb_query.stat.query_above
+	                              AND #mb_query.stat.done);
+	    ELSE
+	        #timer.PT := SEL(G := #first_measurement,
+	                         IN0 := #minimum_measurement_interval,
+	                         IN1 := T#100ms);
+	        #timer_in := true; 
+	        IF #start_measurement AND #timer_q THEN
+	            #state := 1;
+	            #start_measurement := false;
+	            #first_measurement := false;
+	        END_IF;
+	END_CASE;
+	"mb_station_footer"(station := #s, mb_query := #mb_query);
+	
+	(* 
+	Units:
+	---------------
+	value0: Temperature
+	                      value1:                    value2:                    value3:       
+	OPTOD (oxygen)    :   Oxygen [%Sat]              Oxygen [mg/L]              Oxygen [ppm]
+	Turbi             :   Nephelo turbidity [NTU]    Nephelo turbidity [FNU]    TU turbidity [mg/L]
+	pH_Redox          :   pH                         Redox [mV]
+	conductivity_C4E  :   Conductivity C4E [µS/cm]   Salinity [ppt]             TDS - Kcl [ppm]
+	Conductivity_CTZ  :   Conductivity CTZ [mS/cm]   Salinity [g/Kg]            Conductivity CTZ [mS/cm] 
+	                                                                            without temperature compensation                                                                  
+	OPTOD: (Dissolved oxygen)
+	Compensates_1: Atmospheric pressure [hPa], default 1013 hPa
+	Compensates_2: Salinity [ppt], default 0 ppt
+	
+	
+	Wiring: 
+	Red     Wiring diagram V+
+	black   Wiring diagram V-
+	Green   B RS-485
+	White   A RS-485
+	Blue    SDI-12
+	
+	
+	StmX:
+	000: Measurement OK
+	001: Measurement OK, but out of specifications
+	010: Measurement OK with INFO 1 (See datasheet)
+	011: Measurement OK with INFO 2 (See datasheet)
+	100: Measurement impossible, out of specifications
+	101: Measurement impossible with INFO 3 (See datasheet)
+	110: Measurement impossible with INFO 4 (See datasheet)
+	111: measurement under way (not yet available)
+	
+	StmGamme:       
+	001: measurement used range 1
+	010: measurement used range 2
+	011: measurement used range 3
+	100: measurement used range 4
+	*)
+	
+END_FUNCTION_BLOCK
+

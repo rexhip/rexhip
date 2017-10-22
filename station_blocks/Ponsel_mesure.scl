@@ -83,8 +83,7 @@ BEGIN
 	            #mb_query(data_addr := 16#5f,
 	                      mode := #mb_query.c.write.holding_reg,
 	                      data_ptr := #compensate);
-	            #state += BOOL_TO_INT(#mb_query.stat.query_above
-	                                  AND #mb_query.stat.done);
+	            #state += BOOL_TO_INT(#mb_query.done);
 	        ELSE
 	            #state += 1;
 	        END_IF;
@@ -93,19 +92,16 @@ BEGIN
 	        #mb_query(data_addr := 16#01,
 	                  mode := #mb_query.c.write.holding_reg,
 	                  data_ptr := #int);
-	        #state += BOOL_TO_INT(#mb_query.stat.query_above
-	                              AND #mb_query.stat.done);
+	        #state += BOOL_TO_INT(#mb_query.done);
 	    3:  // Read wait-time
 	        #mb_query(data_addr := 16#A4, data_ptr := #timer.PT);
-	        #state += BOOL_TO_INT(#mb_query.stat.query_above
-	                              AND #mb_query.stat.done);
-	    4:  // Timer (wait for obtain measurements)
+	        #state += BOOL_TO_INT(#mb_query.done);
+	    4:  // Timer (Wait while sensor is obtaining measurements)
 	        #timer_in := true;
 	        #state += BOOL_TO_INT(#timer_q);
 	    5:  // Get data
 	        #mb_query(data_addr := 16#0053, data_ptr := #data1);
-	        #state += BOOL_TO_INT(#mb_query.stat.query_above
-	                              AND #mb_query.stat.done);
+	        #state += BOOL_TO_INT(#mb_query.done);
 	        // All measurement ok ?
 	        FOR #c := 0 TO 4 DO
 	            #e := #e
@@ -116,12 +112,11 @@ BEGIN
 	        #measurement_ok := NOT #e;
 	    6:  // Description, Serial number, sw and hw version.
 	        #mb_query(data_addr := 16#0D00, data_ptr := #data2);
-	        #state += BOOL_TO_INT(#mb_query.stat.query_above
-	                              AND #mb_query.stat.done);
+	        #state += BOOL_TO_INT(#mb_query.done);
 	    ELSE
 	        #timer.PT := SEL(G := #first_measurement,
 	                         IN0 := #minimum_measurement_interval,
-	                         IN1 := T#100ms);
+	                         IN1 := T#1s);
 	        #timer_in := true; 
 	        IF #start_measurement AND #timer_q THEN
 	            #state := 1;
@@ -130,6 +125,11 @@ BEGIN
 	        END_IF;
 	END_CASE;
 	"mb_station_footer"(station := #s, mb_query := #mb_query);
+	
+	IF #s.out.error_comm THEN // If communication error
+	    #first_measurement := true;
+	    #state := 0;
+	END_IF;
 	
 	(* 
 	Units:

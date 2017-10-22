@@ -1,4 +1,4 @@
-﻿FUNCTION "mb_length" : DInt
+FUNCTION "mb_length" : DInt
 { S7_Optimized_Access := 'FALSE' }
 VERSION : 1.0
    VAR_IN_OUT 
@@ -28,6 +28,10 @@ VERSION : 0.1
       mode { ExternalAccessible := 'False'; ExternalVisible := 'False'; ExternalWritable := 'False'} : USInt;   // Function code: 1,2,3,4,5,6,15,16. (siemens mode shifted to 200 - 202)
       data_addr { ExternalAccessible := 'False'; ExternalVisible := 'False'; ExternalWritable := 'False'} : UDInt;   // Data addr. (raw telegram value, 0-65535)
       data_len { ExternalAccessible := 'False'; ExternalVisible := 'False'; ExternalWritable := 'False'} : UInt;   // Data len. 0=>Auto detect
+   END_VAR
+
+   VAR_OUTPUT 
+      done : Bool;
    END_VAR
 
    VAR_IN_OUT 
@@ -105,14 +109,16 @@ VERSION : 0.1
 
 
 BEGIN
-	// Rexhip - An improved Modbus API for Siemens PLC's
+	// Rexhip - An improved modbus API for Siemens PLC's
 	// ---------------------------------------------------
 	// Author:   Ola Bjornli
-	// Version:  2.0.0_beta3
+	// Version:  2.0.2
 	// License:  MIT-license
 	// Web:      http://github.com/olab84/rexhip
+	
 	REGION Header    
 	    #stat.query_above := false;
+	    #done := false;
 	    #z.run.qid_cnt += 1;
 	    // qid_cnt is increased for every query (above) and reset back to zero in
 	    // mb_client_ctrl or in mb_master_ctrl. qid (query id) is only increased
@@ -169,10 +175,10 @@ BEGIN
 	        #z.run.insert2 := true;
 	        #z.s.head_insert := true;
 	        
-	    // If the query is finnished. (with or without error)  
+	        // If the query is finnished. (with or without error)  
 	    ELSIF #stat.done_or_error THEN
 	        // Make sure that the query resault really belong to this query. This
-	        // can be false if an other query is surrounded by a if-statement
+	        // can be false if an other query before is surrounded by a if-statement
 	        IF #z.q.mb_addr = #mb_addr
 	            AND #z.q.mode = #mode
 	            AND #z.q.data_addr = #data_addr
@@ -187,6 +193,7 @@ BEGIN
 	                                          DEST_VARIABLE => #data_ptr,
 	                                          POS := #pos);
 	            END_IF;
+	            #done := #stat.done;
 	            #stat.query_above := true;
 	            
 	            // Temperary store the data_addr for debugging. 
@@ -351,7 +358,7 @@ BEGIN
 	THEN
 	    RETURN;
 	END_IF;
-	    
+	
 	IF #mb_query.z.s.head_recive THEN
 	    // If there is a query that bellong to this device that has
 	    // recvied a resault. (with or without error)
@@ -456,7 +463,7 @@ BEGIN
 	// - If the device is disabled. (skip all queries)
 	#station.out.finnish := #mb_query.z.s.head_recive AND (
 	#station.z.exec_cnt >= #station.conf.exec_n_quries
-	OR #mb_query.stat.err_comm )
+	OR #mb_query.stat.err_comm)
 	
 	OR #mb_query.z.s.head_insert AND (
 	#station.out.error_comm
@@ -585,10 +592,12 @@ BEGIN
 	// re-establish an existing connection." (16#80A3). The
 	// solution to this problem is to disconnect and then
 	// reconnect.
-	#tdiscon(REQ := #client.STATUS = 16#80A3, ID := #conn_id);
+	#tdiscon(REQ := #client.STATUS = 16#80A3,
+	         ID := #conn_id);
 	
 	// End is comman for both tcp and rtu.
-	#end(mb_query := #mb_query, error => #error);
+	#end(mb_query := #mb_query,
+	     error => #error);
 	
 END_FUNCTION_BLOCK
 
@@ -732,9 +741,9 @@ VERSION : 1.0
 
 BEGIN
 	// Default is auto-length.
-	#mb_query.data_len := 0; 
+	#mb_query.data_len := 0;
 	// Enable buffer handler
-	#mb_query.conf.buffer_handler := true; 
+	#mb_query.conf.buffer_handler := true;
 	
 	// If device blocks are executeded in diffrent order, a wide wind
 	// up effect will occur, (in same OB) this will prevent that.
@@ -776,8 +785,8 @@ BEGIN
 	// - The code below is reduce the impact of setting a if-statement
 	//   around queries, by setting the qid_cnt to a fixed value at this 
 	//   point.
-	// - mb_device_header will occupy one query-id.		
-	#station.z.header_qid :=	           
+	// - mb_device_header will occupy one query-id.  
+	#station.z.header_qid :=
 	MAX(IN1 := #mb_query.z.run.qid_cnt + 1,
 	    IN2 := #station.z.header_qid);
 	#mb_query.z.run.qid_cnt := #station.z.header_qid;

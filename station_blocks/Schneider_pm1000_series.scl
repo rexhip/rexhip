@@ -1,0 +1,52 @@
+FUNCTION_BLOCK "Schneider_PM1000_series"
+{ S7_Optimized_Access := 'TRUE' }
+VERSION : 0.1
+   VAR_INPUT 
+      mb_addr : UInt;
+   END_VAR
+
+   VAR_IN_OUT 
+      mb_query : "mb_query";
+   END_VAR
+
+   VAR 
+      s : "mb_station_udt";
+      data : "mb_station_udt";
+      total : Struct
+         power_apparent : Real;
+         power_active : Real;
+         power_reactive : Real;
+         Power_factor_average : Real;
+         voltage_L_L_average : Real;
+         voltage_L_N : Real;
+         current_average : Real;
+      END_STRUCT;
+      phase : Array[1..3] of Struct
+         apparent_power : Real;
+         active_power : Real;
+         reactive_power : Real;
+         power_factor : Real;
+         voltage_phase_phase : Real;
+         voltage_phase_neutral : Real;
+         current : Real;
+      END_STRUCT;
+   END_VAR
+
+
+BEGIN
+	// Schneider - PM1000 Series Power Meters
+	// 
+	// http://static.schneider-electric.us/docs/Power%20Management/
+	// PowerLogic%20Products/Metering/PM1200%20power%20meter/
+	// PLSED309039EN_PM1000_UG.pdf
+	
+	"mb_station_header"(station := #s, mb_query := #mb_query);
+	#mb_query.mb_addr := #mb_addr;
+	
+	#mb_query.mode := #mb_query.c.read.holding_reg;
+	#mb_query(data_addr := 3901, data_ptr := #total);
+	#mb_query(data_addr := 3917, data_ptr := #phase);
+	
+	"mb_station_footer"(station := #s, mb_query := #mb_query);
+END_FUNCTION_BLOCK
+

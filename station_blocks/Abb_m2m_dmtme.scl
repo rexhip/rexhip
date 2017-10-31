@@ -1,0 +1,55 @@
+FUNCTION_BLOCK "Abb_M2M_DMTME"
+{ S7_Optimized_Access := 'TRUE' }
+VERSION : 0.1
+   VAR_INPUT 
+      mb_addr : UInt;
+   END_VAR
+
+   VAR_IN_OUT 
+      mb_query : "mb_query";
+   END_VAR
+
+   VAR 
+      s : "mb_station_udt";
+      read1 : Struct
+         "3-PHASE SYSTEM VOLTAGE" : UDInt;   // volt
+         voltage_Lx_N : Array[1..3] of UDInt;   // volt
+         voltage_L_L : Array[1..3] of UDInt;   // volt 1:L1-L2, 2:L2-L3, 3:L3-L1
+         "3-PHASE SYSTEM CURRENT" : UDInt;
+         current : Array[1..3] of UDInt;   // mA
+         "3-PHASE SYS. POWER FACTOR" : DInt;   // x1000
+         Power_factor : Array[1..3] of DInt;   // x1000
+         "3-PHASE SYSTEM COS ϕI" : DInt;   // x1000
+         phase_cos : Array[1..3] of DInt;   // x1000
+      END_STRUCT;
+      read2 : Struct
+         "3-PHASE S. APPARENT POWER" : UDInt;   // VA
+         apparent_power : Array[1..3] of UDInt;   // VA
+         "3-PHASE SYS. ACTIVE POWER" : DInt;   // Watt
+         active_power : Array[1..3] of DInt;   // Watt
+         "3-PHASE S. REACTIVE POWER" : UDInt;
+         reactive_power : Array[1..3] of UDInt;
+         "3-PHASE SYS. ACTIVE ENERGY" : UDInt;   // Wh * 100
+         "3-PHASE S. REACTIVE ENERGY" : UDInt;   // VArh * 100
+         frequency : UDInt;   // mHz
+         "MAX LINE CURRENT" : Array[1..3] of UDInt;
+      END_STRUCT;
+   END_VAR
+
+
+BEGIN
+	// ABB - M2M/DMTME - 2CSG445011D0201 
+	//
+	// https://library.e.abb.com/public/3921770555944801ad6d9e002d23ca23/2CSG445011D0201.pdf
+	
+	"mb_station_header"(station := #s, mb_query := #mb_query);
+	#mb_query.mb_addr := #mb_addr;
+	
+	#mb_query.mode := #mb_query.c.read.holding_reg;
+	#mb_query(data_addr := 16#1000, data_ptr := #read1);
+	#mb_query(data_addr := 16#1026, data_ptr := #read2);
+	
+	"mb_station_footer"(station := #s, mb_query := #mb_query);
+	
+END_FUNCTION_BLOCK
+

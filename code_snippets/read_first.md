@@ -19,7 +19,7 @@ else // read the register before write to the same one.
              data_ptr := #static_var);
   
    // Has query above been executed successfully?
-   if #mb_query.stat.query_above and #mb_query.stat.done then
+   if #mb_query.done then
        #static_write := true; 
    end_if;
 

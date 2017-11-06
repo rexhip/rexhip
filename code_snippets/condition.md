@@ -1,3 +1,6 @@
+Condition for execution
+
+```pascal
 // A query that has a condition for execution.
 IF #conditon_of_exec_query THEN
     #mb_query(mb_addr := 1,
@@ -9,3 +12,4 @@ END_IF;
 // library gets a little "hiccup". If the if-statement changes rapidly,
 // then the example above won't work, and it will also interfere with
 // other queries bellow. 
+```

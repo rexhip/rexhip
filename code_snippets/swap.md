@@ -26,8 +26,7 @@
 ```
 
 ```pascal 
-// The most confusing situation is when both SWAP and SWAP_WORD 
-// need to be used! Though it's not common.
+// In some situation both SWAP and SWAP_WORD need to be used.
 
 #value := SWAP( SWAP_WORD( #tmp_var) );
 ```

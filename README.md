@@ -48,7 +48,7 @@ Quick starter guide:
  - Start a new project in TIA-portal, and then add new PLC.
  - Localise "External Source files" in the tree structure and import the files inside the lib-folder of the downloaded zip-file.
  - Select the imported files, right click them and choose "Generate blocks from source".
- - Study the start examples and customize the code it for your modbus application.
+ - Study the start examples and customize the code for your modbus device. 
  
  ```
  Author:   Ola Bjørnli

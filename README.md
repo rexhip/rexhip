@@ -33,8 +33,10 @@ Key features:
 //   of data_ptr. The variable can be any data types, 
 //   including arrays and udt's.
 // - Length will be calculated automatically. 
-// - The library will take care of executing the queries, 
-//   one by one. 
+// - The library will take care of executing the 
+//   queries, one by one. 
+// - Queries belonging to one device can be grouped together 
+//   into one FB, creating a reusable station block.
 ```
    
 Requirements:

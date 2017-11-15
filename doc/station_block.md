@@ -115,7 +115,7 @@
 
 
 // For this example values are set to zero if communication problems accrue.
-IF #common.out.communication_error THEN
+IF #common.out.error_comm THEN
     #resault_data_query_1 := 0;
     
     #data_query_2[1] := 0;

@@ -4,7 +4,7 @@ Quick starter guide:
  - Localise "External Source files" in the tree structure and import the files inside the lib-folder of the downloaded zip-file.
  - Select the imported files, right click them and choose "Generate blocks from source".
  - Study the start examples and customize the code for your modbus device.
- - To save memory, blocks that are not need should be deleted.
+ - Blocks that are not need should be deleted, to save memory.
  
  Requirements:
  - Software: TIA-portal: v14, sp1, Upd 2

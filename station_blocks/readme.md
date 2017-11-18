@@ -1,3 +1,5 @@
-Station blocks
+Station blocks (SB)
+--------------------
+A station block is a driver for one particular device that plug in to the library. Several SB can be combined in to one application.
 
-A station block is pize of software written for one spesefic type of modbus devices.
+A SB can be used for both modbus-tcp and modbus-rtu application.

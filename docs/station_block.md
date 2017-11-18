@@ -3,7 +3,8 @@
 // written for one specific modbus device.
 
 // Every device block should start with a device header. Though it
-// isn't required.
+// isn't required. #s is a special udt that comes along with the 
+// library.
 "mb_station_header"(station := #s, mb_query := #mb_query);
 
 

@@ -75,7 +75,7 @@ BEGIN
 	// Three abb aqua-master's.
 	#abb_aquaMaster_device1(mb_addr := 1, mb_query := #mb_query);
 	#abb_aquaMaster_device2(mb_addr := 2, mb_query := #mb_query);
-	#abb_aquaMaster_device2(mb_addr := 3, mb_query := #mb_query);
+	#abb_aquaMaster_device3(mb_addr := 3, mb_query := #mb_query);
 	
 	// Keep in mind that a device block can be used both for both modbus
 	// rtu and tcp. This is specially useful if a tcp-rtu-gateway is used.

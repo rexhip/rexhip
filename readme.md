@@ -40,6 +40,6 @@ Key features:
 ```
     
  
- Author:   Ola Bjørnli - [Contact me](http://sn7.no/contact/rexhip)
+ Author:   Ola Bjørnli - [Contact](http://sn7.no/contact/rexhip)
  
 ![.](http://p.sn7.no/piwik.php?idsite=2&rec=1) <!-- Visitor statistics -->

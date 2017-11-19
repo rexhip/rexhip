@@ -2,7 +2,7 @@ Station blocks (SB)
 -------------------
 The library introduce a concept called station block (SB). A SB is created for one specific modbus device, containing all the queries needed to communicate with that specific modbus device. Setup modbus communication with a VFD (Variable-frequency drive) for example, usually take a day or two. The idea with the library is that, this can be done once with a SB and the SB’s can be reused and shared in new applications. The library includes many predefined SB’s, that is freely available. New contributions to the repository is appreciated. 
 
-A SB can plug into both modbus tcp and modbus rtu application, this comes to handy if a rtu-tcp-gateway are going to be used. The whole application doesn't need to be rewritten for that reason.
+A SB can plug into both modbus tcp and modbus rtu application, this quite convenient if a rtu-tcp-gateway are going to be used. Different SB's can easily be combined in the same application, and there can be muliple instances of each SB. 
 
 ```pascal
 // Start example for a station blocks. (SB)

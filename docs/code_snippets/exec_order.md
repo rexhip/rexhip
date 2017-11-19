@@ -1,8 +1,6 @@
-// This is an advanced example which most users don't need to
-// worry about. 
-// 
-// If there is a need of forcing some queries to be executed
-// in a given order, then the example bellow should be followed.
+```pascal
+// If the execution need to be forced to a given 
+// order, then the example bellow should be followed.
 
 CASE #state OF
     
@@ -12,8 +10,8 @@ CASE #state OF
                   data_addr := 123,                  
                   data_ptr := #query_1);
         #state += BOOL_TO_SINT(#mb_query.done);
-        // "#mb_query.stat.query_above" is true if the query above
-        // in the code just finished a query. (with or without error)        
+        // "#mb_query.done" is true if the query above
+        // in the code just finished a query. (without error)        
     
     1:  // 2nd query
         #mb_query(mb_addr := #mb_addr,
@@ -32,4 +30,4 @@ CASE #state OF
     else
         #state := 0; 		      
 ENdata_CASE;
-
+```

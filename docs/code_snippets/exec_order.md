@@ -1,6 +1,8 @@
 ```pascal
+// For most usecases, this example is not applicable.
+//
 // If the execution need to be forced to a given 
-// order, then the example bellow should be followed.
+// order, then the example bellow can be followed.
 
 CASE #state OF
     

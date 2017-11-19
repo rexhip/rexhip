@@ -59,6 +59,9 @@ VERSION : 0.1
 
 
 BEGIN
+	// This a rtu example for S7-1200, for S7-1500 use 
+	// mb_master_1500_ctrl.
+	
 	// hardware_id: Can be found inside the hardware configuration.
 	// baud:        bps. (parity is even by default)
 	// timeout:     Automatically calculated if not specified.
@@ -77,7 +80,7 @@ BEGIN
 	#abb_aquaMaster_device2(mb_addr := 2, mb_query := #mb_query);
 	#abb_aquaMaster_device3(mb_addr := 3, mb_query := #mb_query);
 	
-	// Keep in mind that a device block can be used both for both modbus
+	// Keep in mind that a station block can be used both for both modbus
 	// rtu and tcp. This is specially useful if a tcp-rtu-gateway is used.
 	// The same program could be used, just swap mb_master_ctrl, with
 	// mb_client_ctrl.
@@ -85,8 +88,8 @@ BEGIN
 	
 	// Read holding register 456 (zero counted) from device with modbus
 	// address 123. This is an example showing that a query does not
-	// necessarily need to be part of a device block as obove, however
-	// making reusable device blocks is good practice.
+	// necessarily need to be part of a station block (SB) as obove, however
+	// making reusable SB's is good practice.
 	#mb_query(mb_addr := 123,
 	          mode := #mb_query.c.read.holding_reg,
 	          data_addr := 456,

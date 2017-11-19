@@ -11,7 +11,7 @@ Quick starter guide:
  - Hardware: S7-1200: fw >= 4.2 or S7-1500: fw >= 2.0  
  - For older fw. use version 1.
 
-Basics:
+Same memory:
 If the library is only used for rtu then all blocks related 
 to tcp can be removed to save memory. Equally all rtu 
 blocks can be removed if the library is only used for tcp.
@@ -27,8 +27,7 @@ functionality for modbus slave or modbus server. Take a look
 at MB_SLAVE or MB_SERVER, which is included in TIA-portal, 
 for those functionalities.
 
-To understand the examples it's recommended to acquire some 
-basic knowledge about modbus. More readings at the links bellow:
+More readings about modbus in the links bellow:
  - http://www.csimn.com/CSI_pages/Modbus101.html
  - http://www.simplymodbus.ca/FAQ.htm
  - http://www.modbus.org/specs.php

@@ -1,0 +1,59 @@
+FUNCTION_BLOCK "example_novus_tht"
+{ S7_Optimized_Access := 'TRUE' }
+VERSION : 0.1
+   VAR_INPUT 
+      unit : USInt;
+   END_VAR
+
+   VAR_OUTPUT 
+      temperature : Int;
+      humidity : Int;
+   END_VAR
+
+   VAR_IN_OUT 
+      mb : "udt_mb";
+   END_VAR
+
+   VAR 
+      common : "udt_mb_common";
+      serial_number : DWord;
+      raw_values { ExternalAccessible := 'False'; ExternalVisible := 'False'; ExternalWritable := 'False'} : Struct
+         temp { ExternalAccessible := 'False'; ExternalVisible := 'False'; ExternalWritable := 'False'} : Int;
+         hum { ExternalAccessible := 'False'; ExternalVisible := 'False'; ExternalWritable := 'False'} : Int;
+      END_STRUCT;
+   END_VAR
+
+
+BEGIN
+	// - Novus - RHT (Temperature transmitter)
+	// - http://www.novusautomation.com/downloads/Arquivos/v10x_b_manual_rht_wm-dm-p10_485_lcd_%20english.pdf
+	// - Example code, no test with real equipment done.
+	
+	"mb_device_header"(common := #common, mb := #mb);
+	
+	"mb_query"(unit := #unit,
+	           fc := #mb.c.read.holding_reg,
+	           d_addr := 7,
+	           d_len := #mb.c.auto_len,
+	           data := #raw_values,
+	           mb := #mb);
+	
+	"mb_query"(unit := #unit,
+	           fc := #mb.c.read.holding_reg,
+	           d_addr := 0,
+	           d_len := #mb.c.auto_len,
+	           data := #serial_number,
+	           mb := #mb);
+	
+	"mb_device_footer"(common := #common, mb := #mb);
+	
+	IF #common.out.communication_error THEN
+	    #raw_values.temp := 0;
+	    #raw_values.hum := 0;
+	END_IF;
+	
+	#temperature := #raw_values.temp / 10;
+	#humidity := #raw_values.hum / 10;
+	
+	
+END_FUNCTION_BLOCK

@@ -92,8 +92,7 @@ BEGIN
 	
 	#siemens_PAC3200(mb_query := #mb_query); // Same FB as above.
 	
-	// mb_master_ctrl and mb_buffer can be deleted to save memory,
-	// those blocks are only for modbus rtu.
+	// Modbus rtu blocks can be deleted to save memory.	
 	
 END_FUNCTION_BLOCK
 

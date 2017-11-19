@@ -5,11 +5,11 @@ The library introduce a concept called station block (SB). A SB is created for o
 A SB can plug into both modbus tcp and modbus rtu application, this comes to handy if a rtu-tcp-gateway are going to be used. The whole application doesn't need to be rewritten for that reason.
 
 ```pascal
-// Start example for a station blocks.
+// Start example for a station blocks. (SB)
 
-// Every device block should start with a device header. Though it
-// isn't required. #s is a special udt that comes along with the 
-// library.
+// Every SB should start with a station header. Though it
+// isn't required. #s bellow, is a special udt that comes along 
+// with the library.
 "mb_station_header"(station := #s, mb_query := #mb_query);
 
 
@@ -93,7 +93,7 @@ A SB can plug into both modbus tcp and modbus rtu application, this comes to han
 
 // Header and footer
 // -----------------------------------
-// As mention at the top the mb_device_header isn't required However if
+// As mention at the top the mb_station_header isn't required However if
 // the "footer" is implemented then the "header" is also needed, else the
 // library will not work. No query should go before the "header" or after
 // the "footer".

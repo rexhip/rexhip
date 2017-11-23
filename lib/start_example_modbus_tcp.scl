@@ -52,7 +52,8 @@ BEGIN
 	#mb_query(data_addr := 64012, data_ptr := #query_3);
 	
 	// - Each query reading one section of holding registers.
-	// - Data length is automatically calculated.
+	// - Data length is automatically calculated for holding 
+	//   and input regisers. 
 	
 	"mb_station_footer"(station := #s, mb_query := #mb_query);
 	

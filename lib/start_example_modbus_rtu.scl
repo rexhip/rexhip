@@ -39,7 +39,8 @@ BEGIN
 	#mb_query.mode := #mb_query.c.read.holding_reg; 
 	#mb_query(data_addr := 12003, data_ptr := #totaliser ); 
 	
-	// Data length is automatically calculated. 
+	// Data length is automatically calculated for holding 
+	// and input regisers. 
 	
 	"mb_station_footer"(station := #s, mb_query := #mb_query); 
 	

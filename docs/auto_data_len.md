@@ -14,7 +14,7 @@ If data_len i set manually for one query, then it need to be set back to auto in
           data_len := 2, 
           data_ptr := #array_with_two_bools); 
 
-// Data length is set back to auto.
+// Data length is set back to auto, by passing zero.
 #mb_query(mode := #mb_query.c.read.holding_reg,
           data_addr := __REGISTER__,      
           data_len := 0, // zero => auto

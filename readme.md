@@ -1,14 +1,13 @@
 Rexhip - Extended modbus library for Siemens PLC's.
 ---------------------------------------------------
- - Makes it easy to create and split a program in to reusable «station blocks» (SB).
- - Station blocks can easily be reused and combined in new programs.
+ - Makes it easy to create and split a program in to reusable «station blocks» (SB). They can easily be reused and combined in new programs. SB's for ore then 50 modbus devices are included.
  - A clean API, helps to cut engineering time.
  - Reduce idle time, by skipping queries that has led to recurring timeouts, retries will be done occasionally.
  - Logging features for development and debugging.
  - The library extend on the modbus blocks that comes along with TIA-portal.
  - The software use little memory and cpu-time, important for S7-1200.
  - Free under the MIT-license. (docs/LICENSE.txt)
- - More then 50 SB's included.
+ 
 
 ```pascal
 // A simple modbus RTU example. 

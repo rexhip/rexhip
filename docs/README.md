@@ -15,6 +15,10 @@ Same memory:
 
 If the library is only used for tcp then all blocks related to rtu can be removed to save memory. Equally all tcp blocks can be removed if the library is only used for rtu. There are solution for rtu application one for S7-1200, mb_master_ctrl. And there is one other for S7-1500,  mb_master_1500_ctrl. Delete block that is not used to save memory.
 
+Auto data_len:
+
+The liberay is able to determine the data_len parmeter automatically for holding and input register. This feature only works digital input and outputs, when the number of bits adds up to whole words.  (See auto_data_len.md for more information)
+
 OB-call:
 
 All query blocks connected to a controller has to be called in the same order for each scan, implicate they have to be called from the same OB.

@@ -13,7 +13,7 @@ Quick starter guide:
 
 Same memory:
 
-If the library is only used for tcp then all blocks related to rtu can be removed to save memory. Equally all tcp blocks can be removed if the library is only used for rtu. There are solution for rtu application one for S7-1200, mb_master_ctrl. And there is one other for S7-1500,  mb_master_1500_ctrl. Delete block that is not used to save memory.
+If the library is only used for tcp then all blocks related to rtu can be removed to save memory. Equally all tcp blocks can be removed if the library is only used for rtu. There are two solution for rtu application one for S7-1200, mb_master_ctrl. And there is one other for S7-1500,  mb_master_1500_ctrl. Delete the block that isn't used to save memory.
 
 Auto data_len:
 

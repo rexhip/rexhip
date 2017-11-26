@@ -55,7 +55,7 @@ A SB can plug into both modbus tcp and modbus rtu application, this quite conven
 // 1. A structure of bools (array or udt) should add up to a whole bytes.
 // 2. The modbus protocol limit each query to a maximum of 123 words.
 //    (For some queries up to 125 words) Some modbus devices has stricter 
-      restrictions
+//    restrictions
 
 
 // Similar query as above, except one input register are read. Any number

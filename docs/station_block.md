@@ -1,6 +1,6 @@
 Station blocks (SB)
 -------------------
-The library introduce a concept called station block (SB). A SB is created for one specific modbus device, containing all the queries needed to communicate with that specific modbus device. Setup modbus communication with a VFD (Variable-frequency drive) for example, usually take a day or two. The idea with the library is that, this can be done once with a SB and the SB’s can be reused and shared in new applications. The library includes many predefined SB’s, that is freely available. New contributions to the repository is appreciated. 
+The library introduce a concept called station block (SB). A SB is created for one specific modbus device, containing all the queries needed to communicate with that specific modbus device. Setup modbus communication with a VFD (Variable-frequency drive) for example, usually take a day or two. The idea behind the library is that, this can be done once and the SB’s can be shared and reused in new applications. The library includes many predefined SB’s, that is freely available. New contributions to the repository is appreciated. 
 
 A SB can plug into both modbus tcp and modbus rtu application, this quite convenient if a rtu-tcp-gateway are going to be used. Different SB's can easily be combined in the same application, and there can be muliple instances of each SB. 
 
@@ -25,7 +25,7 @@ A SB can plug into both modbus tcp and modbus rtu application, this quite conven
 //
 // A standard modbus telegram
 // .---------.--------.---------------.--------------.---  ..  ..  -- --.---------------.
-// | mb_addr |  mode  |   data_addr   |    d_len     |      data_ptr    |      CRC      |
+// | mb_addr |  mode  |   data_addr   |   data_len   |      data_ptr    |      CRC      |
 // '---------'--------'---------------'--------------'---- --  ..  ..  -'---------------'
 //
 // --- mb_addr:
@@ -45,15 +45,17 @@ A SB can plug into both modbus tcp and modbus rtu application, this quite conven
 //
 // --- data_len:
 // Data length. Can be omitted and will then be calculate automatically. 
+// However if it's set manualy for one query, then it need to be set back
+// to auto for the next query. (#mb_query.c.auto_len)
 //
 // --- data_ptr:
-// Container for data that will be send or receive. The parameter is not
-// limited to words, but can contain any data types, including: real,
-// bytes, arrays and udt's
-// Though, two criterion most to be followed:
-// 1. Only whole registers. (Bytes and bool's should add up to 16 bits)
+// Container for the data that will be send or receive. The parameter is 
+// not limited to words, but can contain any data types, including: real,
+// bytes, arrays and udt's. Though, two criterion most be meet:
+// 1. A structure of bools (array or udt) should add up to a whole bytes.
 // 2. The modbus protocol limit each query to a maximum of 123 words.
-//    (Sometimes up to 125 words)
+//    (For some queries up to 125 words) Some modbus devices has stricter 
+      restrictions
 
 
 // Similar query as above, except one input register are read. Any number
@@ -62,6 +64,10 @@ A SB can plug into both modbus tcp and modbus rtu application, this quite conven
 #mb_query(mode := #mb_query.c.read.input_reg,
           data_addr := 1234,
           data_ptr := #data_query_2);
+	  
+	  
+// For discrete in and output the function mb_query_bits can be used to
+// query a number of bits that dosen't add up to eight.
 
 
 // Modicon convention addressing:
@@ -100,24 +106,22 @@ A SB can plug into both modbus tcp and modbus rtu application, this quite conven
 
 "mb_station_footer"(station := #s, mb_query := #mb_query);
 
-// Benefits of the header and the fotter :
+// The features bellow will only be affected by intermediate querie 
+// betwwen mb_station_header and mb_station_footer. 
+// The benefits are:
 //  - Logging capacities: Inside the station-udt there is logging of
 //    successfully and failed queries, which is helpful
 //    for debugging. See: "#s.log. ..."
-//  - "#s.out.error" a common error flag that is set if any of the
-//    intermediate queries between mb_device_footer and mb_device_header
-//    gives an error.
+//  - "#s.out.error" a common error flag that is set for kind of errors.
 //  - "#s.out.error_comm" a error flag that will be set after number 
-//    of repeating queries resulting in comm. error (timeout or bad crc)
-//    of the intermediate queries. Intended
-//    to reset values when communication problems occur. The number of
-//    repeating timeout before the flag is set can be configured with
+//    of repeating queries resulting in communication error (timeout or 
+//    bad crc). The flag is set can be configured with 
 //    "#s.conf.max_repeating_comm_errors".
 //  - Only one query for each device is allowed to be executed for
-//    every loop. This is to avoid stations with many queries to occupy
+//    every loop. This will avoid one device with many queries to occupy
 //    the bus for long periods of time.
 //  - Prevent the impact of setting if-condition around queries. The
-//    "hiccup" effect mentioned above.
+//    "hiccup" effect.
 
 
 // For this example values are set to zero if communication problems accrue.

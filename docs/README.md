@@ -17,7 +17,7 @@ If the library is only used for tcp then all blocks related to rtu can be remove
 
 Auto data_len:
 
-The liberay is able to determine the data_len parmeter automatically for holding and input register. This feature only works digital input and outputs, when the number of bits adds up to whole words.  (See auto_data_len.md for more information)
+The liberay is able to determine the data_len parmeter automatically for holding and input register. This feature only works digital input and outputs, when the number of bits adds up to whole bytes. (See auto_data_len.md and for more information)
 
 OB-call:
 

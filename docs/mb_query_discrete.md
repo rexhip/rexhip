@@ -16,4 +16,8 @@ mb_query need whole bytes to work, if discrete in or outputs are going to be que
 #mb_query.data_addr := __DATA_ADDR__;
 "mb_query_discrete"(data_ptr := array_of_one_bool, 
                     mb_query := #mb_query);
+
+// data_len will be dertmined based on to the 
+// size of the array. 
 ```
+

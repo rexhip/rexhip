@@ -1,5 +1,5 @@
-mb_query_discrete
------------------
+mb_query_bits
+--------------
 mb_query need whole bytes to work, if discrete in or outputs are going to be queried, that dosen't add up to whole bytes, then mb_query_discrete should be used.
 
 ```pascal

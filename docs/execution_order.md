@@ -17,8 +17,22 @@ With the mb_station_header, and mb_station_footer the complexity increase quite 
 
 4
 -
-If a device encounter sveral timeout, then the communication-error-flag will be set for the station block, and queries will be executed less frequently.
+Each station block has there own internal loop of execution, when all queries has been executed the loop will start over again. If one SB has 5 queries while another has 15, then the first query will have its queries executed three times as fast as the second one.
 
 5
 -
+By default only one query in each station block is executed for each loop. A bus is shared resource, and a device shouldn't be allowed to occupy the bus for long periods of time. However this cycle can be changed if some devices need more priority then otheres. By changing the variable «#s.conf.exec_n_quries» in the station block, setting this variable to three for example, will let this one station block execute three queries for each loop, while other station blocks only execute one query on the same loop.
+
+6
+-
+If a device encounter sveral timeout, then the communication-error-flag will be set for the station block, and queries will be executed less frequently. This make the trafic on the flow more effectively, by avoiding waiting for timeouts.
+
+7
+-
+If more then one device have communication problems, then only one of them is allowed to make retry for each loop. The devices with error_comm-flag set will altnerative witch one will do a retry on the query loop.
+
+8
+-
+
+
 ...

@@ -332,7 +332,7 @@ VERSION : 0.1
       conf : Struct   // Configuration
          disable { S7_SetPoint := 'True'} : Bool;   // Skip all queries
          "read_only" { S7_SetPoint := 'True'} : Bool;   // Skip all write queries. (fc 5,6,15,16)
-         next_despite_comm { S7_SetPoint := 'True'} : Bool := true;   // next query despite comm error.
+         next_despite_comm { S7_SetPoint := 'False'} : Bool := true;   // next query despite comm error.
          max_comm_error { S7_SetPoint := 'True'} : USInt := 2;   // Repeating erros before communication_error flag is set
          exec_n_quries { S7_SetPoint := 'True'} : USInt := 1;   // Number of queries to be exec. at each loop.
       END_STRUCT;

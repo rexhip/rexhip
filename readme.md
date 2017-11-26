@@ -1,6 +1,7 @@
 Rexhip - Extended modbus library for Siemens PLC's.
 ---------------------------------------------------
- - Makes it easy to create and split a program in to reusable «station blocks». SB's can easily be reused and combined in new programs, and the libery includes more then 50 SB's ready to be used.
+ - Makes it easy to create and split a program in to reusable «station blocks», SB's can easily be reused and combined in new programs. 
+ - The libery includes more then 50 SB's ready to be used. (and growing...)
  - A clean API, helps to cut engineering time.
  - Reduce idle time, by skipping queries that has led to recurring timeouts, retries will be done occasionally.
  - Logging features for development and debugging.

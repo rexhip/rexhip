@@ -1,7 +1,7 @@
 Automatic data_len
 ------------------
 
-The liberay is able to determine the data_len parmeter automatically for holding and input register. This feature only works digital input and outputs, when the number of bits adds up to whole words.
+The liberay is able to determine the data_len parmeter automatically for holding and input register. This feature only works digital input and outputs, when the number of bits adds up to whole bytes.
 
 If data_len i set manually for one query, then it need to be set back to auto in the following query.
 
@@ -17,6 +17,6 @@ If data_len i set manually for one query, then it need to be set back to auto in
 // Data length is set back to auto, by passing zero.
 #mb_query(mode := #mb_query.c.read.holding_reg,
           data_addr := __REGISTER__,      
-          data_len := 0, // zero => auto
+          data_len := #mb_query.c.auto_len,
           data_ptr := #read_query_2); 
 ```

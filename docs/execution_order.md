@@ -49,5 +49,5 @@ Each SB has a read_only flag. If this flag is set and the SB contains write quer
 
 ----------------------------------
 
-This are the main rule of execution in the library, and all the rules apply at the same time. As mention on the top, the user should need to worry about the order she or he just need to know that they all will be executed, regardsless in which order.
+This are the main rule of execution in the library, and all the rules apply at the same time. As mention on the top, the developer should need to worry about the order she or he just need to know that they all will be executed, regardsless in which order.
 

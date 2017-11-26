@@ -51,7 +51,7 @@ FUNCTION_BLOCK "start_example_modbus_rtu"
 VERSION : 0.1
    VAR 
       mb_query : "mb_query";
-      mb_master_ctrl : "mb_master_ctrl";
+      mb_master_ctrl : "mb_master_1200_ctrl";
       abb_aquaMaster_device1 : "abb_aquaMaster_3";
       abb_aquaMaster_device2 : "abb_aquaMaster_3";
       abb_aquaMaster_device3 : "abb_aquaMaster_3";

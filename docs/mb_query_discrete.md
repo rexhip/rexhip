@@ -1,6 +1,6 @@
 mb_query_discrete
 -----------------
-mb_query need whole bytes to work, if discrete in or outputs are going to be queried, that dosen't add up to whole bytes, the mb_query_discrete should be used.
+mb_query need whole bytes to work, if discrete in or outputs are going to be queried, that dosen't add up to whole bytes, then mb_query_discrete should be used.
 
 ```pascal
 #mb_query.mb_addr := __MB_ADDR__;

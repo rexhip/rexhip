@@ -1,0 +1,12 @@
+## Quick starter guide
+ - Download the latest release. (https://github.com/olab84/rexhip/releases)
+ - Start a new project in TIA-portal, and then add new PLC.
+ - Localise "External Source files" in the tree structure and import the files inside the lib-folder of the downloaded zip-file.
+ - Select the imported files, right click them and choose "Generate blocks from source". For a S7-1500 there will be lot of errors becouse there isn't any support the light wight mb_master, delete mb_master_1200_ctrl to solve this errors. 
+ - Open the "Station_block" folder and see if there alleredy exist a SB for your device, if not study the start examples and customize the code the modbus device.
+ - Other blocks that are not needed should also be deleted, to save memory.
+ 
+ ## Requirements
+ - Software: TIA-portal: v14, sp1, Upd 2
+ - Hardware: S7-1200: fw >= 4.2 or S7-1500: fw >= 2.1 (2.0)  
+ - For older fw. use version 1.

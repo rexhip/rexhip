@@ -7,6 +7,5 @@
 5. Discreate in- and outpus
 6. Debugging
 
-# Internal docs.
---------------
-10. Queries execution order
+
+11. Queries execution order

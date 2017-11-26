@@ -40,8 +40,8 @@ A SB can plug into both modbus tcp and modbus rtu application, this quite conven
 // --- data_addr:
 // Data address, the actual value that will be sent in the modbus telegram.
 // Eg. to read holding address 123, you simply pass 123 to data_addr and
-// "#mb_query.c.read.holding_reg" (103) to the mode-parameter. 40001 should NOT 
-// be added to 123.
+// "#mb_query.c.read.holding_reg" (103) to the mode-parameter. 40001 should 
+// NOT be added to 123.
 //
 // --- data_len:
 // Data length. Can be omitted and will then be calculate automatically. 

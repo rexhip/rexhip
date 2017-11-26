@@ -33,6 +33,21 @@ If more then one device have communication problems, then only one of them is al
 
 8
 -
+Each SB has a disable flag, if it's set the queries inside the SB will be skipped, when it's the SB's turn to execute a query. The execution will continue in the next SB.
 
+9
+-
+Each SB has a disable flag, if it's set the queries inside the SB will be skipped, when it's the SB's turn to execute a query. The execution will continue in the next SB.
 
+10
+-
+Each SB has a read_only flag. If this flag is set and the SB contains write query. Then each time this write-query is going to be executed, the library whill skip the query, and let the following SB, execute a query instead. No query in the current SB will be executed at that loop. On the next loop the query after the write-query will be executed.
+
+11
+-
 ...
+
+----------------------------------
+
+This are the main rule of execution in the library, and all the rules apply at the same time. As mention on the top, the user should need to worry about the order she or he just need to know that they all will be executed, regardsless in which order.
+

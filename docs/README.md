@@ -8,7 +8,7 @@ Quick starter guide:
  
  Requirements:
  - Software: TIA-portal: v14, sp1, Upd 2
- - Hardware: S7-1200: fw >= 4.2 or S7-1500: fw >= 2.0  
+ - Hardware: S7-1200: fw >= 4.2 or S7-1500: fw >= 2.1 (2.0)  
  - For older fw. use version 1.
 
 Same memory:
@@ -26,8 +26,3 @@ All query blocks connected to a controller has to be called in the same order fo
 Functionality included:
 
 The library extend on the master bloks and the client block that comes along with TIA portal. The library doesn't includes any functionality for modbus slave or modbus server. Take a look at MB_SLAVE or MB_SERVER, which is included in TIA-portal, for those functionalities.
-
-More readings about modbus in the links bellow:
- - http://www.csimn.com/CSI_pages/Modbus101.html
- - http://www.simplymodbus.ca/FAQ.htm
- - http://www.modbus.org/specs.php

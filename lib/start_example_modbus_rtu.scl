@@ -39,8 +39,10 @@ BEGIN
 	#mb_query.mode := #mb_query.c.read.holding_reg; 
 	#mb_query(data_addr := 12003, data_ptr := #totaliser ); 
 	
-	// Data length is automatically calculated for holding 
-	// and input regisers. 
+	// - Each query reading one section of holding registers.
+	// - Data length is automatically calculated for holding 
+	//   and input regisers. 
+	// - mb_query_bits should be used for discrete in- and outpus.
 	
 	"mb_station_footer"(station := #s, mb_query := #mb_query); 
 	

@@ -51,9 +51,10 @@ BEGIN
 	#mb_query(data_addr := 55, data_ptr := #query_2);
 	#mb_query(data_addr := 64012, data_ptr := #query_3);
 	
-	// - Each query reading one section of holding registers.
+        // - Each query reading one section of holding registers.
 	// - Data length is automatically calculated for holding 
 	//   and input regisers. 
+	// - mb_query_bits should be used for discrete in- and outpus.
 	
 	"mb_station_footer"(station := #s, mb_query := #mb_query);
 	

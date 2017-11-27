@@ -6,7 +6,7 @@ Rexhip - Extended modbus library for Siemens PLC's.
  - Reduce idle time, by skipping queries that has led to recurring timeouts, retries will be done occasionally.
  - Logging features for development and debugging.
  - Extend on the modbus blocks that comes along in TIA-portal, it isn't an attempt to reinvent the wheel, but to extend it.
- - Help share the bus equally between the devices in time slices.
+ - Share the bus equally between the devices in time slices.
  - Use relatively little memory, compared to all its features.
  - Free under the MIT-license. (docs/LICENSE.txt)
  

@@ -1,12 +1,13 @@
 Rexhip - Extended modbus library for Siemens PLC's.
 ---------------------------------------------------
- - Makes it easy to create and split a program in to reusable «station blocks», SB's can easily be reused and combined in new programs. 
- - The libery includes more then 50 SB's ready to be used. (and growing...)
- - A clean API, helps to cut engineering time.
+ - A clean and simple api that makes it easy to split a program in to reusable block for each device.
+ - «Station blocks», or SB's can easily be combined in new programs. A application with 100 devices, can be developped within 10 minutes when there exsist SB's. 
+ - The libery includes many free SB's ready to be used. (and growing...)
  - Reduce idle time, by skipping queries that has led to recurring timeouts, retries will be done occasionally.
  - Logging features for development and debugging.
- - The library extend on the modbus blocks that comes along with TIA-portal.
- - The library use relatively little memory.
+ - Extend on the modbus blocks that comes along in TIA-portal, it isn't an attempt to reinvent the wheel, but to extend it.
+ - Help share the bus equally between the devices in time slices.
+ - Use relatively little memory, compared to all its features.
  - Free under the MIT-license. (docs/LICENSE.txt)
  
 ```pascal

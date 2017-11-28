@@ -1,7 +1,7 @@
 Extended modbus library for Siemens PLC's.
 -------------------------------------------
 ```
-Importatnt: A bug affecting the 2.x.x branch is found, upgraded to v.2.2.0
+Importatnt: A bug affecting the 2.x.x branch is found, please upgraded to v.2.2.0
 ```
 
  - A clean and simple api that makes it easy to split a program in to reusable block for each device.

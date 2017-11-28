@@ -1,5 +1,9 @@
-Rexhip - Extended modbus library for Siemens PLC's.
----------------------------------------------------
+Extended modbus library for Siemens PLC's.
+-------------------------------------------
+```
+Importatnt: A bug affecting the 2.x.x branch is found, upgraded to v.2.2.0
+```
+
  - A clean and simple api that makes it easy to split a program in to reusable block for each device.
  - «Station blocks», or SB's can easily be combined in new programs. A application with 100 devices, can be developped within 10 minutes when there exsist SB's. 
  - The libery includes many free SB's ready to be used. (and growing...)

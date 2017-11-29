@@ -1,4 +1,4 @@
-How to read bits in a holding register 
+## How to read bits in a holding register 
 
 ```pascal
 VAR 

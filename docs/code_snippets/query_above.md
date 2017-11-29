@@ -1,6 +1,8 @@
 
 ```pascal
 
+// This API maybe deprecated.
+
 // To get information about when a particular query has executed the 
 // query_above boolean can be used.
 

@@ -12,7 +12,7 @@ Important: A bug affecting the 2.x.x branch is found, please upgrade to v.2.2.0
  - Extend on the modbus blocks that comes along in TIA-portal, it isn't an attempt to reinvent the wheel, but to extend it.
  - Share the bus equally between the devices.
  - Use relatively little memory, compared to all its features.
- - Free under the MIT-license. (docs/99. LICENSE.txt)
+ - Free under the MIT-license. (docs/99. License.txt)
  
 ```pascal
 // A simple modbus RTU example. 

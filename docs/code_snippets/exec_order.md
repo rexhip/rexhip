@@ -10,7 +10,7 @@ CASE #state OF
                   data_addr := 123,                  
                   data_ptr := #query_1);
         #state += BOOL_TO_SINT(#mb_query.done);
-        // «#mb_query.done» is set true when the query above done 
+        // «#mb_query.done» is set true when the query above is done 
 	// successfully. When next query is executed, «#mb_query.done»
 	// is set back false.
     

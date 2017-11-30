@@ -10,7 +10,8 @@ Important: A bug affecting the 2.x.x branch is found, please upgrade to v2.2.0
  - Reduce idle time, by skipping queries that has led to recurring timeouts, retries will be done occasionally.
  - Logging features for development and debugging.
  - Extend on the modbus blocks that comes along in TIA-portal, it isn't an attempt to reinvent the wheel, but to extend it.
- - Share the bus equally between the devices.
+ - Help share the bus efficient between the devices.
+ - Data can be stored with optimized data access on.
  - Use relatively little memory, compared to all its features.
  - Free under the MIT-license. (docs/99. License.txt)
  

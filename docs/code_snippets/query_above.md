@@ -27,9 +27,7 @@ IF #mb_query.stat.query_above THEN
         ; // Or some action if other error problem.
         
         // #mb_query.stat.status , gives more information about the 
-		// error. The error codes can be looked up in the help-manual,
-        // check MB_MASTER for mosbus rtu, and for modbus tcp
-        // check MB_CLIENT
+	// error.         
         
     END_IF;    
 

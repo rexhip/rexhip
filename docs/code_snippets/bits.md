@@ -7,36 +7,36 @@ VAR
   // Bits that are not in use, also need to be defined to create the 
   // corret offset.
   status : Struct
-     b08 : Bool;
-     b09 : Bool;
-     b10 : Bool;
-     b11_ready : Bool;
-     b12 : Bool;
-     b13_running : Bool;
-     b14 : Bool;
-     b15 : Bool;
-     b00 : Bool;
-     b01 : Bool;
-     b02 : Bool;
-     b03_alarm : Bool;
-     b04_overheat : Bool;
-     b05_fan_alarm : Bool;
-     b06 : Bool;
-     b07 : Bool;
+     x08 : Bool;
+     x09 : Bool;
+     x10 : Bool;
+     x11_ready : Bool;
+     x12 : Bool;
+     x13_running : Bool;
+     x14 : Bool;
+     x15 : Bool;
+     x00 : Bool;
+     x01 : Bool;
+     x02 : Bool;
+     x03_alarm : Bool;
+     x04_overheat : Bool;
+     x05_fan_alarm : Bool;
+     x06 : Bool;
+     x07 : Bool;
   END_STRUCT;  
 END_VAR
 
 // A normal query.
-#mb_query(mb_addr := mb_addr,         
+#mb_query(mb_addr := ___MB_ADDR___,         
           mode := #mb_query.c.read.holding_reg,
-          data_addr := __REGISTER__,          
+          data_addr := ___REGISTER___,          
           data_ptr := #status ); // Read the whole word         
 
 // Later in the program when a bits need to be read, then a bit 
-// can be referred to directly. Eg. #status.b11_ready, for the 
+// can be referred to directly. Eg. #status.x11_ready, for the 
 // ready bit in this example
 
-IF #status.b11_ready THEN
+IF #status.x11_ready THEN
     ; // Do something.	    
 END_IF;
 

@@ -1,9 +1,5 @@
 Extended modbus library for Siemens PLC's.
 -------------------------------------------
-```
-Important: A bug affecting the v2.x.x branch is found, please upgrade to v2.2.1
-```
-
  - A clean and simple api that makes it easy to split a program in to reusable FB for each device.
  - «Station blocks», or SB's can easily be combined in new programs. A application with 100 devices, can be developped within 10 minutes when there exsist SB's. 
  - The libery includes many free SB's ready to be used. (and growing...)

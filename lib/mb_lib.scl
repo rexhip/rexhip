@@ -279,7 +279,7 @@ BEGIN
 	END_IF;
 	
 	// Automatically adjust timeout.
-	#resp_to := SEL(G := #timeout = 0,
+	#resp_to := SEL(G := #timeout = T#0s,
 	                IN0 := TIME_TO_UINT(#timeout),
 	                IN1 := UDINT_TO_UINT(3200000 / #baud));
 	

@@ -95,7 +95,7 @@ BEGIN
 	// Rexhip - Extended modbus library for Siemens PLC's.
 	// ---------------------------------------------------
 	// Author:   Ola Bjornli
-	// Version:  2.2.0
+	// Version:  2.2.1
 	// License:  MIT-license
 	// Web:      http://github.com/olab84/rexhip
 	

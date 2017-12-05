@@ -1,6 +1,7 @@
 ```pascal
-// Sometimes only some bits in a word need to be manipulated, without touching the 
-// other bits, bellow is an example how that can be achieved.
+// Sometimes only some bits in a word need to be manipulated, 
+// without touching the other bits, bellow is an example how 
+// that can be achieved.
 
 #mb_query.mb_addr := __mb_addr__,         
 #mb_query.data_addr := __REGISTER__,             

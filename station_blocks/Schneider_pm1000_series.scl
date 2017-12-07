@@ -73,7 +73,7 @@ BEGIN
 	#mb_query(data_addr := 3901, data_ptr := #tAll);
 	IF #mb_query.done THEN
 	    #all.power_apparent := SWAP(#tAll.power_apparent); 
-	    #all.power_apparent := SWAP(#tAll.power_apparent);
+	    #all.power_active := SWAP(#tAll.power_active);
 	    #all.power_reactive := SWAP(#tAll.power_reactive);
 	    #all.power_factor := SWAP(#tAll.power_factor);
 	    #all.voltage_L_L := SWAP(#tAll.voltage_L_L);
@@ -90,7 +90,7 @@ BEGIN
 	
 	IF #tSwap <> 0 THEN
 	    #phase[#tSwap].power_apparent := SWAP(#tPhase[#tSwap].power_apparent);
-	    #phase[#tSwap].power_apparent := SWAP(#tPhase[#tSwap].power_apparent);
+	    #phase[#tSwap].power_active := SWAP(#tPhase[#tSwap].power_active);
 	    #phase[#tSwap].power_reactive := SWAP(#tPhase[#tSwap].power_reactive);
 	    #phase[#tSwap].power_factor := SWAP(#tPhase[#tSwap].power_factor);
 	    #phase[#tSwap].voltage_L_L := SWAP(#tPhase[#tSwap].voltage_L_L);

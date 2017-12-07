@@ -5,36 +5,61 @@ VERSION : 0.1
       mb_addr : UInt;
    END_VAR
 
+   VAR_OUTPUT 
+      all : Struct
+         power_apparent : Real;
+         power_active : Real;
+         power_reactive : Real;
+         power_factor : Real;
+         voltage_L_L : Real;
+         voltage_L_N : Real;
+         current : Real;
+      END_STRUCT;
+      phase : Array[1..3] of Struct
+         power_apparent : Real;
+         power_active : Real;
+         power_reactive : Real;
+         power_factor : Real;
+         voltage_L_L : Real;
+         voltage_L_N : Real;
+         current : Real;
+      END_STRUCT;
+   END_VAR
+
    VAR_IN_OUT 
       mb_query : "mb_query";
    END_VAR
 
    VAR 
       s : "mb_station_udt";
-      data : "mb_station_udt";
-      total : Struct
+   END_VAR
+
+   VAR_TEMP 
+      tAll : Struct
          power_apparent : Real;
          power_active : Real;
          power_reactive : Real;
-         Power_factor_average : Real;
-         voltage_L_L_average : Real;
-         voltage_L_N : Real;
-         current_average : Real;
-      END_STRUCT;
-      phase : Array[1..3] of Struct
-         apparent_power : Real;
-         active_power : Real;
-         reactive_power : Real;
          power_factor : Real;
-         voltage_phase_phase : Real;
-         voltage_phase_neutral : Real;
+         voltage_L_L : Real;
+         voltage_L_N : Real;
          current : Real;
       END_STRUCT;
+      tPhase : Array[1..3] of Struct
+         power_apparent : Real;
+         power_active : Real;
+         power_reactive : Real;
+         power_factor : Real;
+         voltage_L_L : Real;
+         voltage_L_N : Real;
+         current : Real;
+      END_STRUCT;
+      tSwap : USInt;
    END_VAR
 
 
 BEGIN
-	// Schneider - PM1000 Series Power Meters
+	// Schneider Electric - PowerLogic - PM1000 Series Power Meters
+	//  - PM1200
 	// 
 	// http://static.schneider-electric.us/docs/Power%20Management/
 	// PowerLogic%20Products/Metering/PM1200%20power%20meter/
@@ -44,9 +69,35 @@ BEGIN
 	#mb_query.mb_addr := #mb_addr;
 	
 	#mb_query.mode := #mb_query.c.read.holding_reg;
-	#mb_query(data_addr := 3901, data_ptr := #total);
-	#mb_query(data_addr := 3917, data_ptr := #phase);
+	
+	#mb_query(data_addr := 3901, data_ptr := #tAll);
+	IF #mb_query.done THEN
+	    #all.power_apparent := SWAP(#tAll.power_apparent); 
+	    #all.power_apparent := SWAP(#tAll.power_apparent);
+	    #all.power_reactive := SWAP(#tAll.power_reactive);
+	    #all.power_factor := SWAP(#tAll.power_factor);
+	    #all.voltage_L_L := SWAP(#tAll.voltage_L_L);
+	    #all.voltage_L_N := SWAP(#tAll.voltage_L_N);
+	    #all.current := SWAP(#tAll.current);
+	END_IF;
+	
+	#mb_query(data_addr := 3917, data_ptr := #tPhase[1]);
+	IF #mb_query.done THEN #tSwap := 1; END_IF;
+	#mb_query(data_addr := 3931, data_ptr := #tPhase[2]);
+	IF #mb_query.done THEN #tSwap := 2; END_IF;
+	#mb_query(data_addr := 3945, data_ptr := #tPhase[3]);
+	IF #mb_query.done THEN #tSwap := 3; END_IF;
+	
+	IF #tSwap <> 0 THEN
+	    #phase[#tSwap].power_apparent := SWAP(#tPhase[#tSwap].power_apparent);
+	    #phase[#tSwap].power_apparent := SWAP(#tPhase[#tSwap].power_apparent);
+	    #phase[#tSwap].power_reactive := SWAP(#tPhase[#tSwap].power_reactive);
+	    #phase[#tSwap].power_factor := SWAP(#tPhase[#tSwap].power_factor);
+	    #phase[#tSwap].voltage_L_L := SWAP(#tPhase[#tSwap].voltage_L_L);
+	    #phase[#tSwap].voltage_L_N := SWAP(#tPhase[#tSwap].voltage_L_N);
+	    #phase[#tSwap].current := SWAP(#tPhase[#tSwap].current);
+	END_IF;
 	
 	"mb_station_footer"(station := #s, mb_query := #mb_query);
+	
 END_FUNCTION_BLOCK
-

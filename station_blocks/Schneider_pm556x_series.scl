@@ -1,0 +1,110 @@
+﻿FUNCTION_BLOCK "Schneider_PM556x_series"
+{ S7_Optimized_Access := 'TRUE' }
+VERSION : 0.1
+   VAR_INPUT 
+      mb_addr : UInt;
+   END_VAR
+
+   VAR_IN_OUT 
+      mb_query : "mb_query";
+   END_VAR
+
+   VAR 
+      s : "mb_station_udt";
+      "Accumulated Energy" { ExternalAccessible := 'False'; ExternalVisible := 'False'; ExternalWritable := 'False'} : Struct
+         "Active Energy Delivered (Into Load)" { ExternalAccessible := 'False'; ExternalVisible := 'False'; ExternalWritable := 'False'} : Real;   // kWh
+         "Active Energy Received (Out of Load)" { ExternalAccessible := 'False'; ExternalVisible := 'False'; ExternalWritable := 'False'} : Real;   // kWh
+         "Active Energy Delivered + Received" { ExternalAccessible := 'False'; ExternalVisible := 'False'; ExternalWritable := 'False'} : Real;   // kWh
+         "Active Energy Delivered- Received" { ExternalAccessible := 'False'; ExternalVisible := 'False'; ExternalWritable := 'False'} : Real;   // kWh
+         "Reactive Energy Delivered" { ExternalAccessible := 'False'; ExternalVisible := 'False'; ExternalWritable := 'False'} : Real;   // kVARh
+         "Reactive Energy Received" { ExternalAccessible := 'False'; ExternalVisible := 'False'; ExternalWritable := 'False'} : Real;   // kVARh
+         "Reactive Energy Delivered + Received" { ExternalAccessible := 'False'; ExternalVisible := 'False'; ExternalWritable := 'False'} : Real;   // kVARh
+         "Reactive Energy Delivered - Received" { ExternalAccessible := 'False'; ExternalVisible := 'False'; ExternalWritable := 'False'} : Real;   // kVARh
+         "Apparent Energy Delivered" { ExternalAccessible := 'False'; ExternalVisible := 'False'; ExternalWritable := 'False'} : Real;   // kVAh
+         "Apparent Energy Received" { ExternalAccessible := 'False'; ExternalVisible := 'False'; ExternalWritable := 'False'} : Real;   // kVAh
+         "Apparent Energy Delivered + Received" { ExternalAccessible := 'False'; ExternalVisible := 'False'; ExternalWritable := 'False'} : Real;   // kVAh
+         "Apparent Energy Delivered - Received" { ExternalAccessible := 'False'; ExternalVisible := 'False'; ExternalWritable := 'False'} : Real;   // kVAh
+      END_STRUCT;
+      data1 { ExternalAccessible := 'False'; ExternalVisible := 'False'; ExternalWritable := 'False'} : Struct
+         Current { ExternalAccessible := 'False'; ExternalVisible := 'False'; ExternalWritable := 'False'} : Array[1..3] of Real;   // A
+         "Current N" { ExternalAccessible := 'False'; ExternalVisible := 'False'; ExternalWritable := 'False'} : Real;   // A
+         "Current G" { ExternalAccessible := 'False'; ExternalVisible := 'False'; ExternalWritable := 'False'} : Real;   // A
+         "Current Avg" { ExternalAccessible := 'False'; ExternalVisible := 'False'; ExternalWritable := 'False'} : Real;   // A
+         "Current Unbalance" { ExternalAccessible := 'False'; ExternalVisible := 'False'; ExternalWritable := 'False'} : Array[1..3] of Real;   // %
+         "Current Unbalance Worst" { ExternalAccessible := 'False'; ExternalVisible := 'False'; ExternalWritable := 'False'} : Real;   // %
+         "Voltage L-L" { ExternalAccessible := 'False'; ExternalVisible := 'False'; ExternalWritable := 'False'} : Array[1..3] of Real;   // V
+         "Voltage L-L Avg" { ExternalAccessible := 'False'; ExternalVisible := 'False'; ExternalWritable := 'False'} : Real;   // V
+         "Voltage L-N" { ExternalAccessible := 'False'; ExternalVisible := 'False'; ExternalWritable := 'False'} : Array[1..3] of Real;   // V
+         "Voltage L-N Avg" { ExternalAccessible := 'False'; ExternalVisible := 'False'; ExternalWritable := 'False'} : Real;   // V
+         "Voltage Unbalance L-L" { ExternalAccessible := 'False'; ExternalVisible := 'False'; ExternalWritable := 'False'} : Array[1..3] of Real;   // %
+         "Voltage Unbalance L-L Worst" { ExternalAccessible := 'False'; ExternalVisible := 'False'; ExternalWritable := 'False'} : Real;   // %
+         "Voltage Unbalance L-N" { ExternalAccessible := 'False'; ExternalVisible := 'False'; ExternalWritable := 'False'} : Array[1..3] of Real;   // %
+         "Voltage Unbalance L-N Worst" { ExternalAccessible := 'False'; ExternalVisible := 'False'; ExternalWritable := 'False'} : Real;   // %
+      END_STRUCT;
+      Power : Struct
+         "Active Power" : Array[1..3] of Real;   // kW
+         "Active Power Total" : Real;   // kW
+         "Reactive Power" : Array[1..3] of Real;   // kVAR
+         "Reactive Power Total" : Real;   // kVAR
+         "Apparent Power" : Array[1..3] of Real;   // kVA
+         "Apparent Power Total" : Real;   // kVA
+         "Power Factor" : Array[1..3] of Real;   // ---
+         "Power Factor Total" : Real;   // ---
+         "Displacement Power Factor" : Array[1..3] of Real;   // ---
+         "Displacement Power Factor Total" : Real;   // ---
+      END_STRUCT;
+      Frequency : Real;   // Hz
+   END_VAR
+
+
+BEGIN
+	// Schneider Electric - PM5560 PM5563 PM5563RD
+	// 
+	// https://www.schneider-electric.com/en/faqs/FA234017/
+	
+	"mb_station_header"(station := #s, mb_query := #mb_query);
+	#mb_query.mb_addr := #mb_addr;
+	
+	#mb_query.mode := #mb_query.c.read.holding_reg;
+	#mb_query(data_addr := 2700, data_ptr := #"Accumulated Energy");
+	#mb_query(data_addr := 3000, data_ptr := #data1);
+	#mb_query(data_addr := 3054, data_ptr := #Power);
+	#mb_query(data_addr := 3110, data_ptr := #Frequency);
+	
+	"mb_station_footer"(station := #s, mb_query := #mb_query);
+	
+	(*
+	"Power factor values are specially encoded floating point values.
+	
+	Angle of complex power = power factor register value
+	0° = 1
+	90° = 0
+	180° = -1
+	270° = 2
+	Q1: 0 < x < 1
+	Q2: -2 < x < -1
+	Q3:  -1 < x < 0
+	Q4: 1 < x < 2
+	
+	Pseudo code to decode PF Value
+	if (regVal > 1) {
+	 PF_Val = 2 - regVal;
+	 PF is leading
+	}
+	else if (regVal < -1) {
+	 PF_Val = -2-regVal
+	 PF is leading
+	}
+	else if ( abs(regVal) equals 1 ) {
+	 PF_Val = regVal
+	 PF is at unity
+	}
+	else {
+	 PF_Val = regVal
+	 PF is lagging
+	}
+	
+	*)
+	
+END_FUNCTION_BLOCK
+

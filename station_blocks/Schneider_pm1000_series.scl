@@ -45,9 +45,9 @@ VERSION : 0.1
          current : Real;
       END_STRUCT;
       tPhase : Array[1..3] of Struct
-         power_apparent : Real;
-         power_active : Real;
-         power_reactive : Real;
+         apparent_power : Real;
+         active_power : Real;
+         reactive_power : Real;
          power_factor : Real;
          voltage_L_L : Real;
          voltage_L_N : Real;
@@ -91,9 +91,9 @@ BEGIN
 	    #mb_query(data_ptr := #tPhase[#c]);
 	    
 	    IF #mb_query.done THEN
-	        #phase[#c].apparent_power := "swap_real"(#tPhase[#c].power_apparent);
-	        #phase[#c].active_power := "swap_real"(#tPhase[#c].power_active);
-	        #phase[#c].reactive_power := "swap_real"(#tPhase[#c].power_reactive);
+	        #phase[#c].apparent_power := "swap_real"(#tPhase[#c].apparent_power);
+	        #phase[#c].active_power := "swap_real"(#tPhase[#c].active_power);
+	        #phase[#c].reactive_power := "swap_real"(#tPhase[#c].reactive_power);
 	        #phase[#c].power_factor := "swap_real"(#tPhase[#c].power_factor);
 	        #phase[#c].voltage_L_L := "swap_real"(#tPhase[#c].voltage_L_L);
 	        #phase[#c].voltage_L_N := "swap_real"(#tPhase[#c].voltage_L_N);

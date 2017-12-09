@@ -1,0 +1,36 @@
+﻿FUNCTION "swap_real" : Real
+{ S7_Optimized_Access := 'TRUE' }
+VERSION : 0.1
+   VAR_INPUT 
+      in : Real;
+   END_VAR
+
+   VAR_TEMP 
+      buffer : Array[0..3] of Byte;
+      pos : DInt;
+      e : Int;
+      tmp : Byte;
+   END_VAR
+
+
+BEGIN
+	// Swap byes inside a real
+	
+	#e := Serialize(SRC_VARIABLE := #in,
+	                DEST_ARRAY => #buffer,
+	                POS := #pos);
+	
+	#tmp := #buffer[0];
+	#buffer[0] := #buffer[3];
+	#buffer[3] := #tmp;
+	#tmp := #buffer[1];
+	#buffer[1] := #buffer[2];
+	#buffer[2] := #tmp;
+	
+	#pos := 0;
+	#e := Deserialize(SRC_ARRAY := #buffer,
+	                  DEST_VARIABLE => #swap_real,
+	                  POS := #pos);
+	
+END_FUNCTION
+

@@ -7,9 +7,9 @@ VERSION : 0.1
 
    VAR_OUTPUT 
       all : Struct
-         power_apparent : Real;
-         power_active : Real;
-         power_reactive : Real;
+         apparent_power : Real;
+         active_power : Real;
+         reactive_power : Real;
          power_factor : Real;
          voltage_L_L : Real;
          voltage_L_N : Real;
@@ -36,9 +36,9 @@ VERSION : 0.1
 
    VAR_TEMP 
       tAll : Struct
-         power_apparent : Real;
-         power_active : Real;
-         power_reactive : Real;
+         apparent_power : Real;
+         active_power : Real;
+         reactive_power : Real;
          power_factor : Real;
          voltage_L_L : Real;
          voltage_L_N : Real;
@@ -53,7 +53,7 @@ VERSION : 0.1
          voltage_L_N : Real;
          current : Real;
       END_STRUCT;
-      tSwap : USInt;
+      c : Int;
    END_VAR
 
 
@@ -72,39 +72,34 @@ BEGIN
 	
 	#mb_query(data_addr := 3901, data_ptr := #tAll);
 	IF #mb_query.done THEN
-	    #all.power_apparent := "swap_real"(#tAll.power_apparent);
-	    #all.power_active := "swap_real"(#tAll.power_active);
-	    #all.power_reactive := "swap_real"(#tAll.power_reactive);
+	    #all.apparent_power := "swap_real"(#tAll.apparent_power);
+	    #all.active_power := "swap_real"(#tAll.active_power);
+	    #all.reactive_power := "swap_real"(#tAll.reactive_power);
 	    #all.power_factor := "swap_real"(#tAll.power_factor);
 	    #all.voltage_L_L := "swap_real"(#tAll.voltage_L_L);
 	    #all.voltage_L_N := "swap_real"(#tAll.voltage_L_N);
 	    #all.current := "swap_real"(#tAll.current);
 	END_IF;
 	
-	#mb_query(data_addr := 3917, data_ptr := #tPhase[1]);
-	IF #mb_query.done THEN
-	    #tSwap := 1;
-	END_IF;
-	
-	#mb_query(data_addr := 3931, data_ptr := #tPhase[2]);
-	IF #mb_query.done THEN
-	    #tSwap := 2;
-	END_IF;
-	
-	#mb_query(data_addr := 3945, data_ptr := #tPhase[3]);
-	IF #mb_query.done THEN
-	    #tSwap := 3;
-	END_IF;
-	
-	IF #tSwap <> 0 THEN
-	    #phase[#tSwap].power_apparent :="swap_real"(#tPhase[#tSwap].power_apparent);
-	    #phase[#tSwap].power_active := "swap_real"(#tPhase[#tSwap].power_active);
-	    #phase[#tSwap].power_reactive := "swap_real"(#tPhase[#tSwap].power_reactive);
-	    #phase[#tSwap].power_factor := "swap_real"(#tPhase[#tSwap].power_factor);
-	    #phase[#tSwap].voltage_L_L := "swap_real"(#tPhase[#tSwap].voltage_L_L);
-	    #phase[#tSwap].voltage_L_N := "swap_real"(#tPhase[#tSwap].voltage_L_N);
-	    #phase[#tSwap].current := "swap_real"(#tPhase[#tSwap].current);
-	END_IF;
+	FOR #c := 1 TO 3 DO
+	    CASE #c OF
+	        1: #mb_query.data_addr := 3917;
+	        2: #mb_query.data_addr := 3931;
+	        3: #mb_query.data_addr := 3945;
+	    END_CASE;
+	    
+	    #mb_query(data_ptr := #tPhase[#c]);
+	    
+	    IF #mb_query.done THEN
+	        #phase[#c].power_apparent := "swap_real"(#tPhase[#c].power_apparent);
+	        #phase[#c].power_active := "swap_real"(#tPhase[#c].power_active);
+	        #phase[#c].power_reactive := "swap_real"(#tPhase[#c].power_reactive);
+	        #phase[#c].power_factor := "swap_real"(#tPhase[#c].power_factor);
+	        #phase[#c].voltage_L_L := "swap_real"(#tPhase[#c].voltage_L_L);
+	        #phase[#c].voltage_L_N := "swap_real"(#tPhase[#c].voltage_L_N);
+	        #phase[#c].current := "swap_real"(#tPhase[#c].current);
+	    END_IF;
+	END_FOR;
 	
 	"mb_station_footer"(station := #s, mb_query := #mb_query);
 	

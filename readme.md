@@ -8,7 +8,7 @@
  - Extend on the modbus blocks that comes along in TIA-portal, it isn't an attempt to reinvent the wheel, but to extend it.
  - Help share the bus efficient between the devices.
  - Data can be stored with optimized data access on.
- - Use relatively little memory.
+ - Use little memory.
  - Free under the MIT-license. (docs/99. License.txt)
  
 ```pascal

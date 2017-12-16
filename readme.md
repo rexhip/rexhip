@@ -1,4 +1,4 @@
-## Extended modbus library for Siemens PLC's.
+### Extended modbus library for Siemens PLC's.
 
  - A clean and simple api that makes it easy to split a program into reusable FB for each modbus station.
  - «Station blocks», or SB's can easily be combined in new programs. A application with 100 devices, can be developed within 10 minutes when there exist SB's.
@@ -38,8 +38,8 @@
 // - Queries belonging to one device can be grouped together 
 //   into one FB, creating a reusable station block.
 ```
-    
- 
- Author:   Ola Bjørnli - [Contact](http://sn7.no/contact/rexhip)
- 
+
+
+- Author: Ola Bjørnli - [Contact](http://sn7.no/contact/rexhip)
+- This library has been included in [Siemens Open libarary](http://openplclibrary.com) 
 ![.](http://p.sn7.no/piwik.php?idsite=2&rec=1) <!-- Visitor statistics -->

@@ -9,7 +9,7 @@
  - Help share the bus efficient between the devices.
  - Data can be stored with optimized data access on.
  - Use little memory.
- - Free under the MIT-license. (docs/99. License.txt)
+ - Free under the MIT-license. (docs/License.txt)
  
 ```pascal
 // A simple modbus RTU example. 

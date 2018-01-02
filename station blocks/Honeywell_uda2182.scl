@@ -1,0 +1,37 @@
+﻿FUNCTION_BLOCK "Honeywell_UDA2182"
+{ S7_Optimized_Access := 'TRUE' }
+VERSION : 0.1
+   VAR_INPUT 
+      mb_addr : UInt;
+   END_VAR
+
+   VAR_IN_OUT 
+      mb_query : "mb_query";
+   END_VAR
+
+   VAR 
+      sb : "mb_station_block_udt";
+      data : Struct
+         pv1 : Array[1..2] of Real;
+         temperature : Array[1..2] of Real;
+         alarm : Array[1..4] of DWord;
+      END_STRUCT;
+   END_VAR
+
+
+BEGIN
+	// Honeywell - UDA2182
+	// 
+	// Web: https://www.honeywellprocess.com/library/support/Public/Documents/70-82-25-126.pdf
+	
+	"mb_station_block_header"(sb := #sb, mb_query := #mb_query);
+	#mb_query.mb_addr := #mb_addr;
+	
+	#mb_query.mode := #mb_query.c.mode.read;
+	#mb_query(data_addr := 30001, data_ptr := #data);
+	
+	"mb_station_block_footer"(sb := #sb, mb_query := #mb_query);
+	
+	
+END_FUNCTION_BLOCK
+

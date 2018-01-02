@@ -10,7 +10,7 @@ VERSION : 0.1
    END_VAR
 
    VAR 
-      s : "mb_station_udt";
+      sb : "mb_station_block_udt";
       flow : Real;
       pressure : Real;
       totaliser : Struct
@@ -23,28 +23,28 @@ VERSION : 0.1
 
 BEGIN
 	// - ABB - AquaMaster 3 - Electromagnetic flowmeter
-	// - COI/FET2XX/MOD/TBLâ€“EN
+	// - COI/FET2XX/MOD/TBLÃ¢â‚¬â€œEN
 	// - https://library.e.abb.com/public/
 	//   91eead459bb0d349c12577fc0033d2b5/COI_FET2XX_MOD_TBL-EN.pdf
 	
-	"mb_station_header"(station := #s, mb_query := #mb_query); 
+	"mb_station_block_header"(sb := #sb, mb_query := #mb_query);
 	#mb_query.mb_addr := #mb_addr; // Device address.
 	
 	// Two queries, reading input registers. 
-	#mb_query.mode := #mb_query.c.read.input_reg; 
-	#mb_query(data_addr := 5017, data_ptr := #flow); 
-	#mb_query(data_addr := 5025, data_ptr := #pressure); 
+	#mb_query.mode := #mb_query.c.read.input_reg;
+	#mb_query(data_addr := 5017, data_ptr := #flow);
+	#mb_query(data_addr := 5025, data_ptr := #pressure);
 	
-	// One query, reading one section of holding registers. 
-	#mb_query.mode := #mb_query.c.read.holding_reg; 
-	#mb_query(data_addr := 12003, data_ptr := #totaliser ); 
+	// One query, reading one section of holding registers.
+	#mb_query.mode := #mb_query.c.read.holding_reg;
+	#mb_query(data_addr := 12003, data_ptr := #totaliser);
 	
 	// - Each query reading one section of holding registers.
 	// - Data length is automatically calculated for holding 
-	//   and input regisers. 
+	//   and input regisers.
 	// - mb_query_bits should be used for discrete in- and outpus.
 	
-	"mb_station_footer"(station := #s, mb_query := #mb_query); 
+	"mb_station_block_footer"(sb := #sb, mb_query := #mb_query);
 	
 END_FUNCTION_BLOCK
 
@@ -62,13 +62,15 @@ VERSION : 0.1
 
 
 BEGIN
-	// This a rtu example for S7-1200, for S7-1500 use 
+	// This a rtu example for S7-1200, for S7-1500 PLC's use
 	// mb_master_1500_ctrl.
 	
-	// hardware_id: Can be found inside the hardware configuration.
-	// baud:        bps. (parity is even by default)
-	// timeout:     Automatically calculated if not specified.
-	// mb_query:    A FB.
+	// hardware_id: Can be found inside "Device configuration".
+	// baud:        Bits per sec. As stated in the modbus specification,
+	//              on page 20, 19200 bps should be default. Parity is even by
+	//              default as stated on page 12.
+	// timeout:     Automatically calculated if set to zero. (T#0s)
+	// mb_query:    The query FB.
 	#mb_master_ctrl(hardware_id := "Local~CB_1241_(RS485)",
 	                baud := 19200,
 	                mb_query := #mb_query);
@@ -78,16 +80,14 @@ BEGIN
 	// device on the bus. A "station block" has to be created for each
 	// spesific modbus device.
 	
-	// Three abb aqua-master's.
+	// Three Abb aqua-master's.
 	#abb_aquaMaster_device1(mb_addr := 1, mb_query := #mb_query);
 	#abb_aquaMaster_device2(mb_addr := 2, mb_query := #mb_query);
 	#abb_aquaMaster_device3(mb_addr := 3, mb_query := #mb_query);
 	
-	// Keep in mind that a station block can be used both for both modbus
-	// rtu and tcp. This is specially useful if a tcp-rtu-gateway is used.
-	// The same program could be used, just swap mb_master_ctrl, with
-	// mb_client_ctrl.
-	
+	// A station block can be used both for both modbus rtu and tcp. This
+	// is specially useful if a tcp-rtu-gateway is used. The same program
+	// could be used, just swap mb_master_ctrl, with mb_client_ctrl.
 	
 	// Read holding register 456 (zero counted) from device with modbus
 	// address 123. This is an example showing that a query does not

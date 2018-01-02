@@ -1,0 +1,79 @@
+﻿FUNCTION_BLOCK "Schneider_SCADAPack_4000"
+{ S7_Optimized_Access := 'TRUE' }
+VERSION : 0.1
+   VAR_INPUT 
+      mb_addr : UInt;
+   END_VAR
+
+   VAR_IN_OUT 
+      mb_query : "mb_query";
+   END_VAR
+
+   VAR 
+      s : "mb_station_block_udt";
+      data : Array[1..3] of Int;
+      setting : Array[1..3] of Int;
+   END_VAR
+
+
+BEGIN
+	// Schneider - SCADAPack 4000 
+	// Models 4012, 4032 and 4102 - Transmitters
+	// 
+	// Web: https://s3.amazonaws.com/cdn.freshdesk.com/data/helpdesk/
+	// attachments/production/5013914262/original/
+	// SCADAPack_4000_Series_Transmitters.pdf?
+	// X-Amz-Algorithm=AWS4-HMAC-SHA256&X-Amz-Credential=
+	// AKIAJ2JSYZ7O3I4JO6DA%2F20170919%2Fus-east-1%2Fs3%2Faws4_
+	// request&X-Amz-Date=20170919T163931Z&X-Amz-Expires=300&X-Amz-
+	// Signature=a206005821114e23f4a38162afdf9d14bd82209c246a378f18
+	// 9af628740a1509&X-Amz-SignedHeaders=Host&response-content-type=
+	// application%2Fpdf
+	
+	"mb_station_block_header"(sb := #s, mb_query := #mb_query);
+	#mb_query.mb_addr := #mb_addr;
+	
+	#mb_query.mode := #mb_query.c.mode.read;
+	#mb_query(data_addr := 40116, data_ptr := #data);
+	
+	#mb_query.mode := #mb_query.c.mode.write;
+	#mb_query(data_addr := 40060, data_ptr := #setting);
+	
+	"mb_station_block_footer"(sb := #s, mb_query := #mb_query);
+	
+	(*
+	Setting:
+	
+	value[1] and value[2]
+	------------------
+	2 = Pascal (Pa)
+	3 = kiloPascal (kPa)
+	4 = megaPascal (MPa)
+	5 = pounds per square inch (psi)
+	6 = inches of water at 68 F
+	7 = ftH2O
+	8 = atm
+	9 = bar
+	10 = kg/cm2
+	11 = g/cm2
+	12 = cmHg
+	13 = mmHg
+	14 = torr
+	15 = mH2O
+	16 = cmH2O
+	17 = mmH2O
+	18 = inHg
+	19 = mbar
+	
+	
+	value[3]
+	------------------
+	20 = degrees Celsius (ï‚°C)
+	21 = degrees Fahrenheit (ï‚°F)
+	22 = degrees Kelvin (K)
+	23 = degrees Rankine(R)
+	
+	*)
+	
+END_FUNCTION_BLOCK
+

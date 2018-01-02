@@ -1,0 +1,112 @@
+﻿FUNCTION_BLOCK "Siemens_sed2_modbus2"
+{ S7_Optimized_Access := 'TRUE' }
+VERSION : 0.1
+   VAR_INPUT 
+      mb_addr : UInt;
+      ref : Real;   // 0-100% ( -100% reverse)
+   END_VAR
+
+   VAR_OUTPUT 
+      speed : Real;   // rpm
+      current : Real;   // A x10
+      torque : Real;   // Nm x10
+      actual_pwr : Real;   // kW x100
+      total_kwh : Real;   // kWh
+      dc_bus_volt : Real;   // V
+   END_VAR
+
+   VAR_IN_OUT 
+      mb_query : "mb_query";
+   END_VAR
+
+   VAR 
+      sb : "mb_station_block_udt";
+      write1 : Struct
+         wdog_time : UInt := 1500;   // [ms]
+         wdog_action : Word := 1;   // 1:stop, 0:no action
+         freq_ref : UInt;
+         run_enable : UInt;
+         reverse : UInt;
+         cmd_start : UInt;
+         fault_ack : UInt;
+      END_STRUCT;
+      write2 : Struct
+         current_limit : UInt := 4000;   // A x0
+         accel_time : UInt := 1000;   // s x100
+         decel_time : UInt := 1000;   // s x100
+         manual : UInt;
+      END_STRUCT;
+      write3 : Struct
+         freq_max : UInt := 5000;   // HZ x100
+      END_STRUCT;
+      read1 : Struct
+         freq_output : UInt;   // Hz x10
+         speed : UInt;   // rpm
+         current : UInt;   // A x10
+         torque : UInt;   // Nm x10
+         actual_pwr : UInt;   // kW x100
+         total_kwh : UInt;   // kWh
+         dc_bus_volt : UInt;   // V
+         reference : UInt;   // Hz x10
+         rated_pwr : UInt;   // kWx100
+         output_volts : UInt;
+         reverse : UInt;
+         run : UInt;
+         at_max_freq : UInt;
+         ctrl_mode : UInt;   // 1:SERIAL, 0:LOCAL
+         enabled : UInt;
+         ready_to_run : UInt;
+         analog_in_1 : UInt;
+         analog_in_2 : UInt;
+      END_STRUCT;
+      read2 : Struct
+         digital_in : Array[1..6] of UInt;
+         fault : UInt;
+         last_fault : UInt;
+         fault_hist : Array[1..4] of UInt;
+         warning : UInt;
+         last_warning : UInt;
+      END_STRUCT;
+   END_VAR
+
+   VAR_TEMP 
+      "real" : Real;
+   END_VAR
+
+
+BEGIN
+	// Siemens - SED2-MODBUS2 - Variable Frequency Drive
+	// Modbus RTU Interface Module for SED2 
+	// 
+	// https://www.downloads.siemens.com/download-center/
+	// Download.aspx?pos=download&fct=getasset&id1=A6V10073869
+	
+	#write1.reverse := BOOL_TO_UINT(#ref < 0);
+	#real := NORM_X_REAL(MIN := 0, VALUE := #ref, MAX := ABS(100));
+	#write1.freq_ref := SCALE_X(MIN := 0, VALUE := #real, MAX := 16#4000);
+	#write1.run_enable := BOOL_TO_UINT(#ref <> 0);
+	#write1.cmd_start := BOOL_TO_UINT(#ref <> 0);
+	
+	"mb_station_block_header"(sb := #sb, mb_query := #mb_query);
+	#mb_query.mb_addr := #mb_addr;
+	
+	#mb_query.mode := #mb_query.c.mode.write;
+	#mb_query(data_addr := 40001, data_ptr := #write1);
+	#mb_query(data_addr := 40010, data_ptr := #write2);
+	#mb_query(data_addr := 40016, data_ptr := #write3);
+	
+	#mb_query.mode := #mb_query.c.mode.read;
+	#mb_query(data_addr := 40024, data_ptr := #read1);
+	#mb_query(data_addr := 40048, data_ptr := #read2);
+	
+	"mb_station_block_footer"(sb := #sb, mb_query := #mb_query);
+	
+	#speed := UINT_TO_REAL(#read1.speed);
+	#current := UINT_TO_REAL(#read1.current) / 10;
+	#torque := UINT_TO_REAL(#read1.torque) / 10;
+	#actual_pwr := UINT_TO_REAL(#read1.actual_pwr) / 100;
+	#total_kwh := UINT_TO_REAL(#read1.total_kwh);
+	#dc_bus_volt := UINT_TO_REAL(#read1.dc_bus_volt);
+	
+END_FUNCTION_BLOCK
+

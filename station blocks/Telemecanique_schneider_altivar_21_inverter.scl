@@ -1,0 +1,167 @@
+﻿FUNCTION_BLOCK "Telemecanique_Schneider_Altivar_21_inverter"
+{ S7_Optimized_Access := 'TRUE' }
+VERSION : 0.1
+   VAR_INPUT 
+      mb_addr : UInt;
+      ref : Real;
+   END_VAR
+
+   VAR_IN_OUT 
+      mb_query : "mb_query";
+   END_VAR
+
+   VAR 
+      sb : "mb_station_block_udt";
+      read1 : Struct
+         "Output frequency" : Word;
+         stat : Struct
+            x08 : Bool;
+            x09_Reverse : Bool;
+            x10_Run : Bool;
+            x11_Coast_stop : Bool;
+            x12_Emergency_stop : Bool;
+            x13_Standby_ST_ON : Bool;   // Standby: Initialization completed, not failure stop status, not alarm stop status (MOFF, LL forced stop or forced stop due to a momentary power failure), ST=ON, and RUN=ON
+            x14_Standby : Bool;   // Standby: Initialization completed, not failure stop status, and not alarm stop status (MOFF, LL forced stop or forced stop due to a momentary power failure)
+            x15_Local : Bool;
+            x00_Failure_FL : Bool;
+            x01_Failure : Bool;
+            x02_Alarm : Bool;
+            x03_Main_circuit_undervoltage : Bool;
+            x04_THR_2 : Bool;   // THR1: PT=set value, vL, vb, Thr - THR2: PT=0, F170, F172, F173
+            x05_PI_control_OFF : Bool;
+            x06_Acceleration2_deceleration2 : Bool;
+            x07_DC_braking : Bool;
+         END_STRUCT;
+      END_STRUCT;
+      read2 : Struct
+         Command_mode { ExternalAccessible := 'False'; ExternalVisible := 'False'; ExternalWritable := 'False'} : Int;   // 0:Terminal board, 1:Operation panel, 2:Serial
+         "Setpoint mode" : Int;   // 1 VIA, 2 VIB, 3 Operation panel, 4 Serial, 5 TB up down frequency, 255 Preset speed operation
+      END_STRUCT;
+      read3_alarm : Struct
+         x08_Over_torque : Bool;
+         x09_Cumulative_operation_hours : Bool;
+         x10 : Bool;
+         x11 : Bool;
+         x12 : Bool;
+         "x13_Main circuit_undervoltage" : Bool;   // same as MS-relay status
+         x14_Decelerating_stopping : Bool;   // Related: F256 setting. At the time of the instant blackout, Forced deceleration/stop
+         x15_Decelerating_stopping : Bool;   // Related: F302 setting. An automatic stop during the lower limit frequency continuance
+         x00_Overcurrent : Bool;
+         x01_Inverter_overload : Bool;
+         x02_Motor_overload : Bool;
+         x03_Overheat : Bool;
+         x04_Overvoltage : Bool;
+         x05_Main_circuit_undervoltage : Bool;
+         x06 : Bool;
+         x07_Undercurrent : Bool;
+      END_STRUCT;
+      read4_alarm2 : Struct
+         x08 : Bool;
+         x09 : Bool;
+         x10 : Bool;
+         x11 : Bool;
+         x12 : Bool;
+         x13 : Bool;
+         x14 : Bool;
+         x15 : Bool;
+         x00_Fan_life_alarm : Bool;
+         x01_Circuit_board_life : Bool;
+         x02_Main_circuit_capacitor_life : Bool;
+         x03_User_set_alarm : Bool;
+         x04 : Bool;
+         x05 : Bool;
+         x06 : Bool;
+         x07 : Bool;
+      END_STRUCT;
+      read5_trip_code : UInt;
+      write1 : Struct
+         cmd : Struct
+            x08 : Bool;
+            x09_Reverse : Bool;
+            x10_Run : Bool;
+            x11_Coast_stop : Bool;
+            x12_Emergency_stop : Bool;
+            x13_Fault_reset : Bool;
+            x14_Setpoint_priority : Bool;   // Enabled regardless of the setting of FMOD
+            x15_Command_priority : Bool;   // Enabled regardless of the setting of CMOD
+            x00_Preset_speed_b0 : Bool := TRUE;
+            x01_Preset_speed_b1 : Bool;
+            x02_Preset_speed_b2 : Bool;
+            x03 : Bool;
+            x04_thr2 : Bool;   // THR1 : PT=set value, vL, vb, tHr  -  THR2 : PT=0, F170, F172, F173
+            x05_PI_control : Bool;   // 0:Normal operation, 1:PI OFF
+            x06_Acceleration_deceleration_pattern_2 : Bool;   // 0: Acceleration deceleration pattern 1
+            x07_DC_braking : Bool;
+         END_STRUCT;
+         ref : UInt;
+      END_STRUCT;
+   END_VAR
+
+
+BEGIN
+	// Telemecanique (Schneider) - Altivar 21 inverter
+	// VFD (AC-drive)
+	// http://www2.schneider-electric.com/resources/sites/SCHNEIDER_ELECTRIC/
+	// content/live/FAQS/12000/FA12122/en_US/Altivar%2021%20Modbus%20manual.pdf
+	
+	"mb_station_block_header"(sb := #sb, mb_query := #mb_query);
+	#mb_query.mb_addr := #mb_addr;
+	
+	#mb_query.mode := #mb_query.c.read.holding_reg;
+	#mb_query(data_addr := 16#fd00, data_ptr := #read1);
+	#mb_query(data_addr := 16#fe45, data_ptr := #read2);
+	#mb_query(data_addr := 16#fe91, data_ptr := #read3_alarm);
+	#mb_query(data_addr := 16#fe79, data_ptr := #read4_alarm2);
+	#mb_query(data_addr := 16#FC90, data_ptr := #read5_trip_code);
+	
+	#write1.ref := REAL_TO_UINT(#ref * 100);
+	#write1.cmd.x10_Run := #ref <> 0;
+	#mb_query.mode := #mb_query.c.write.holding_reg;
+	#mb_query(data_addr := 16#fa00, data_ptr := #write1);
+	
+	"mb_station_block_footer"(sb := #sb, mb_query := #mb_query);
+	
+	(* Trip code
+	NErr     0  0  No error
+	OC1      1  1  Over-current during acceleration
+	OC2      2  2  Over-current during deceleration
+	OC3      3  3  Over-current during constant speed operation
+	OCL      4  4  Over-current in load at startup
+	OCA      5  5  Short circuit in arm
+	EPHI     8  8  Input phase failure
+	EPHO     9  9  Output phase failure
+	OP1      A 10 Overvoltage during acceleration
+	OP2      B 11 Overvoltage during deceleration
+	OP3      C 12 Overvoltage during constant speed operation
+	OL1      D 13 Over-LOAD in inverter
+	OL2      E 14 Over-LOAD in motor
+	OH      10 16 Overheat trip
+	E       11 17 Emergency stop
+	EEP1    12 18 EEPROM fault 1 (writing error)
+	EEP2    13 19 EEPROM fault 2 (reading error)
+	EEP3    14 20 EEPROM fault 3 (internal fault)
+	Err2    15 21 RAM fault
+	Err3    16 22 ROM fault
+	Err4    17 23 CPU fault
+	Err5    18 24 Communication error trip
+	Err7    1A 26 Current detector fault
+	Err8    1B 27 Optional circuit board type error
+	UC      1D 29 Small-current trip
+	UP1     1E 30 Trip due to undervoltage in main circuit
+	Ot      20 32 Over-torque trip
+	EF2     22 34 Ground fault trip (hardware detection)
+	OC1P    25 37 Overcurrent flowing in element during acceleration
+	OC2P    26 38 Overcurrent flowing in element during deceleration
+	OC3P    27 39 Overcurrent flowing in element during operation
+	EtYP    29 41 Inverter type error
+	OH2     2E 46 External thermal input
+	SOUt    2F 47 VIA cable break
+	E-18    32 50 Break in an analog signal cable
+	E-19    33 51 CPU fault
+	E-20    34 52 Excess torque boost
+	E-21    35 53 CPU fault
+	Etn1    54 84 Auto-tuning error
+	*)
+	
+END_FUNCTION_BLOCK
+

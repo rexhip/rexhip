@@ -1,0 +1,132 @@
+﻿FUNCTION_BLOCK "Allen_bradley_power_flex_4"
+{ S7_Optimized_Access := 'TRUE' }
+VERSION : 0.1
+   VAR_INPUT 
+      mb_addr : USInt;
+      ref : Real;
+      reverse : Bool;
+      reset : Bool;
+   END_VAR
+
+   VAR_OUTPUT 
+      Output_Frequency : Real;
+      Output_Current : Real;
+      DC_Bus_Voltage : Real;
+      Output_Voltage : Real;
+   END_VAR
+
+   VAR_IN_OUT 
+      mb_query : "mb_query";
+   END_VAR
+
+   VAR 
+      sb : "mb_station_block_udt";
+      read : Struct
+         stat : Struct
+            x08_At_Reference : Bool;
+            x09_Reference_Controlled_by_Comm : Bool;
+            x10_Operation_Cmd_Controlled_by_Comm : Bool;
+            x11_Parameters_have_been_locked : Bool;
+            x12_Digital_Input_1_Status : Bool;
+            x13_Digital_Input_2_Status : Bool;
+            x14 : Bool;
+            x15 : Bool;
+            "x00_Ready," : Bool;
+            x01_Running : Bool;
+            x02_cmd_Forward : Bool;
+            x03_Rotating_Forward : Bool;
+            x04_Accelerating : Bool;
+            "x05_Decelerating," : Bool;
+            x06_Alarm : Bool;
+            x07_Faulted : Bool;
+         END_STRUCT;
+         error_code : UInt;
+         ref_feedback : UInt;
+         Output_Frequency : UInt;
+         Output_Current : UInt;
+         DC_Bus_Voltage : UInt;
+         Output_Voltage : UInt;
+      END_STRUCT;
+      write : Struct
+         cmd : Struct
+            "x08_Accel Rate 1" : Bool := TRUE;
+            "x09_Accel Rate 2" : Bool;
+            "x10_Decel Rate 1" : Bool := TRUE;
+            "x11_Decel Rate 2" : Bool;
+            x12_Freq_Source_b0 : Bool := TRUE;
+            x13_Freq_Source_b1 : Bool := TRUE;
+            x14_Freq_Source_b2 : Bool;
+            x15 : Bool;
+            x00_Stop : Bool;
+            x01_Start : Bool;
+            x02_Jog : Bool;
+            x03_Clear_Faults : Bool;
+            x04_Forward : Bool;
+            x05_Reverse : Bool;
+            x06 : Bool;
+            x07 : Bool;
+         END_STRUCT;
+         ref : UInt;
+      END_STRUCT;
+   END_VAR
+
+
+BEGIN
+	// Allen Bradley - Power Flex 4 - Compact AC Drive
+	//
+	// http://ab.rockwellautomation.com/Drives/PowerFlex-4
+	// Web: https://plc-hmi-scadas.com/gallery/PowerFlex4ModBusAddressing.pdf
+	
+	"mb_station_block_header"(sb := #sb, mb_query := #mb_query);
+	#mb_query.mb_addr := #mb_addr;
+	
+	#write.ref := REAL_TO_UINT(#ref * 10);
+	#write.cmd.x00_Stop := #ref = 0;
+	#write.cmd.x01_Start := #ref <> 0;
+	#write.cmd.x03_Clear_Faults := #reset;
+	#write.cmd.x04_Forward := NOT #reverse;
+	#write.cmd.x05_Reverse := #reverse;
+	
+	#mb_query.mode := #mb_query.c.write.single_holding_reg;
+	#mb_query(data_addr := 8192, data_ptr := #write.cmd);
+	#mb_query(data_addr := 8193, data_ptr := #write.ref);
+	
+	#mb_query.mode := #mb_query.c.read.holding_reg;
+	#mb_query(data_addr := 8448, data_ptr := #read);
+	#Output_Frequency := UINT_TO_REAL(#read.Output_Frequency) / 10;
+	#Output_Current := UINT_TO_REAL(#read.Output_Current) / 100;
+	#DC_Bus_Voltage := UINT_TO_REAL(#read.DC_Bus_Voltage) / 10;
+	#Output_Voltage := UINT_TO_REAL(#read.Output_Voltage) / 10;
+	
+	"mb_station_block_footer"(sb := #sb, mb_query := #mb_query);
+	
+	(* Error codes: (read.error_codes)
+	0 - No Fault
+	2 - Auxilary Input
+	3 - Power Loss
+	4 - Undervoltage
+	5 - Overvoltage
+	6 - Motor Stalled
+	7 - Motor Overload
+	8 - Heatsink Overtemperature
+	12 - HW Overcurrent (300%)
+	13 - Ground Fault
+	29 - Analog Input Loss
+	33 - Auto Restart Tries
+	38 - Phase U to Ground Short
+	39 - Phase V to Ground Short
+	40 - Phase W to Ground Short
+	41 - Phase U/V Short
+	42 - Phase U/W Short
+	43 - Phase V/W Short
+	63 - Software Overcurrent
+	64 - Drive Overload
+	70 - Power Unit Fail
+	80 - AutoTune Fail
+	81 - Communication Loss
+	100 - Parameter Checksum Error
+	122 - I/O Board Fail         
+	*)
+	
+END_FUNCTION_BLOCK
+

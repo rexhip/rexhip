@@ -41,6 +41,6 @@ BEGIN
 	
 	// Data length is automatically calculated. 
 	
-	"mb_station_footer"(sb := #sb, mb_query := #mb_query); 
+	"mb_station_block_footer"(sb := #sb, mb_query := #mb_query); 
 	
 END_FUNCTION_BLOCK

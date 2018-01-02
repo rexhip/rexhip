@@ -139,7 +139,7 @@ BEGIN
 	    6: #mb_query(data_addr := 313, data_ptr := #w7_no_comm_action);
 	    ELSE: #c := 0;
 	END_CASE;
-	#c += BOOL_TO_INT(#mb_query.stat.query_above AND #mb_query.stat.done);
+	#c += BOOL_TO_INT(#mb_query.Done);
 	
 	"mb_station_block_footer"(sb := #sb, mb_query := #mb_query);
 	IF #sb.out.error_comm THEN #setup_finished := false; END_IF;

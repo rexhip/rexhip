@@ -91,7 +91,7 @@ VERSION : 0.1
 BEGIN
 	// Rexhip - Extended modbus library 
 	// --------------------------------
-	// Version:  2.3.0
+	// Version:  2.3.1
 	// License:  MIT-license
 	// Author:   Ola Bjornli
 	// Web:      https://github.com/olab84/rexhip

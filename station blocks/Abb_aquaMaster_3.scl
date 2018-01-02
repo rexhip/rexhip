@@ -10,7 +10,7 @@ VERSION : 0.1
    END_VAR
 
    VAR 
-      s : "mb_station_udt";
+      sb : "mb_station_block_udt";
       flow : Real;
       pressure : Real;
       totaliser : Struct
@@ -27,7 +27,7 @@ BEGIN
 	// - https://library.e.abb.com/public/
 	//   91eead459bb0d349c12577fc0033d2b5/COI_FET2XX_MOD_TBL-EN.pdf
 	
-	"mb_station_header"(station := #s, mb_query := #mb_query); 
+	"mb_station_block_header"(sb := #sb, mb_query := #mb_query); 
 	#mb_query.mb_addr := #mb_addr; // Device address.
 	
 	// Two queries, reading input registers. 
@@ -41,6 +41,6 @@ BEGIN
 	
 	// Data length is automatically calculated. 
 	
-	"mb_station_footer"(station := #s, mb_query := #mb_query); 
+	"mb_station_footer"(sb := #sb, mb_query := #mb_query); 
 	
 END_FUNCTION_BLOCK

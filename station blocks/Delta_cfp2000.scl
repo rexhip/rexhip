@@ -3,7 +3,7 @@ FUNCTION_BLOCK "Delta_CFP2000"
 VERSION : 0.1
    VAR_INPUT 
       mb_addr : USInt;
-      ref : Real;   // (minus rev.)
+      ref : Real;   // (minus=>rev.)
    END_VAR
 
    VAR_OUTPUT 
@@ -21,7 +21,7 @@ VERSION : 0.1
    END_VAR
 
    VAR 
-      s : "mb_station_udt";
+      sb : "mb_station_block_udt";
       read : Struct
          warn_code : USInt;
          error_code : USInt;
@@ -99,34 +99,12 @@ VERSION : 0.1
       END_STRUCT;
    END_VAR
 
-   VAR_TEMP 
-      a : Struct
-         b08 : Bool;
-         b09 : Bool;
-         b10 : Bool;
-         b11 : Bool;
-         b12 : Bool;
-         b13 : Bool;
-         b14 : Bool;
-         b15 : Bool;
-         b0 : Bool;
-         b01 : Bool;
-         b02 : Bool;
-         b03 : Bool;
-         b04 : Bool;
-         b05 : Bool;
-         b06 : Bool;
-         b07 : Bool;
-      END_STRUCT;
-   END_VAR
-
-
 BEGIN
 	// Delta - CFP2000 - Variable frequency drive
 	// 
 	// http://www.softstartuk.com/wp-content/uploads/2017/07/VFD-CFP2000_UM_EN_20170303.pdf
 	
-	"mb_station_header"(station := #s, mb_query := #mb_query);
+	"mb_station_block_header"(sb := #sb, mb_query := #mb_query);
 	#mb_query.mb_addr := #mb_addr;
 	
 	// Read
@@ -152,6 +130,6 @@ BEGIN
 	#write.cmd_word.b04_fwd := NOT #write.cmd_word.b05_rev;
 	#mb_query(data_addr := 16#2000, data_ptr := #write);
 	
-	"mb_station_footer"(station := #s, mb_query := #mb_query);
+	"mb_station_block_footer"(sb := #sb, mb_query := #mb_query);
 	
 END_FUNCTION_BLOCK

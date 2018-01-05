@@ -34,3 +34,53 @@ BEGIN
 	
 END_FUNCTION
 
+
+
+FUNCTION_BLOCK "mb_delay"
+{ S7_Optimized_Access := 'TRUE' }
+VERSION : 0.1
+   VAR_INPUT 
+      delay : Time;
+   END_VAR
+
+   VAR_IN_OUT 
+      mb_query : "mb_query";
+   END_VAR
+
+   VAR 
+      sQid { ExternalAccessible := 'False'; ExternalVisible := 'False'; ExternalWritable := 'False'} : UInt := 1;
+      ton {OriginalPartName := 'IEC_TIMER'; LibVersion := '1.0'} : TON_TIME;
+      ton_in : Bool;
+      ton_q : Bool;
+   END_VAR
+
+
+BEGIN
+	// For use with modbus tcp, so the client dosen't jam a network.
+	
+	#mb_query.z.run.qid_cnt += 1;  // The timer occupy one qid.
+	#ton(IN := #ton_in,
+	     PT := #delay,
+	     Q => #ton_q);
+	
+	IF #ton_in THEN // If the timer has been activated.
+	    IF #ton_q THEN
+	        #mb_query.z.run.qid := #sQid + 1;
+	        RESET_TIMER(#ton);
+	    END_IF;
+	    
+	ELSIF #mb_query.z.run.qid_cnt = #mb_query.z.run.qid
+	    AND NOT #mb_query.z.run.busy
+	THEN
+	    #sQid := #mb_query.z.run.qid; // Store the value
+	    #mb_query.z.run.qid := 0; // Stop "the loop".
+	    #mb_query.z.run.insert := true; // Stop exec.
+	    #ton_in := true;
+	END_IF;
+	
+END_FUNCTION_BLOCK
+
+
+
+
+

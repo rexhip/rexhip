@@ -89,9 +89,9 @@ VERSION : 0.1
 
 
 BEGIN
-	// Rexhip - Extended modbus library 
+	// Rexhip - Extended modbus library
 	// --------------------------------
-	// Version:  2.3.1
+	// Version:  2.3.2
 	// License:  MIT-license
 	// Author:   Ola Bjornli
 	// Web:      https://github.com/olab84/rexhip
@@ -514,6 +514,7 @@ BEGIN
 	
 END_FUNCTION_BLOCK
 
+
 FUNCTION "mb_query_bits" : Void
 { S7_Optimized_Access := 'TRUE' }
 VERSION : 0.1
@@ -525,11 +526,10 @@ VERSION : 0.1
    VAR_TEMP 
       discrete : Bool;
       dommy : Bool;
-      count : UDInt;   // bytes
-      lower : Int;
-      upper : Int;
-      c : Int;
-      b : Byte;
+      lower : DInt;
+      upper : DInt;
+      bits : UInt;
+      bytes : UDInt;   // bytes
    END_VAR
 
 
@@ -540,49 +540,60 @@ BEGIN
 	// data_ptr need to be a one dimensional array of bools.
 	// --- --- ---
 	
-	// If it isn's this query turn ?
-	IF #mb_query.#z.run.qid_cnt + 1 <> #mb_query.#z.run.qid THEN
-	    #mb_query(data_ptr := #dommy);
+	IF #mb_query.z.run.qid_cnt + 1 <> #mb_query.z.run.qid
+	    OR #mb_query.z.run.busy
+	THEN
+	    // Skip query, qid will not match qid_cnt and
+	    // my_query will return.
+	    #mb_query(data_ptr := #dommy); 
 	    RETURN;
 	END_IF;
 	
 	// Some preparing calculations.
-	#lower := DINT_TO_INT(LOWER_BOUND(ARR := #data_ptr, DIM := 1));
-	#upper := DINT_TO_INT(UPPER_BOUND(ARR := #data_ptr, DIM := 1));
-	IF #mb_query.data_len = #mb_query.c.auto_len THEN
-	    #mb_query.data_len := INT_TO_UINT(#upper - #lower + 1); // bits
-	    #count := INT_TO_UDINT((#upper - #lower + 1 + 7) / 8); // bytes
-	    // A bitt query ?
-	    CASE #mb_query.mode OF
-	        101, 102, 105, 115: #discrete := true;
-	        0..2:
-	            CASE #mb_query.data_addr OF
-	                1..9999, 10001..19999:
-	                    #discrete := true;
-	            END_CASE;
-	    END_CASE;
-	    IF NOT #discrete THEN
-	        #mb_query.data_len := (#mb_query.data_len + 15) / 16;
-	    END_IF;
-	ELSIF #mb_query.data_len < #upper - #lower + 1 THEN
-	    #count := #mb_query.data_len + 7 / 8;
+	CASE #mb_query.mode OF // A bit query ?
+	    101, 102, 105, 115:
+	        #discrete := true;
+	    0..2:
+	        CASE #mb_query.data_addr OF
+	            1..9999, 10001..19999:
+	                #discrete := true;
+	        END_CASE;
+	END_CASE;
+	#lower := LOWER_BOUND(ARR := #data_ptr, DIM := 1);
+	#upper := UPPER_BOUND(ARR := #data_ptr, DIM := 1);
+	#bits := DINT_TO_UINT(#upper - #lower + 1); // Elements in array.
+	
+	// Auto data len ?
+	IF #mb_query.data_len = #mb_query.c.auto_len THEN 
+	    #bytes := (#bits + 7) / 8; // CEIL()
+	    #mb_query.data_len := SEL(G := #discrete,
+	                              IN0 := (#bits + 15) / 16, // CEIL()
+	                              IN1 := #bits);
+	ELSE 
+	    #bytes := SEL(G := #discrete,
+	                  IN0 := #mb_query.data_len * 2, // 1 word -> 2 bytes
+	                  IN1 := (#mb_query.data_len + 7) / 8); // CEIL()
 	END_IF;
 	
 	// Insert query.
-	IF #mb_query.z.run.insert THEN
+	IF #mb_query.z.run.insert THEN 
 	    CASE #mb_query.mode OF
-	        1, 2, 105, 106, 115, 116: // A write query
+	        1, 2, 105, 106, 115, 116: // A write query.
 	            // Copy the content from data_ptr to the buffer.
 	            GATHER_BLK(IN := #data_ptr[#lower],
-	                       COUNT_OUT := #count,
+	                       COUNT_OUT := #bytes,
 	                       OUT => #mb_query.z.buffer[0]);
 	    END_CASE;
 	END_IF;
 	
 	// Disable buf.h. inside mb_query.
 	#mb_query.conf.buffer_handler := false;
+	
 	// Run the query.
-	#mb_query(data_ptr := #dommy);
+	#mb_query(data_ptr := #dommy); 
+	
+	#mb_query.conf.buffer_handler := true; // Enable buf.h. again.
+	#mb_query.data_len := #mb_query.c.auto_len; // Back to auto.
 	
 	// Handle resualt.
 	IF #mb_query.Done // The query above.
@@ -590,12 +601,14 @@ BEGIN
 	THEN
 	    // Copy the content from the buffer to data_ptr.
 	    SCATTER_BLK(IN := #mb_query.z.buffer[0],
-	                COUNT_IN := #count,
+	                COUNT_IN := #bytes,
 	                OUT => #data_ptr[#lower]);
 	END_IF;
-	#mb_query.data_len := #mb_query.c.auto_len; // Back to auto.
 	
 END_FUNCTION
+
+
+
 
 FUNCTION_BLOCK "mb_client_ctrl"
 { S7_Optimized_Access := 'TRUE' }

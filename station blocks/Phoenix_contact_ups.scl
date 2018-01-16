@@ -10,7 +10,7 @@ VERSION : 0.1
    END_VAR
 
    VAR 
-      s : "mb_station_block_udt";
+      sb : "mb_station_block_udt";
       r1 : Struct
          remote : Word;
          BatteryMode : Word;
@@ -64,7 +64,7 @@ BEGIN
 	// Web: https://media.digikey.com/pdf/Data%20Sheets/
 	//      Phoenix%20Contact%20PDFs/2320461_Ds.pdf
 	
-	"mb_station_block_header"(sb := #s, mb_query := #mb_query);
+	"mb_station_block_header"(sb := #sb, mb_query := #mb_query);
 	#mb_query.mb_addr := #mb_addr;
 	
 	#mb_query.mode := #mb_query.c.read.holding_reg;
@@ -75,7 +75,7 @@ BEGIN
 	#mb_query(data_addr := 29798, data_ptr := #r5);
 	#mb_query(data_addr := 29840, data_ptr := #r6_Alarm);
 	
-	"mb_station_block_footer"(sb := #s, mb_query := #mb_query);
+	"mb_station_block_footer"(sb := #sb, mb_query := #mb_query);
 	
 END_FUNCTION_BLOCK
 

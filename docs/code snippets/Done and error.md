@@ -13,14 +13,16 @@ IF #mb_query.Done THEN
     // Some action after a successfully query.
 	          
 ELSIF #mb_query.Error THEN
-    // Some action faild a query.    
+    // Some action if a faild query.    
 
     // #mb_query.stat.status , gives more information about 
-	// the error.         
+    // the error.         
 	
     IF #mb_query.stat.error_comm THEN
-        // Some particular action if communication error.
-	End_if;
+          // Some particular action if communication error.
+    End_if;
         
 END_IF;
+
+#mb_query( ... );
 ```

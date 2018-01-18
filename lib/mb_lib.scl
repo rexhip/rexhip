@@ -89,12 +89,19 @@ VERSION : 0.1
 
 
 BEGIN
-	// Rexhip - Extended modbus library
+	// mb_query only works when the number of bits adds up to whole bytes, 
+	// use mb_query_bits if this is not the case. Eg for discrete queries.
+	//
+	// --- --- --- 
+	//
+	// Rexhip - Extended modbus library	
 	// --------------------------------
 	// Version:  2.3.2
 	// License:  MIT-license
 	// Author:   Ola Bjornli
 	// Web:      https://github.com/olab84/rexhip
+	//
+	// --- --- --- 
 	
 	REGION Header        
 	    #Done := false;

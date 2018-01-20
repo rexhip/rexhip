@@ -89,8 +89,9 @@ VERSION : 0.1
 
 
 BEGIN
-	// mb_query only works when the number of bits adds up to whole bytes, 
-	// use mb_query_bits if this is not the case. Eg for discrete queries.
+	// mb_query use de-/serialize for data_ptr and hence the function
+	// will not work for a discrete where the number of bits dosen't 
+	// add up to whole bytes. See mb_query_bits
 	//
 	// --- --- --- 
 	//

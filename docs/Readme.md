@@ -56,7 +56,8 @@
 
 // This six lines of code and the variable definition is all 
 // that is needed to read the data from the device. #flow 
-// is a struct that actually contain two variables.
+// is a struct that actually contain two variables. #mb_addr
+// is a input and #mb_query is inOut on the block.
 ```
 
 - Author: Ola Bjørnli - [Contact](http://sn7.no/contact/rexhip)

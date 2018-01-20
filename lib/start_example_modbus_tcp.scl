@@ -66,6 +66,7 @@ VERSION : 0.1
       mb_client_ctrl : "mb_client_ctrl";
       siemens_PAC3200 : "siemens_PAC3200";
       ip : Array[1..4] of Byte;
+      mb_delay : "mb_delay";
    END_VAR
 
 
@@ -91,6 +92,10 @@ BEGIN
 	                mb_query := #mb_query);
 	
 	#siemens_PAC3200(mb_query := #mb_query); 
+	
+	// Delay the query execution, this prevent the plc from
+	// jamming the network. Adjust the time to your need.
+	#mb_delay(delay := T#500ms, mb_query := mb_query);
 	
 	// Modbus rtu blocks can be deleted to save memory. 
 	

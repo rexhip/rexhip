@@ -90,7 +90,7 @@ BEGIN
 	                timeout := T#400ms,
 	                mb_query := #mb_query);
 	
-	#siemens_PAC3200(mb_query := #mb_query); // Same FB as above.
+	#siemens_PAC3200(mb_query := #mb_query); 
 	
 	// Modbus rtu blocks can be deleted to save memory. 
 	

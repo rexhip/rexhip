@@ -680,11 +680,11 @@ BEGIN
 	#client.Retries := #conf.retries;
 	#client(REQ := NOT #client.BUSY
 	        AND NOT #mb_query.z.run.insert
-	        AND NOT #client.DISCONNECT,
+	        AND NOT #client.DISCONNECT		
+	        AND #mb_query.z.run.qid <> 0,
 	        DISCONNECT := #conf.disconnect
 	        OR #tdiscon.BUSY
-	        OR #timeout_state = 1
-	        OR #mb_query.z.run.qid = 0,
+	        OR #timeout_state = 1,
 	        MB_MODE := #mb_query.z.q.mode,
 	        MB_DATA_ADDR := #mb_query.z.q.data_addr,
 	        MB_DATA_LEN := #client.MB_DATA_LEN,

@@ -1,6 +1,6 @@
 ### Changelog:
 
-#### 2.2.2
+#### x.y.z
 - mb_delay is now part of the library. The function is included in tcp example.
 - For modbus tcp, setting qid to zero will not disconnect.
 - Documentation improvments.

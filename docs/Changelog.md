@@ -2,6 +2,7 @@
 
 #### 2.2.2
 - mb_delay is now part of the library
+- For modbus tcp, setting qid to zero will not disconnect.
 - Documentation improvments.
 
 #### 2.3.2

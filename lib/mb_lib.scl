@@ -472,7 +472,8 @@ VERSION : 1.0
 BEGIN
 	// RTU master for S7-1200
 	// 
-	// This FB use less memory then mb_master_1500_ctrl.
+	// This FB use less memory then mb_master_1500_ctrl,
+	// and it only works for S7-1200 PLC's
 	// -----------------------------------------------
 	
 	// Master header
@@ -497,7 +498,8 @@ BEGIN
 	           MB_DB := #master);
 	
 	// The core master block.
-	#master(REQ := #comm_load.DONE AND NOT #master.BUSY
+	#master(REQ := #comm_load.DONE 
+		AND NOT #master.BUSY
 	        AND NOT #mb_query.z.run.insert
 	        AND #mb_query.z.run.qid <> 0,
 	        MB_ADDR := #mb_query.z.q.mb_addr,
@@ -772,9 +774,10 @@ VERSION : 1.0
 BEGIN
 	// RTU master for S7-1500
 	// 
-	// This master blocks also works for S7-1200,
-	// but use a lot of memory.
-	// -----------------------------------------------
+	// This master blocks works for both S7-1200 and S7-1500.
+	// For S7-1200 it's recommended to use the other master 
+	// block because it use less memory.
+	// --- --- ---
 	
 	// master header
 	"mb_internal_h"(mode104 := true,
@@ -803,8 +806,10 @@ BEGIN
 	END_IF;
 	
 	// The core master block.
-	#master(REQ := #done AND NOT #mb_query.z.run.insert
-	        AND #mb_query.z.run.qid <> 0 AND NOT #master.BUSY,
+	#master(REQ := #done 
+		AND NOT #master.BUSY
+		AND NOT #mb_query.z.run.insert
+	        AND #mb_query.z.run.qid <> 0,		
 	        MB_ADDR := #mb_query.z.q.mb_addr,
 	        MODE := #master.MODE,
 	        DATA_ADDR := #master.DATA_ADDR,

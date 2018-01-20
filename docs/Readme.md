@@ -40,6 +40,25 @@
 ```
 
 
+#### Example Station block
+```pascal
+// Siemens - SITRANS F M MAG 8000
+// Please see the whole code at: «station blocks/Siemens_mag_6000.scl»
+
+"mb_station_block_header"(sb := #sb, mb_query := #mb_query);
+#mb_query.mb_addr := #mb_addr;
+	
+#mb_query.mode := #mb_query.c.read.holding_reg;
+#mb_query(data_addr := 2999, data_ptr := #flow);
+#mb_query(data_addr := 3016, data_ptr := #totalizer);
+	
+"mb_station_block_footer"(sb := #sb, mb_query := #mb_query);
+
+// This six lines of code and the variable definition is all 
+// that is needed to read the data from the device. #flow 
+// is a struct that actually contain two variables.
+```
+
 - Author: Ola Bjørnli - [Contact](http://sn7.no/contact/rexhip)
 - This library has been included in [Siemens Open libarary](http://openplclibrary.com) 
 ![.](http://p.sn7.no/piwik.php?idsite=2&rec=1) <!-- Visitor statistics -->

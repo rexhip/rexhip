@@ -40,8 +40,8 @@
 ```
 
 
-#### Example Station block
-```pascal
+#### Station block example 
+```
 // Siemens - SITRANS F M MAG 8000
 // Please see the whole code at: «station blocks/Siemens_mag_6000.scl»
 
@@ -57,8 +57,8 @@
 // This six lines of code and the variable definition is all 
 // that is needed to read the data from the device. #flow 
 // is a struct that actually contain two variables. #mb_addr
-// is a input and #mb_query is inOut on the block. #sb is 
-// udt that come along with the library, with common 
+// is a input and #mb_query is a inOut on the block. #sb is 
+// a udt that come along with the library, with common 
 // information for the device.
 ```
 

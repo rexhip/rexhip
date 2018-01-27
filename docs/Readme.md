@@ -64,9 +64,9 @@
 
 #### Another station block example 
 ```pascal
-// This SB can be combined with the one above, and others from 
-// the library. It's also fine to have more instaces of one SB 
-// in the same program. New queries can be added without 
+// This SB can be combined with the one above, and any others 
+// in the library. It's also fine to have more instaces of one 
+// SB in the same program. New queries can be added without 
 // changing anything in existing program.
 // Please see the whole block at: 
 // «station blocks/Telemecanique_schneider_altivar_21_inverter.scl»

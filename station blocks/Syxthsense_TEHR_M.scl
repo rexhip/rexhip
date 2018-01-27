@@ -20,7 +20,7 @@ VERSION : 0.1
    END_VAR
 
    VAR 
-      s : "mb_station_block_udt";
+      sb : "mb_station_block_udt";
       query_1 : Struct
          temperature : Int;   // [Â°C]
          analogue_output : Int;   // [Â°F]
@@ -32,16 +32,16 @@ VERSION : 0.1
 BEGIN
 	// http://www.syxthsense.com/product/product_pdf/SN1.174-TEHR-M.pdf
 	
-	"mb_station_block_header"(sb := #s, mb_query := #mb_query);
+	"mb_station_block_header"(sb := #sb, mb_query := #mb_query);
 	
 	#mb_query(mb_addr := #mb_addr,
 	          mode := #mb_query.c.mode.read,
 	          data_addr := 30001,
 	          data_ptr := #query_1);
 	
-	"mb_station_block_footer"(sb := #s, mb_query := #mb_query);
+	"mb_station_block_footer"(sb := #sb, mb_query := #mb_query);
 	
-	IF #s.out.error_comm THEN
+	IF #sb.out.error_comm THEN
 	    #query_1.temperature := 0;
 	    #query_1.analogue_output := 0;
 	    #query_1.potentiometer_position := 0;

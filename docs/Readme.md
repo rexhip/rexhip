@@ -41,9 +41,9 @@
 
 
 #### Station block example 
-```
+```pascal
 // Siemens - SITRANS F M MAG 8000
-// Please see the whole code at: «station blocks/Siemens_mag_6000.scl»
+// Please see the whole block at: «station blocks/Siemens_mag_6000.scl»
 
 "mb_station_block_header"(sb := #sb, mb_query := #mb_query);
 #mb_query.mb_addr := #mb_addr;
@@ -61,6 +61,35 @@
 // a udt that come along with the library, with common 
 // information for the device.
 ```
+
+#### Another station block example 
+```pascal
+// This SB can be combined with the one above, and others from 
+// the library. It's also fine to have more instaces of one SB 
+// in the same program. New queries can be added without 
+// changing anything in existing program.
+// Please see the whole block at: 
+// «station blocks/Telemecanique_schneider_altivar_21_inverter.scl»
+
+// Telemecanique (Schneider) - Altivar 21 inverter - VFD (AC-drive)
+
+"mb_station_block_header"(sb := #sb, mb_query := #mb_query);
+#mb_query.mb_addr := #mb_addr;
+
+#mb_query.mode := #mb_query.c.read.holding_reg;
+#mb_query(data_addr := 16#fd00, data_ptr := #read1);
+#mb_query(data_addr := 16#fe45, data_ptr := #read2);
+#mb_query(data_addr := 16#fe91, data_ptr := #read3_alarm);
+#mb_query(data_addr := 16#fe79, data_ptr := #read4_alarm2);
+#mb_query(data_addr := 16#FC90, data_ptr := #read5_trip_code);
+
+#write1.ref := REAL_TO_UINT(#ref * 100);
+#write1.cmd.x10_Run := #ref <> 0;
+#mb_query.mode := #mb_query.c.write.holding_reg;
+#mb_query(data_addr := 16#fa00, data_ptr := #write1);
+
+"mb_station_block_footer"(sb := #sb, mb_query := #mb_query);
+```	
 
 - Author: Ola Bjørnli - [Contact](http://sn7.no/contact/rexhip)
 - This library has been included in [Siemens Open libarary](http://openplclibrary.com) 

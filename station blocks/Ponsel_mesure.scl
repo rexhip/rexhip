@@ -68,6 +68,9 @@ BEGIN
 	// Ponsel mesure
 	// Dissolved oxygen (OPTOD), Conductivity (C4E, CTZ), pH_Redox, Turbi    
 	// 
+	// Warning: Each pull for sensor measurement, will reduce the available 
+	// life span. Please set the measurement interval to appropriate value.
+	//
 	// http://www.ponsel-web.com/cbx/_ftp/datasheet_digisens_optod-titanium2014.pdf
 	// http://www.ponsel-web.com/cbx/_ftp/datasheet_digisens_optod.pdf
 	// ftp://ftpponsel.aqualabo-intra.net/Public/CAPTEUR%20NUMERIQUE%20DIGITAL%20SENSORS/doc_English/USER%20MANUAL/USER_MANUAL_C4E.pdf

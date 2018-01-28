@@ -1,8 +1,7 @@
 ### Extended modbus library for Siemens PLC's.
 
- - A clean and simple api that makes it easy to split a program into reusable FB for each modbus station.
- - «Station blocks», or SB's can easily be combined in new programs. A application with 100 devices, can be developed within 10 minutes when there exist SB's.
- - The library includes many free SB's ready to be used. (and growing...)
+Makes it possible to split a program into reusable function blocks for each modbus device. This blocks can later be reused and combined in new programs. Together with a clean and simple api this speed up devopment significantly. The library call this block «station blocks» or just «SB».
+
  - Reduce idle time, by skipping queries that has led to recurring timeouts, retries will be done occasionally.
  - Logging features for development and debugging.
  - Extend on the modbus blocks that comes along in TIA-portal, it isn't an attempt to reinvent the wheel, but to extend it.

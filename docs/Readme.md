@@ -40,9 +40,11 @@ The library makes it possible to split a program into reusable function blocks f
 
 
 #### Station block example 
+This six lines of code bellow and the variable definition is all that is needed to read the data from the device. 
+Please see the whole block at: [station blocks/Siemens_mag_6000.scl](/station%20blocks/Siemens_mag_6000.scl)
+
 ```pascal
 // Siemens - SITRANS F M MAG 8000
-// Please see the whole block at: «station blocks/Siemens_mag_6000.scl»
 
 "mb_station_block_header"(sb := #sb, mb_query := #mb_query);
 #mb_query.mb_addr := #mb_addr;
@@ -53,23 +55,19 @@ The library makes it possible to split a program into reusable function blocks f
 	
 "mb_station_block_footer"(sb := #sb, mb_query := #mb_query);
 
-// This six lines of code and the variable definition is all 
-// that is needed to read the data from the device. #flow 
-// is a struct that actually contain two variables. #mb_addr
-// is a input and #mb_query is a inOut on the block. #sb is 
-// a udt that come along with the library, with common 
-// information for the device.
+// - #flow is a struct that actually contain two variables. 
+// - #mb_addr is a input 
+// - #mb_query is a inOut on the block. 
+// - #sb is a udt that come along with the library, with 
+//   common information for the device.
 ```
 
-#### Another station block example 
-```pascal
-// This SB can be combined with the one above, and any others 
-// in the library. It's also fine to have more instaces of one 
-// SB in the same program. New queries can be added without 
-// changing anything in existing program.
-// Please see the whole block at: 
-// «station blocks/Telemecanique_schneider_altivar_21_inverter.scl»
 
+#### Another station block example 
+This SB can be combined with the one above, and any others in the library. It's also fine to have more instaces of one SB in the same program. New queries can be added without changing anything in existing program. Please see the whole block at: 
+[station blocks/Telemecanique_schneider_altivar_21_inverter.scl](/station%20blocks/Telemecanique_schneider_altivar_21_inverter.scl)
+
+```pascal
 // Telemecanique (Schneider) - Altivar 21 inverter - VFD (AC-drive)
 
 "mb_station_block_header"(sb := #sb, mb_query := #mb_query);

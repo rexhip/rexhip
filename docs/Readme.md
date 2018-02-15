@@ -1,6 +1,6 @@
 ### Extended modbus library for Siemens PLC's.
 
-The library makes it possible to split a program into reusable function blocks for each modbus device. This blocks can later be reused and combined in new programs. Together with a clean and simple api this speed up devopment significantly. The concept is called «station blocks» or just «SB». Other nice features are listed below:
+The library makes it possible to split a program into reusable function blocks for each modbus device. This blocks can later be reused and combined in new programs. Together with a clean and simple api this speed up devopment significantly.
 
  - Reduce idle time, by skipping queries that has led to recurring timeouts, retries will be done occasionally.
  - Logging features for development and debugging.
@@ -39,12 +39,11 @@ The library makes it possible to split a program into reusable function blocks f
 ```
 
 
-#### Station block example 
-This six lines of code bellow and the variable definition is all that is needed to read the data from the device. 
-Please see the whole block at: [station blocks/Siemens_mag_6000.scl](/station%20blocks/Siemens_mag_6000.scl)
+#### Station block (SB) example 
+This six lines of code bellow and the variable definition is all that is needed to read the data from the a MAG 6000 device. Please see the whole block at: [station blocks/Siemens_mag_6000.scl](/station%20blocks/Siemens_mag_6000.scl)
 
 ```pascal
-// Siemens - SITRANS F M MAG 8000
+// Siemens - SITRANS F M MAG 6000
 
 "mb_station_block_header"(sb := #sb, mb_query := #mb_query);
 #mb_query.mb_addr := #mb_addr;

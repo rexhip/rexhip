@@ -20,9 +20,7 @@ VERSION : 0.1
 
 
 BEGIN
-	// Siemens - SITRANS F M MAG 8000
-	// https://cache.industry.siemens.com/dl/files/509/54091509/
-	// att_100244/v1/A5E03409989_01_MAG8000_MODBUS_AOM_OI_.pdf
+	// Siemens - SITRANS F M MAG 6000
 	
 	"mb_station_block_header"(sb := #sb, mb_query := #mb_query);
 	#mb_query.mb_addr := #mb_addr;

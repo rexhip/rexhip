@@ -8,8 +8,8 @@ The library makes it possible to split a program into reusable function blocks f
  - Help share the bus efficient between the devices.
  - Data can be stored with optimized data access on.
  - Use little memory.
- - Free under the MIT-license. (docs/License.txt)
- 
+ - Free under the [MIT-license](/docs/License.txt).
+
 ```pascal
 // A simple modbus RTU example. 
 // (Support for modbus TCP is also available)

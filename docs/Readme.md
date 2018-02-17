@@ -1,6 +1,6 @@
 ### Extended modbus library for Siemens PLC's.
 
-The library makes it possible to split a program into reusable function blocks for each modbus device. This blocks can later be reused and combined in new programs. Together with a clean and simple api this speed up devopment significantly.
+The library makes it possible to split a program into reusable function blocks for each modbus device. This blocks can later be reused and combined in new programs. Together with a clean and simple api this speed up devopment significantly. Other features include:
 
  - Reduce idle time, by skipping queries that has led to recurring timeouts, retries will be done occasionally.
  - Logging features for development and debugging.

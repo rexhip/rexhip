@@ -90,8 +90,8 @@ VERSION : 0.1
 
 BEGIN
 	// mb_query use de-/serialize for data_ptr and hence the function
-	// will not work for a discrete where the number of bits dosen't 
-	// add up to whole bytes. See mb_query_bits
+	// will not work for a discrete queries where the number of bits 
+	// dosen't add up to whole bytes. See mb_query_bits.
 	//
 	// --- --- --- 
 	//
@@ -100,9 +100,12 @@ BEGIN
 	// Version:  2.3.2
 	// License:  MIT-license
 	// Author:   Ola Bjornli
-	// Web:      https://github.com/olab84/rexhip
+	// Web:      https://github.com/rexhip/rexhip
 	//
 	// --- --- --- 
+	//
+	// Before dive into the code below, please read to the documentation 
+	// page at the url provided above.
 	
 	REGION Header        
 	    #Done := false;

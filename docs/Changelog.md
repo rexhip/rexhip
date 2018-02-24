@@ -1,5 +1,9 @@
 ### Changelog:
 
+
+#### x.y.z
+- swap_real is removed from library, use swap and dword_to_real instead.
+
 #### 2.3.3
 - mb_delay is now part of the library. The function is included in tcp example.
 - For modbus tcp, setting qid to zero will not disconnect.

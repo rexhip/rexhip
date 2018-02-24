@@ -1,4 +1,5 @@
-﻿FUNCTION_BLOCK "Schneider_PM1000_series"
+FUNCTION_BLOCK "Schneider_PM1000_series"
+TITLE = Schneider Electric - PM1000 Series Power Meters
 { S7_Optimized_Access := 'TRUE' }
 VERSION : 0.1
    VAR_INPUT 
@@ -31,27 +32,27 @@ VERSION : 0.1
    END_VAR
 
    VAR 
-      s : "mb_station_block_udt";
+      sb : "mb_station_block_udt";
    END_VAR
 
    VAR_TEMP 
       tAll : Struct
-         apparent_power : Real;
-         active_power : Real;
-         reactive_power : Real;
-         power_factor : Real;
-         voltage_L_L : Real;
-         voltage_L_N : Real;
-         current : Real;
+         apparent_power : DWord;
+         active_power : DWord;
+         reactive_power : DWord;
+         power_factor : DWord;
+         voltage_L_L : DWord;
+         voltage_L_N : DWord;
+         current : DWord;
       END_STRUCT;
       tPhase : Array[1..3] of Struct
-         apparent_power : Real;
-         active_power : Real;
-         reactive_power : Real;
-         power_factor : Real;
-         voltage_L_L : Real;
-         voltage_L_N : Real;
-         current : Real;
+         apparent_power : DWord;
+         active_power : DWord;
+         reactive_power : DWord;
+         power_factor : DWord;
+         voltage_L_L : DWord;
+         voltage_L_N : DWord;
+         current : DWord;
       END_STRUCT;
       c : Int;
    END_VAR
@@ -65,20 +66,20 @@ BEGIN
 	// PowerLogic%20Products/Metering/PM1200%20power%20meter/
 	// PLSED309039EN_PM1000_UG.pdf
 	
-	"mb_station_block_header"(sb := #s, mb_query := #mb_query);
+	"mb_station_block_header"(sb := #sb, mb_query := #mb_query);
 	#mb_query.mb_addr := #mb_addr;
 	
 	#mb_query.mode := #mb_query.c.read.holding_reg;
 	
 	#mb_query(data_addr := 3901, data_ptr := #tAll);
 	IF #mb_query.Done THEN
-	    #all.apparent_power := "swap_real"(#tAll.apparent_power);
-	    #all.active_power := "swap_real"(#tAll.active_power);
-	    #all.reactive_power := "swap_real"(#tAll.reactive_power);
-	    #all.power_factor := "swap_real"(#tAll.power_factor);
-	    #all.voltage_L_L := "swap_real"(#tAll.voltage_L_L);
-	    #all.voltage_L_N := "swap_real"(#tAll.voltage_L_N);
-	    #all.current := "swap_real"(#tAll.current);
+	    #all.apparent_power := DWORD_TO_REAL(SWAP(#tAll.apparent_power));
+	    #all.active_power := DWORD_TO_REAL(SWAP(#tAll.active_power));
+	    #all.reactive_power := DWORD_TO_REAL(SWAP(#tAll.reactive_power));
+	    #all.power_factor := DWORD_TO_REAL(SWAP(#tAll.power_factor));
+	    #all.voltage_L_L := DWORD_TO_REAL(SWAP(#tAll.voltage_L_L));
+	    #all.voltage_L_N := DWORD_TO_REAL(SWAP(#tAll.voltage_L_N));
+	    #all.current := DWORD_TO_REAL(SWAP(#tAll.current));
 	END_IF;
 	
 	FOR #c := 1 TO 3 DO
@@ -87,21 +88,18 @@ BEGIN
 	        2: #mb_query.data_addr := 3931;
 	        3: #mb_query.data_addr := 3945;
 	    END_CASE;
-	    
 	    #mb_query(data_ptr := #tPhase[#c]);
-	    
 	    IF #mb_query.Done THEN
-	        #phase[#c].apparent_power := "swap_real"(#tPhase[#c].apparent_power);
-	        #phase[#c].active_power := "swap_real"(#tPhase[#c].active_power);
-	        #phase[#c].reactive_power := "swap_real"(#tPhase[#c].reactive_power);
-	        #phase[#c].power_factor := "swap_real"(#tPhase[#c].power_factor);
-	        #phase[#c].voltage_L_L := "swap_real"(#tPhase[#c].voltage_L_L);
-	        #phase[#c].voltage_L_N := "swap_real"(#tPhase[#c].voltage_L_N);
-	        #phase[#c].current := "swap_real"(#tPhase[#c].current);
+	        #phase[#c].apparent_power := DWORD_TO_REAL(SWAP(#tPhase[#c].apparent_power));
+	        #phase[#c].active_power := DWORD_TO_REAL(SWAP(#tPhase[#c].active_power));
+	        #phase[#c].reactive_power := DWORD_TO_REAL(SWAP(#tPhase[#c].reactive_power));
+	        #phase[#c].power_factor := DWORD_TO_REAL(SWAP(#tPhase[#c].power_factor));
+	        #phase[#c].voltage_L_L := DWORD_TO_REAL(SWAP(#tPhase[#c].voltage_L_L));
+	        #phase[#c].voltage_L_N := DWORD_TO_REAL(SWAP(#tPhase[#c].voltage_L_N));
+	        #phase[#c].current := DWORD_TO_REAL(SWAP(#tPhase[#c].current));
 	    END_IF;
 	END_FOR;
 	
-	"mb_station_block_footer"(sb := #s, mb_query := #mb_query);
+	"mb_station_block_footer"(sb := #sb, mb_query := #mb_query);
 	
 END_FUNCTION_BLOCK
-

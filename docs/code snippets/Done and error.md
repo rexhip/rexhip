@@ -10,8 +10,9 @@
 // query, and before the next query.    
 
 IF #mb_query.Done THEN
-    // Some action after a successfully query.
-	          
+    // Some action after a successfully query.    
+    #done_cnt += 1; // Eg. count successfully queries.
+		  
 ELSIF #mb_query.Error THEN
     // Some action if a faild query.    
 

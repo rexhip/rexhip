@@ -14,8 +14,8 @@
 ```pascal 
 // For other device, when two registers are combined, the least significant 
 // word is stored first and the most significant word is stored in the 
-// following register. When the above situation is present, the SWAP_WORD 
-// function needs to be used.
+// following register. When this is the case, the SWAP_WORD function needs 
+// to be used.
 
 #mb_query(mb_addr := #mb_addr,               
           mode := #mb_query.c.read.holding_reg,
@@ -31,5 +31,4 @@
 #value := SWAP( SWAP_WORD( #tmp_var) );
 ```
 
-How the data is stored in a device is usually described the
-data sheet of the device.
+How the data is stored, is usually described in the data sheet of the particular device.

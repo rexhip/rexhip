@@ -81,8 +81,7 @@ VERSION : 0.1
 
 BEGIN
 	// Web: http://files.danfoss.com/documents/PE/doc_MG20N202.pdf
-	//      http://files.danfoss.com/documents/PE/doc_MG20O602.pdf
-	// Warning: The code has not been tested with real equipment !
+	//      http://files.danfoss.com/documents/PE/doc_MG20O602.pdf	
 	
 	"mb_station_block_header"(sb := #sb, mb_query := #mb_query);
 	#mb_query.mb_addr := #in_mb_addr;

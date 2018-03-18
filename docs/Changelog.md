@@ -4,6 +4,7 @@
 #### x.y.z
 - swap_real is removed from library, use swap and dword_to_real instead.
 - Updates to documentation.
+- New SB's
 
 #### 2.3.3
 - mb_delay is now part of the library. The function is included in tcp example.

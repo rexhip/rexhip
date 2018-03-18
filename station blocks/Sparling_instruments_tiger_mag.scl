@@ -29,7 +29,7 @@ BEGIN
 	// http://www.sparlinginstruments.com/documents/IDS-TMEP-160323.PDF
 	// Revision 160323
 	
-	"mb_station_block_header"(sb:=#sb, mb_query:=#mb_query);
+	"mb_station_block_header"(sb := #sb, mb_query := #mb_query);
 	#mb_query.mb_addr := #mb_addr;
 	
 	#mb_query.mode := #mb_query.c.mode.read;
@@ -37,6 +37,18 @@ BEGIN
 	#mb_query(data_addr := 31003, data_ptr := #serial_number);
 	
 	"mb_station_block_footer"(sb := #sb, mb_query := #mb_query);
+	
+	(*
+	Terminal RS-485 Bus:
+	1-RX  -> A+
+	2-TX  -> B-
+	3-GND -> GND
+	4-DTR -> N/A Not used
+	
+	Default comm. param:
+	19200 bps, even parity. 
+ 	Slave ID: 1.
+	*)
 	
 END_FUNCTION_BLOCK
 

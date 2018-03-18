@@ -1,0 +1,72 @@
+﻿FUNCTION_BLOCK "G_Instruments_GpH141_MB"
+{ S7_Optimized_Access := 'TRUE' }
+VERSION : 0.1
+   VAR_INPUT 
+      mb_addr : USInt;
+   END_VAR
+
+   VAR_OUTPUT 
+      voltage_mV : Real;
+      pH : Real;
+      temperature : Real;
+   END_VAR
+
+   VAR_IN_OUT 
+      mb_query : "mb_query";
+   END_VAR
+
+   VAR 
+      sb : "mb_station_block_udt";
+      change_mb_addr : Struct
+         old : UInt;
+         new : UInt;
+      END_STRUCT;
+   END_VAR
+
+   VAR_TEMP 
+      read1 : Struct
+         voltage : Int;
+         pH : Int;   //  compensated for temperature
+         temperature : Int;
+      END_STRUCT;
+   END_VAR
+
+
+BEGIN
+	// G Instruments - GpH141-MB
+	// Part number: 30535.
+	// http://www.ginstruments.com/files/GpH141-MB.pdf
+	
+	"mb_station_block_header"(sb := #sb, mb_query := #mb_query);
+	#mb_query.mb_addr := #mb_addr;
+	
+	#mb_query.mode := #mb_query.c.read.holding_reg;
+	
+	#mb_query(data_addr := 19, data_ptr := #read1);
+	IF #mb_query.Done THEN
+	    #voltage_mV := INT_TO_REAL(#read1.voltage) / 10;
+	    #pH := INT_TO_REAL(#read1.pH) / 100;
+	    #temperature := INT_TO_REAL(#read1.temperature) / 10;
+	END_IF;
+	
+	(* IF #change_mb_addr.new <> 0 AND #change_mb_addr.old <> 0 THEN
+	    #mb_query(mb_addr := #change_mb_addr.old,
+	              mode := #mb_query.c.write.single_holding_reg,
+	              data_addr := 1200,
+	              data_ptr := #change_mb_addr.new);
+	    IF #mb_query.Done THEN #change_mb_addr.new := 0; END_IF;
+	END_IF; *)
+	
+	"mb_station_block_footer"(sb := #sb, mb_query := #mb_query);
+	
+	(*
+	Default comm. setting: 19200 bps, even parity, addr 1.
+	
+	Electrical connection:
+	10 is A (D+)
+	11 is RS485 ground (isolated from all other grounds)
+	12 is B (D-)
+	*)
+	
+END_FUNCTION_BLOCK
+

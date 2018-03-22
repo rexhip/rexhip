@@ -97,7 +97,7 @@ BEGIN
 	//
 	// Rexhip - Extended modbus library	
 	// --------------------------------
-	// Version:  2.3.3
+	// Version:  2.3.4
 	// License:  MIT-license
 	// Author:   Ola Bjornli
 	// Web:      https://github.com/rexhip/rexhip
@@ -949,10 +949,10 @@ BEGIN
 	                #sb.log.error_exception_cnt += 1;
 	            END_IF;
 	            
-	            // Increase timeout cnt. if it's a timeout error.
+	            // Increase comm.err.cnt. if it's a comm.error.
 	            // if it's not a timeout error then reset the cnt.  
-	            IF #mb_query.stat.error_comm THEN
-	                IF #sb.z.comm_err_cnt < 255 THEN
+	            IF #mb_query.stat.error_comm THEN	                
+			IF #sb.z.comm_err_cnt < 255 THEN
 	                    #sb.z.comm_err_cnt += 1;
 	                END_IF;
 	            ELSE
@@ -1023,25 +1023,22 @@ BEGIN
 	
 	REGION Finnish
 	    // Several condition that resault in passing on the query-token on to the
-	    // next device. Skipping all or the rest of the queries for this device:
-	    // - If this device has one query that have received a result. (One query
-	    //   from each device for each loop, regardsless successfully or failed
-	    //   query)
-	    // - If #station.out.comm_error is set, and isn't this device turn to
-	    //   try again.
-	    // - If the device is disabled. (skip all queries)
-	    #sb.out.finnish := #mb_query.z.sb.head_recive AND (
-	    #sb.z.exec_cnt >= #sb.conf.exec_x_quries
-	    OR #mb_query.stat.error_comm)
-	    
-	    OR #mb_query.z.sb.head_insert AND (
-	    #sb.out.error_comm
-	    AND (#mb_query.z.sb.did_retry <> #mb_query.z.sb.did_cnt
-	    OR #mb_query.z.sb.retry_finished)
-	    // (retry_finished will be reset in *_ctrl)
-	    OR #sb.conf.disable
-	    OR #sb.conf.exec_x_quries = 0
-	    OR #sb.conf.read_only AND #mb_query.z.run.write);
+	    // next device. Skipping all or the rest of the queries for this device:	    	    	   
+	    #sb.out.finnish := 
+	    #mb_query.z.sb.head_recive AND ( // Skip rest of the queries if: ->
+	    (* *)#sb.z.exec_cnt >= #sb.conf.exec_x_quries // Some queries has executed,
+	    (*           *)// wait for the next loop for the remaining queries.
+	    (*      *)OR #mb_query.stat.error_comm) // A query resualting in comm.error    
+	    OR #mb_query.z.sb.head_insert AND ( // Erase a already inserted query if: ->
+	    (* *)#sb.out.error_comm // This station has allready comm. problems.
+	    (*      *)// And, it isn't this devies turn to try again.
+	    (*      *)AND (#mb_query.z.sb.did_retry <> #mb_query.z.sb.did_cnt             
+	    (*           *)// Or, there has allready been a retry attempt on this loop.
+	    (*           *)OR #mb_query.z.sb.retry_finished) // (reseted in mb_internal_e)	    
+	    (* *)OR #sb.conf.disable 
+	    (* *)OR #sb.conf.exec_x_quries = 0    
+	    (* *)OR #sb.conf.read_only // The read_only flag is set, and it's a write query.
+	    (*      *)AND #mb_query.z.run.write); 
 	    
 	    IF #sb.out.finnish THEN // Reset
 	        #mb_query.z.run.insert := true;

@@ -1,5 +1,7 @@
 ### Changelog:
 
+#### x.y.z
+- Added the function block mb_delay_between_queries
 
 #### 2.3.4
 - Bug fix in mb_delay.

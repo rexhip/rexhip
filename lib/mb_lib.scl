@@ -1064,34 +1064,32 @@ VERSION : 0.1
    END_VAR
 
    VAR 
-      sQid { ExternalAccessible := 'False'; ExternalVisible := 'False'; ExternalWritable := 'False'} : UInt := 1;
-      ton {OriginalPartName := 'IEC_TIMER'; LibVersion := '1.0'} : TON_TIME;
-      ton_in : Bool;
-      ton_q : Bool;
+      "timer" {OriginalPartName := 'IEC_TIMER'; LibVersion := '1.0'} : TON_TIME;
+      qid { ExternalAccessible := 'False'; ExternalVisible := 'False'; ExternalWritable := 'False'} : UInt := 1;
+      wait : Bool;
    END_VAR
 
 
 BEGIN
 	// For use with modbus tcp, so the client dosen't jam a network.
+	// The function halt execution of queries for a certain time
 	
 	#mb_query.z.run.qid_cnt += 1;  // The timer occupy one qid.
-	#ton(IN := #ton_in,
-	     PT := #delay,
-	     Q => #ton_q);
 	
-	IF #ton_in THEN // If the timer has been activated.
-	    IF #ton_q THEN
-	        #mb_query.z.run.qid := #sQid + 1;
-	        RESET_TIMER(#ton);
+	IF #wait THEN // If the timer has been activated.
+	    #timer(IN := true, PT := #delay);
+	    IF #timer.Q THEN
+	        #mb_query.z.run.qid := #qid + 1;
+	        RESET_TIMER(#timer);
+	        #wait := false;
 	    END_IF;
-	    
 	ELSIF #mb_query.z.run.qid_cnt = #mb_query.z.run.qid
 	    AND NOT #mb_query.z.run.busy
 	THEN
-	    #sQid := #mb_query.z.run.qid; // Store the value
-	    #mb_query.z.run.qid := 0; // Stop "the loop".
-	    #mb_query.z.run.insert := true; // Stop exec.
-	    #ton_in := true;
+	    #qid := #mb_query.z.run.qid; // Store the value
+	    #mb_query.z.run.qid := 0; // Stop exec.
+	    #wait := true;
 	END_IF;
-	
 END_FUNCTION_BLOCK
+
+

@@ -1089,4 +1089,45 @@ BEGIN
 	END_IF;
 END_FUNCTION_BLOCK
 
+FUNCTION_BLOCK "mb_delay_between_queries"
+{ S7_Optimized_Access := 'TRUE' }
+VERSION : 0.1
+   VAR_INPUT 
+      delay : Time;
+   END_VAR
+
+   VAR_IN_OUT 
+      mb_query : "mb_query";
+   END_VAR
+
+   VAR 
+      "timer" {OriginalPartName := 'IEC_TIMER'; LibVersion := '1.0'} : TON_TIME;
+      wait : Bool;
+      qid { ExternalAccessible := 'False'; ExternalVisible := 'False'; ExternalWritable := 'False'} : UInt := 1;
+   END_VAR
+
+
+BEGIN
+	// For use with modbus tcp, so the client dosen't jam a network.
+	// The function halt execution of queries for a certain time
+	// not just once, but between every query.		
+	
+	IF #wait THEN
+	    #timer(IN := true,
+	           PT := #delay);
+	    IF #timer.Q THEN
+	        #mb_query.z.run.qid := #qid;
+	        RESET_TIMER(#timer);
+	        #wait := false;
+	    END_IF;
+	ELSIF #mb_query.z.run.qid <> #qid
+	    AND #mb_query.z.run.qid <> 0
+	    AND NOT #mb_query.z.run.busy
+	THEN
+	    #qid := #mb_query.z.run.qid;
+	    #mb_query.z.run.qid := 0; // Stop the "loop"
+	    #wait := true;
+	END_IF;
+	
+END_FUNCTION_BLOCK
 

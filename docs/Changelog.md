@@ -1,8 +1,9 @@
 ### Changelog:
 
 
-#### x.y.z
-- swap_real is removed from library, use swap and dword_to_real instead.
+#### 2.3.4
+- Bug fix in mb_delay.
+- swap_real is removed from library, use swap together with dword_to_real instead.
 - Updates to documentation.
 - New SB's
 

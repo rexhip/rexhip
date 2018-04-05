@@ -13,28 +13,10 @@ VERSION : 0.1
       sb : "mb_station_block_udt";
       data : Struct
          current : Array[1..8] of UInt;   // mA
-         outputs : Array[1..8] of UInt;   // 0=Normal, 1=Pre-alarm, 2=Aktivert, 3=LÃ¥st
+         outputs : Array[1..8] of UInt;   // 0=Normal, 1=Pre-alarm, 2=Activated, 3=Looked
          pre_alarm_relay : UInt;
       END_STRUCT;
-      limits : Array[1..8] of UInt;
-      a : Struct
-         x08 : Bool;
-         x09 : Bool;
-         x10 : Bool;
-         x11 : Bool;
-         x12 : Bool;
-         x13 : Bool;
-         x14 : Bool;
-         x15 : Bool;
-         x00 : Bool;
-         x01 : Bool;
-         x02 : Bool;
-         x03 : Bool;
-         x04 : Bool;
-         x05 : Bool;
-         x06 : Bool;
-         x07 : Bool;
-      END_STRUCT;
+      limits : Array[1..8] of UInt;      
    END_VAR
 
 

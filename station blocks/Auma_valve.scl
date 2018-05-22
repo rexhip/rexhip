@@ -1,4 +1,4 @@
-﻿FUNCTION_BLOCK "Auma_valve"
+FUNCTION_BLOCK "Auma_valve"
 { S7_Optimized_Access := 'TRUE' }
 VERSION : 0.1
    VAR_INPUT 
@@ -13,36 +13,39 @@ VERSION : 0.1
       sb : "mb_station_block_udt";
       read : Struct
          status : Struct
-            torque_sw_closed : Bool;
-            torque_sw_open : Bool;
-            limit_sw_closed : Bool;
-            limit_sw_open : Bool;
-            sel_sw_local : Bool;
-            sel_sw_remote : Bool;
-            phase_fault : Bool;
-            therminal_fault : Bool;
-            falt : Bool;
-            warning : Bool;
-            running_close : Bool;
-            running_open : Bool;
-            not_ready_remote : Bool;
-            setpoint_reached : Bool;
-            end_p_clossed : Bool;
-            end_p_open : Bool;
+            x08_torque_sw_closed : Bool;
+            x09_torque_sw_open : Bool;
+            x10_limit_sw_closed : Bool;
+            x11_limit_sw_open : Bool;
+            x12_sel_sw_local : Bool;
+            x13_sel_sw_remote : Bool;
+            x14_phase_fault : Bool;
+            x15_therminal_fault : Bool;
+            x00_falt : Bool;
+            x01_warning : Bool;
+            x02_running_close : Bool;
+            x03_running_open : Bool;
+            x04_not_ready_remote : Bool;
+            x05_setpoint_reached : Bool;
+            x06_end_p_clossed : Bool;
+            x07_end_p_open : Bool;
          END_STRUCT;
-         "Actual position" : UInt;
+         actual_position : UInt;
+         z : Array[1..2] of Word;
+         ain_1 : UInt;
+         torque : UInt;
       END_STRUCT;
       write : Struct
          cmd : Struct
-            byte_2 : Byte;
-            open : Bool;
-            close : Bool;
-            use_setpoint : Bool;
-            reset : Bool;
-            b4 : Bool;
-            b5 : Bool;
-            b6 : Bool;
-            b7 : Bool;
+            z : Byte;
+            x0_open : Bool;
+            x1_close : Bool;
+            x2_use_setpoint : Bool;
+            x3_reset : Bool;
+            x4 : Bool;
+            x5 : Bool;
+            x6 : Bool;
+            x7 : Bool;
          END_STRUCT;
          setpoint : UInt;
       END_STRUCT;
@@ -70,4 +73,3 @@ BEGIN
 	"mb_station_block_footer"(sb := #sb, mb_query := #mb_query);
 	
 END_FUNCTION_BLOCK
-

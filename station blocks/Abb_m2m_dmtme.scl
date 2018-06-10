@@ -1,7 +1,7 @@
-﻿FUNCTION_BLOCK "Abb_M2M_DMTME"
+FUNCTION_BLOCK "Abb_M2M_DMTME"
 { S7_Optimized_Access := 'TRUE' }
 VERSION : 0.1
-   VAR_INPUT 
+   VAR_INPUT DB_SPECIFIC
       mb_addr : UInt;
    END_VAR
 
@@ -9,37 +9,40 @@ VERSION : 0.1
       mb_query : "mb_query";
    END_VAR
 
-   VAR 
+   VAR DB_SPECIFIC
       sb : "mb_station_block_udt";
-      read1 : Struct
-         "3-PHASE SYSTEM VOLTAGE" : UDInt;   // volt
-         voltage_Lx_N : Array[1..3] of UDInt;   // volt
-         voltage_L_L : Array[1..3] of UDInt;   // volt 1:L1-L2, 2:L2-L3, 3:L3-L1
-         "3-PHASE SYSTEM CURRENT" : UDInt;
-         current : Array[1..3] of UDInt;   // mA
-         "3-PHASE SYS. POWER FACTOR" : DInt;   // x1000
-         Power_factor : Array[1..3] of DInt;   // x1000
-         "3-PHASE SYSTEM COS Ï•I" : DInt;   // x1000
-         phase_cos : Array[1..3] of DInt;   // x1000
+   END_VAR
+   VAR 
+      read1 { ExternalWritable := 'False'} : Struct
+         voltage_3phase { ExternalWritable := 'False'} : UDInt;   // volt
+         voltage_Lx_N { ExternalWritable := 'False'} : Array[1..3] of UDInt;   // volt
+         voltage_L_L { ExternalWritable := 'False'} : Array[1..3] of UDInt;   // volt 1:L1-L2, 2:L2-L3, 3:L3-L1
+         current_3phase { ExternalWritable := 'False'} : UDInt;
+         current { ExternalWritable := 'False'} : Array[1..3] of UDInt;   // mA
+         power_factor_3phase { ExternalWritable := 'False'} : DInt;   // x1000
+         power_factor { ExternalWritable := 'False'} : Array[1..3] of DInt;   // x1000
+         phase_cos_3phase { ExternalWritable := 'False'} : DInt;   // x1000
+         phase_cos { ExternalWritable := 'False'} : Array[1..3] of DInt;   // x1000
       END_STRUCT;
-      read2 : Struct
-         "3-PHASE S. APPARENT POWER" : UDInt;   // VA
-         apparent_power : Array[1..3] of UDInt;   // VA
-         "3-PHASE SYS. ACTIVE POWER" : DInt;   // Watt
-         active_power : Array[1..3] of DInt;   // Watt
-         "3-PHASE S. REACTIVE POWER" : UDInt;
-         reactive_power : Array[1..3] of UDInt;
-         "3-PHASE SYS. ACTIVE ENERGY" : UDInt;   // Wh * 100
-         "3-PHASE S. REACTIVE ENERGY" : UDInt;   // VArh * 100
-         frequency : UDInt;   // mHz
-         "MAX LINE CURRENT" : Array[1..3] of UDInt;
+      read2 { ExternalWritable := 'False'} : Struct
+         apparent_power_3phase { ExternalWritable := 'False'} : UDInt;   // VA
+         apparent_power { ExternalWritable := 'False'} : Array[1..3] of UDInt;   // VA
+         active_power_3phase { ExternalWritable := 'False'} : DInt;   // Watt
+         active_power { ExternalWritable := 'False'} : Array[1..3] of DInt;   // Watt
+         reactive_power_3phase { ExternalWritable := 'False'} : UDInt;
+         reactive_power { ExternalWritable := 'False'} : Array[1..3] of UDInt;
+         active_energy_3phase { ExternalWritable := 'False'} : UDInt;   // Wh * 100
+         reactive_energy_3phase { ExternalWritable := 'False'} : UDInt;   // VArh * 100
+         frequency { ExternalWritable := 'False'} : UDInt;   // mHz
+         max_line_current { ExternalWritable := 'False'} : Array[1..3] of UDInt;
       END_STRUCT;
    END_VAR
 
 
 BEGIN
-	// ABB - M2M/DMTME - 2CSG445011D0201 
-	//
+	// ABB - M2M/DMTME - Network analyser
+	// Product ID: 2CSG445011D0201, EAN: 8012542998938
+	// 
 	// https://library.e.abb.com/public/3921770555944801ad6d9e002d23ca23/2CSG445011D0201.pdf
 	
 	"mb_station_block_header"(sb := #sb, mb_query := #mb_query);
@@ -52,4 +55,3 @@ BEGIN
 	"mb_station_block_footer"(sb := #sb, mb_query := #mb_query);
 	
 END_FUNCTION_BLOCK
-

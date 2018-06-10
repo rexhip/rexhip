@@ -90,4 +90,3 @@ This SB can be combined with the one above, and any others in the library. It's 
 
 - Author: Ola Bjørnli - [Contact](http://sn7.no/contact/rexhip)
 - This library has been included in [Siemens Open libarary](http://openplclibrary.com) 
-![.](http://p.sn7.no/piwik.php?idsite=2&rec=1) <!-- Visitor statistics -->

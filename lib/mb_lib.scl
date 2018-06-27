@@ -358,7 +358,9 @@ BEGIN
 	    // (Handled different from other errors)
 	    CASE WORD_TO_UINT(#mb_query.stat.status) OF
 	        16#80C8, // Timeout
-	        16#8380: // Bad CRC 
+	        16#8380, // Bad CRC 
+		16#80E1, // Parity error
+		16#80E2: // Framing error
 	            #comm_error := true;
 	    END_CASE;
 	END_IF;

@@ -2,6 +2,7 @@
 
 #### x.y.z
 - Added the function block mb_delay_between_queries
+- Parity error (80E1) and Framing error (80E2) included in comm_error for modbus rtu.
 
 #### 2.3.4
 - Bug fix in mb_delay.

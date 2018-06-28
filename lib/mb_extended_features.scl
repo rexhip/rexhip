@@ -60,7 +60,7 @@ BEGIN
 	//           data_ptr := #data);
 	//
 	// IF #mb_query.Done AND
-	//     "mb_data_eq_buffer"(data_ptr := #data, mb_query := #mb_query)
+	//     "mb_dataPtr_eq_buffer"(data_ptr := #data, mb_query := #mb_query)
 	// THEN
 	//      // If there are for some reason two write queries that has exatly
 	//      // the same parameters, then the Done-flag may not be enough to

@@ -1,4 +1,4 @@
-﻿FUNCTION_BLOCK "Schneider_power_meter_750"
+﻿FUNCTION_BLOCK "Schneider_PM750"
 { S7_Optimized_Access := 'TRUE' }
 VERSION : 0.1
    VAR_INPUT 

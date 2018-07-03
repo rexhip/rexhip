@@ -1,0 +1,136 @@
+﻿FUNCTION_BLOCK "Siemens_SIWAREX_WP251"
+{ S7_Optimized_Access := 'TRUE' }
+VERSION : 0.1
+   VAR_INPUT DB_SPECIFIC
+      mb_addr : UInt;
+   END_VAR
+
+   VAR_IN_OUT 
+      mb_query : "mb_query";
+   END_VAR
+
+   VAR DB_SPECIFIC
+      sb : "mb_station_block_udt";
+   END_VAR
+   VAR 
+      read1 { ExternalWritable := 'False'} : Struct
+         Unit_of_weight { ExternalWritable := 'False'} : UInt;   // x1000
+         Gross_identifier { ExternalWritable := 'False'} : UInt;
+         Code_for_regulations { ExternalWritable := 'False'} : UInt;
+         Reserve { ExternalWritable := 'False'} : UInt;
+         weighing_range_min { ExternalWritable := 'False'} : UInt;
+         weighing_range_max { ExternalWritable := 'False'} : Real;
+         Calibration_weight { ExternalWritable := 'False'} : Array[0..2] of Real;
+         Calibration_digits { ExternalWritable := 'False'} : Array[0..2] of Real;
+         Scale_interval { ExternalWritable := 'False'} : Array[0..2] of Real;   // (Page 64)
+      END_STRUCT;
+      read2 { ExternalWritable := 'False'} : Struct
+         stat { ExternalWritable := 'False'} : Struct
+            x08 { ExternalWritable := 'False'} : Bool;
+            x09 { ExternalWritable := 'False'} : Bool;
+            x10 { ExternalWritable := 'False'} : Bool;
+            x11 { ExternalWritable := 'False'} : Bool;
+            x12 { ExternalWritable := 'False'} : Bool;
+            x13 { ExternalWritable := 'False'} : Bool;
+            x14 { ExternalWritable := 'False'} : Bool;
+            x15 { ExternalWritable := 'False'} : Bool;
+            x00 { ExternalWritable := 'False'} : Bool;
+            x01 { ExternalWritable := 'False'} : Bool;
+            x02 { ExternalWritable := 'False'} : Bool;
+            x03 { ExternalWritable := 'False'} : Bool;
+            x04 { ExternalWritable := 'False'} : Bool;
+            x05 { ExternalWritable := 'False'} : Bool;
+            x06 { ExternalWritable := 'False'} : Bool;
+            x07 { ExternalWritable := 'False'} : Bool;
+         END_STRUCT;
+         Reserve { ExternalWritable := 'False'} : UInt;
+         Max_tare_load { ExternalWritable := 'False'} : Real;
+         Max_negative_zero_limit_power_on { ExternalWritable := 'False'} : Real;
+         Max_positive_zero_limit_power_on { ExternalWritable := 'False'} : Real;
+         Max_negative_zero_limit_semi_automatically { ExternalWritable := 'False'} : Real;
+         Max_positive_zero_limit_semi_automatically { ExternalWritable := 'False'} : Real;
+      END_STRUCT;
+      read3 : Struct
+         standstill : Array[1..2] of Struct
+            range : Real;
+            "time" : Time;
+            max_waiting_time : Time;
+         END_STRUCT;
+         frequency_low_pass_filter1 : Real;
+         Order_no_low_pass_filter1 : UInt;
+         depth_average_filter : UInt;
+         reserve_1 : UInt;
+         weighing_operating_mode : UInt;
+         resolution_of_master_totalizer : Real;
+         Reserve_2 : Real;
+         SecureDisplay_including_weighing_range_data : UInt;
+      END_STRUCT;
+      read4 : Struct
+         SecureDisplay_interface : UInt;   // (Page 71)
+         String_header_version_SecureDisplay : String[2];
+         SecureDisplay_version : String[12];
+         Minimum_zoom_factor_of_SecureDisplay : UInt;
+         Reserve_1 : Array[1..3] of Real;
+         Reserve_2 : Array[1..3] of UInt;
+         Grid_frequency : UInt;   // 0: 50 Hz, 1: 60Hz
+      END_STRUCT;
+      write1 : Struct
+         Smallest_weight_below_TU2 : Real;
+         Highest_weight_above_TH2 : Real;
+         Single_setpoin : Real;
+         Net_weight_average_value : Real;
+         Standard_deviation : Real;
+      END_STRUCT;
+   END_VAR
+
+
+BEGIN
+	// Siemens - SIWAREX WP251 - Electronic Weighing System
+	// A5E37203357A
+	// 
+	// https://cache.industry.siemens.com/dl/files/751/109481751/att_893477/v1/Manual_SIWAREX_WP251_en_en-US.pdf
+	
+	"mb_station_block_header"(sb := #sb, mb_query := #mb_query);
+	#mb_query.mb_addr := #mb_addr;
+	
+	#mb_query.mode := #mb_query.c.read.holding_reg;
+	#mb_query(data_addr := 1011, data_ptr := #read1);
+	#mb_query(data_addr := 1032, data_ptr := #read2);
+	#mb_query(data_addr := 1044, data_ptr := #read3);
+	#mb_query(data_addr := 1067, data_ptr := #read4);
+	
+	#mb_query.mode := #mb_query.c.write.holding_reg;
+	#mb_query(data_addr := 4101, data_ptr := #write1);
+	
+	"mb_station_block_footer"(sb := #sb, mb_query := #mb_query);
+	
+	(*
+	
+	Unit of weight:
+	0: "mg"
+	1: "g"
+	2: "kg"
+	3: "t"
+	4: "oz" (ounce)
+	5: "lb" (pound)
+	6: "T" (=short tons)
+	7: "TL" (= long tons)
+	
+	Gross identifier:
+	0: "brutto" 
+	1: "Gross"
+	
+	Code for regulations:
+	0: None
+	1: OIML
+	
+	Weighing operating mode (Page 71):
+	0: NAWI – Filling
+	1: NAWI – Removal
+	10: AWI
+	20: ACI – Filling 
+	21: ACI – Removal
+	
+	*)
+END_FUNCTION_BLOCK
+

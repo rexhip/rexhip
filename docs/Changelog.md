@@ -1,6 +1,6 @@
 ### Changelog:
 
-#### 2.3.5
+#### 2.4.0
 - Added the function block mb_delay_between_queries
 - modbus rtu: Parity error (80E1) and Framing error (80E2) included in the expression for comm.error.
 - Added mb_delay_between_queries, replaces mb_delay.

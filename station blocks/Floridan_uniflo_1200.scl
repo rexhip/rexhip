@@ -72,13 +72,17 @@ VERSION : 0.1
 
 
 BEGIN
-	// Flonidan - Uniflo 1200
+	// Flonidan - Uniflo 1200 GVEC
+	// Product number: 061864X-YYY
+	//
+	// - https://www.gavilar.nl/files/communicationboard230210_1521630740_b6a3b533.pdf
+	// - M/06180XX/24
 	
 	"mb_station_block_header"(sb := #sb, mb_query := #mb_query);
 	#mb_query.mb_addr := #mb_addr; // Device address.
 	
-	// Reduce battery consumption, if the device running on battery.
-	// mb_delay is located inside extended features file.
+	// Reduce power consumption, by halting execution. Nice if the device is running 
+	// on battery. mb_delay is located inside the mb_extended_features.scl file.
 	#mb_delay(delay := #delay, mb_query := #mb_query);
 	
 	#mb_query.mb_addr.%X5 := 0; // - Last bits of mb_addr is used for expanding 

@@ -1,4 +1,4 @@
-﻿FUNCTION "intreal" : LReal
+FUNCTION "intreal" : LReal
 { S7_Optimized_Access := 'TRUE' }
 VERSION : 0.1
    VAR_INPUT 
@@ -42,6 +42,7 @@ FUNCTION_BLOCK "Floridan_Uniflo_1200"
 VERSION : 0.1
    VAR_INPUT 
       mb_addr : USInt;
+      delay : Time := T#10s;
    END_VAR
 
    VAR_OUTPUT 
@@ -60,6 +61,7 @@ VERSION : 0.1
    VAR 
       sb : "mb_station_block_udt";
       battery_remaining : UInt;
+      mb_delay : "mb_delay";
    END_VAR
 
    VAR_TEMP 
@@ -72,11 +74,12 @@ VERSION : 0.1
 BEGIN
 	// Flonidan - Uniflo 1200
 	
-	// Important: If the device running on battery, then use mb_delay
-	//            to reduce battery consumption.
-	
 	"mb_station_block_header"(sb := #sb, mb_query := #mb_query);
 	#mb_query.mb_addr := #mb_addr; // Device address.
+	
+	// Reduce battery consumption, if the device running on battery.
+	// mb_delay is located inside extended features file.
+	#mb_delay(delay := #delay, mb_query := #mb_query);
 	
 	#mb_query.mb_addr.%X5 := 0; // - Last bits of mb_addr is used for expanding 
 	#mb_query.mb_addr.%X6 := 0; //   register addr, this means that only addr 1

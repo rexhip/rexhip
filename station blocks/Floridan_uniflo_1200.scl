@@ -91,7 +91,8 @@ BEGIN
 	
 	#mb_query.mode := #mb_query.c.read.holding_reg;
 	
-	#mb_query(data_addr := 123, data_len := 14, data_ptr := #battery_remaining);
+	#mb_query(data_addr := 123, data_ptr := #battery_remaining);
+	#mb_query(data_addr := 2833, data_ptr := #serial_number); // Serial number	
 	
 	#mb_query.conf.buffer_handler := false;
 	
@@ -110,16 +111,10 @@ BEGIN
 	    #temperature := DWORD_TO_REAL(#dword); 
 	    #energi := "intreal"(mb_query := #mb_query, addr := 16#90/2);
 	    #vol_measured := "intreal"(mb_query := #mb_query, addr := 16#98/2);
-	END_IF;
-	
-	#mb_query(data_addr := 2833, data_len := 6, data_ptr := #dommy); // Serial number
-	IF #mb_query.Done THEN
-	    FOR #c := 1 TO 6 DO
-	        #serial_number[#c] := #mb_query.z.buffer[#c - 1];
-	    END_FOR;
-	END_IF;
+	END_IF;	
 	
 	#mb_query.data_len := #mb_query.c.auto_len;
+	#mb_query.conf.buffer_handler := true;
 	"mb_station_block_footer"(sb := #sb, mb_query := #mb_query);
 	
 END_FUNCTION_BLOCK

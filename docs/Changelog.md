@@ -1,10 +1,8 @@
 ### Changelog:
 
 #### x.y.z
-- All queries inside a staion block will execute in order.
 - Renamed some internal varsiables, like «sid»
 - Improved comments
-
 
 #### 2.4.0
 - Added the function block mb_delay_between_queries

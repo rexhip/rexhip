@@ -1,4 +1,4 @@
-﻿FUNCTION_BLOCK "Ponsel_mesure"
+FUNCTION_BLOCK "Ponsel_mesure"
 { S7_Optimized_Access := 'TRUE' }
 VERSION : 0.1
    VAR_INPUT 
@@ -13,8 +13,8 @@ VERSION : 0.1
    END_VAR
 
    VAR_IN_OUT 
-      mb_query : "mb_query";
       start_measurement : Bool;
+      mb_query : "mb_query";
    END_VAR
 
    VAR 
@@ -55,46 +55,52 @@ VERSION : 0.1
       timer_in : Bool;
       timer_q : Bool;
       first_measurement : Bool := TRUE;
+      skip_sb : Bool;
    END_VAR
 
    VAR_TEMP 
-      "int" : Int;
+      "word" : Word;
       c : Int;
       e : Bool;
    END_VAR
 
 
 BEGIN
-	// Ponsel mesure
+	// Aqualabo - Ponsel mesure
 	// Dissolved oxygen (OPTOD), Conductivity (C4E, CTZ), pH_Redox, Turbi    
 	// 
 	// Warning: Each pull for sensor measurement, will reduce the available 
 	// life span. Please set the measurement interval to appropriate value.
-	//
-	// http://www.ponsel-web.com/cbx/_ftp/datasheet_digisens_optod-titanium2014.pdf
-	// http://www.ponsel-web.com/cbx/_ftp/datasheet_digisens_optod.pdf
-	// ftp://ftpponsel.aqualabo-intra.net/Public/CAPTEUR%20NUMERIQUE%20DIGITAL%20SENSORS/doc_English/USER%20MANUAL/USER_MANUAL_C4E.pdf
+	// 
+	// Continuous assign true to start_measurement, to continuous do meassurements.
+	// 
+	// https://en.aqualabo.fr/userfiles/doc/User%20Manual%20Oxygen%20Optical%20digital%20sensor%20OPTOD.pdf
 	
 	"mb_station_block_header"(sb := #sb, mb_query := #mb_query);
+	
 	#mb_query.mb_addr := #mb_addr;
 	#mb_query.mode := #mb_query.c.read.holding_reg;
+	
 	#timer(IN := #timer_in,
 	       PT := #timer.PT,
 	       Q => #timer_q);
 	#timer_in := false;
+	
 	CASE #state OF
-	    1:  // Compensate
+	    1:  // Compensate: Salinity, barometric pressure, temperature, etc. 
 	        IF #compensate_enable THEN
 	            #mb_query(mode := #mb_query.c.write.holding_reg,
-	                      data_addr := 16#5f, data_ptr := #compensate);
+	                      data_addr := 16#5f,
+	                      data_ptr := #compensate);
 	            #state += BOOL_TO_INT(#mb_query.Done);
 	        ELSE
 	            #state += 1;
 	        END_IF;
-	    2:  // Start meassurement
-	        #int := 16#f;
+	    2:  // Start all meassurements.
+	        #word := 16#f;
 	        #mb_query(mode := #mb_query.c.write.holding_reg,
-	                  data_addr := 16#01, data_ptr := #int);
+	                  data_addr := 16#01,
+	                  data_ptr := #word);
 	        #state += BOOL_TO_INT(#mb_query.Done);
 	    3:  // Read wait-time
 	        #mb_query(data_addr := 16#A4, data_ptr := #timer.PT);
@@ -102,7 +108,7 @@ BEGIN
 	    4:  // Timer (Wait while sensor is obtaining measurements)
 	        #timer_in := true;
 	        #state += BOOL_TO_INT(#timer_q);
-	    5:  // Get data
+	    5:  // Get data.
 	        #mb_query(data_addr := 16#0053, data_ptr := #data1);
 	        #state += BOOL_TO_INT(#mb_query.Done);
 	        // All measurement ok ?
@@ -116,6 +122,10 @@ BEGIN
 	    6:  // Description, Serial number, sw and hw version.
 	        #mb_query(data_addr := 16#0D00, data_ptr := #data2);
 	        #state += BOOL_TO_INT(#mb_query.Done);
+	    7:  // Finnish
+	        // #start_measurement need to be assigned true again to start a new messurement.
+	        #start_measurement := false; 
+	        #state := 0;
 	    ELSE
 	        #timer.PT := SEL(G := #first_measurement,
 	                         IN0 := #minimum_measurement_interval,
@@ -123,10 +133,10 @@ BEGIN
 	        #timer_in := true;
 	        IF #start_measurement AND #timer_q THEN
 	            #state := 1;
-	            #start_measurement := false;
 	            #first_measurement := false;
 	        END_IF;
 	END_CASE;
+	
 	"mb_station_block_footer"(sb := #sb, mb_query := #mb_query);
 	
 	IF #sb.out.error_comm THEN // If communication error
@@ -142,7 +152,7 @@ BEGIN
 	OPTOD (oxygen)    :   Oxygen [%Sat]              Oxygen [mg/L]              Oxygen [ppm]
 	Turbi             :   Nephelo turbidity [NTU]    Nephelo turbidity [FNU]    TU turbidity [mg/L]
 	pH_Redox          :   pH                         Redox [mV]
-	conductivity_C4E  :   Conductivity C4E [ÂµS/cm]   Salinity [ppt]             TDS - Kcl [ppm]
+	conductivity_C4E  :   Conductivity C4E [µS/cm]   Salinity [ppt]             TDS - Kcl [ppm]
 	Conductivity_CTZ  :   Conductivity CTZ [mS/cm]   Salinity [g/Kg]            Conductivity CTZ [mS/cm] 
 	                                                                            without temperature compensation                                                                  
 	OPTOD: (Dissolved oxygen)
@@ -153,8 +163,8 @@ BEGIN
 	Wiring: 
 	Red     Wiring diagram V+
 	black   Wiring diagram V-
-	Green   B RS-485
-	White   A RS-485
+	Green   B+ RS-485
+	White   A- RS-485
 	Blue    SDI-12
 	
 	
@@ -174,6 +184,152 @@ BEGIN
 	011: measurement used range 3
 	100: measurement used range 4
 	*)
+	
+END_FUNCTION_BLOCK
+
+FUNCTION_BLOCK "Ponsel_mesure_Conductivity_C4E"
+{ S7_Optimized_Access := 'TRUE' }
+VERSION : 0.1
+   VAR_INPUT 
+      mb_addr : UInt := 255;   // 255=broadcast
+   END_VAR
+
+   VAR_OUTPUT 
+      Temperature : Real;
+      Conductivity : Real;   // [µS/cm]
+      Salinity : Real;   // [ppt]
+      TDS_Kcl : Real;   // [ppm]
+      measurement_ok : Bool;
+   END_VAR
+
+   VAR_IN_OUT 
+      start : Bool;
+      mb_query : "mb_query";
+   END_VAR
+
+   VAR 
+      ponsel_mesure : "Ponsel_mesure";
+   END_VAR
+
+
+BEGIN
+	// Ponsel mesure - Conductivity_C4E
+	
+	#start := true;
+	
+	#ponsel_mesure.minimum_measurement_interval := T#1s;
+	#ponsel_mesure(mb_addr := #mb_addr,
+	               compensate_enable := false,
+	               measurement_ok => #measurement_ok,
+	               start_measurement := #start,
+	               mb_query := #mb_query);
+	
+	#Temperature := #ponsel_mesure.data1.value[0];
+	#Conductivity := #ponsel_mesure.data1.value[1];
+	#Salinity := #ponsel_mesure.data1.value[2];
+	#TDS_Kcl := #ponsel_mesure.data1.value[3];
+	
+END_FUNCTION_BLOCK
+
+FUNCTION_BLOCK "Ponsel_mesure_Dissolved_oxygen"
+{ S7_Optimized_Access := 'TRUE' }
+VERSION : 0.1
+   VAR_INPUT 
+      mb_addr : UInt := 255;   // 255=broadcast
+      continuously_measurements : Bool := true;   // (Else use start to init messurements)
+      measurement_interval : Time := T#1M;
+      compensate_atmospheric_pressure : Real := 1013.0;   // hPa
+      compensate_salinity : Real := 0.0;   // ppm
+   END_VAR
+
+   VAR_OUTPUT 
+      Temperature : Real;
+      Oxygen_Sat : Real;   // [%]
+      Oxygen_mgl : Real;   // [mg/L]
+      Oxygen_ppm : Real;   // [ppm]
+      measurement_ok : Bool;
+   END_VAR
+
+   VAR_IN_OUT 
+      mb_query : "mb_query";
+   END_VAR
+
+   VAR 
+      ponsel_mesure : "Ponsel_mesure";
+      start { ExternalAccessible := 'False'; ExternalVisible := 'False'; ExternalWritable := 'False'} : Bool;
+   END_VAR
+
+
+BEGIN
+	// Ponsel mesure Dissolved oxygen (OPTOD)
+	// 
+	// Warning: Each pull for sensor measurement, will reduce the available 
+	// life span. Please set the measurement interval to appropriate value.
+	
+	IF #continuously_measurements THEN
+	    #start := true;
+	END_IF;
+	
+	#ponsel_mesure.minimum_measurement_interval := MAX(IN1 := T#2s, IN2 := #measurement_interval);
+	#ponsel_mesure.compensate[1] := #compensate_atmospheric_pressure;
+	#ponsel_mesure.compensate[2] := #compensate_salinity;
+	#ponsel_mesure(mb_addr := #mb_addr,
+	               compensate_enable := true,
+	               measurement_ok => #measurement_ok,
+	               start_measurement := #start,
+	               mb_query := #mb_query);
+	
+	#Temperature := #ponsel_mesure.data1.value[0]; // °C
+	#Oxygen_Sat := #ponsel_mesure.data1.value[1];  // [%]
+	#Oxygen_mgl := #ponsel_mesure.data1.value[2];  // [mg/l]
+	#Oxygen_ppm := #ponsel_mesure.data1.value[3];  // [ppm]
+	
+END_FUNCTION_BLOCK
+
+FUNCTION_BLOCK "Ponsel_mesure_example"
+{ S7_Optimized_Access := 'TRUE' }
+VERSION : 0.1
+   VAR 
+      mb_master_1200_ctrl : "mb_master_1200_ctrl";
+      mb_query { ExternalAccessible := 'False'; ExternalVisible := 'False'; ExternalWritable := 'False'} : "mb_query";
+      conductivity_C4E : "Ponsel_mesure_Conductivity_C4E";
+      oxygen_sensor1 : "Ponsel_mesure_Dissolved_oxygen";
+      oxygen_sensor2 : "Ponsel_mesure_Dissolved_oxygen";
+      oxygen_sensor3 : "Ponsel_mesure_Dissolved_oxygen";
+   END_VAR
+
+
+BEGIN
+	#mb_master_1200_ctrl.conf.parity := 0; // None
+	#mb_master_1200_ctrl(hardware_id := "Local~CB_1241_(RS485)",
+	                     baud := 9600,
+	                     timeout := T#500ms,
+	                     mb_query := #mb_query);
+	
+	#conductivity_C4E(mb_addr := 1,
+	                  mb_query := #mb_query);
+	
+	#oxygen_sensor1(mb_addr := 2,
+	                measurement_interval := T#1M,
+	                compensate_salinity := #conductivity_C4E.Salinity,
+	                mb_query := #mb_query);
+	
+	#oxygen_sensor2(mb_addr := 3,
+	                measurement_interval := T#1M,
+	                compensate_salinity := #conductivity_C4E.Salinity,
+	                mb_query := #mb_query);
+	
+	#oxygen_sensor3(mb_addr := 4,
+	                measurement_interval := T#1M,
+	                compensate_salinity := #conductivity_C4E.Salinity,
+	                mb_query := #mb_query);
+	
+	(* Wiring: 
+	Red     Wiring diagram V+
+	black   Wiring diagram V-
+	Green   B+ RS-485
+	White   A- RS-485
+	Blue    SDI-12    *)
 	
 END_FUNCTION_BLOCK
 

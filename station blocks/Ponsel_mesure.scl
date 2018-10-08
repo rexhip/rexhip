@@ -69,15 +69,14 @@ BEGIN
 	// Aqualabo - Ponsel mesure
 	// Dissolved oxygen (OPTOD), Conductivity (C4E, CTZ), pH_Redox, Turbi    
 	// 
-	// Warning: Each pull for sensor measurement, will reduce the available 
-	// life span. Please set the measurement interval to appropriate value.
+	// Warning: For the oxygen sensor each pull for sensor measurement, will reduce
+	// the available life span. Please set the measurement interval to appropriate value.
 	// 
 	// Continuous assign true to start_measurement, to continuous do meassurements.
 	// 
 	// https://en.aqualabo.fr/userfiles/doc/User%20Manual%20Oxygen%20Optical%20digital%20sensor%20OPTOD.pdf
 	
 	"mb_station_block_header"(sb := #sb, mb_query := #mb_query);
-	
 	#mb_query.mb_addr := #mb_addr;
 	#mb_query.mode := #mb_query.c.read.holding_reg;
 	
@@ -111,7 +110,7 @@ BEGIN
 	    5:  // Get data.
 	        #mb_query(data_addr := 16#0053, data_ptr := #data1);
 	        #state += BOOL_TO_INT(#mb_query.Done);
-	        // All measurement ok ?
+	        // All measurements ok ?
 	        FOR #c := 0 TO 4 DO
 	            #e := #e
 	            OR NOT #data1.status[#c].x00_Stm0
@@ -124,7 +123,7 @@ BEGIN
 	        #state += BOOL_TO_INT(#mb_query.Done);
 	    7:  // Finnish
 	        // #start_measurement need to be assigned true again to start a new messurement.
-	        #start_measurement := false; 
+	        #start_measurement := false;
 	        #state := 0;
 	    ELSE
 	        #timer.PT := SEL(G := #first_measurement,
@@ -149,15 +148,15 @@ BEGIN
 	---------------
 	value0: Temperature
 	                      value1:                    value2:                    value3:       
-	OPTOD (oxygen)    :   Oxygen [%Sat]              Oxygen [mg/L]              Oxygen [ppm]
+	OPTOD (oxygen)    :   Oxygen [%Sat]              Oxygen [mg/l]              Oxygen [ppm]
 	Turbi             :   Nephelo turbidity [NTU]    Nephelo turbidity [FNU]    TU turbidity [mg/L]
 	pH_Redox          :   pH                         Redox [mV]
-	conductivity_C4E  :   Conductivity C4E [µS/cm]   Salinity [ppt]             TDS - Kcl [ppm]
+	conductivity_C4E  :   Conductivity C4E [uS/cm]   Salinity [ppt]             TDS - Kcl [ppm]
 	Conductivity_CTZ  :   Conductivity CTZ [mS/cm]   Salinity [g/Kg]            Conductivity CTZ [mS/cm] 
 	                                                                            without temperature compensation                                                                  
 	OPTOD: (Dissolved oxygen)
-	Compensates_1: Atmospheric pressure [hPa], default 1013 hPa
-	Compensates_2: Salinity [ppt], default 0 ppt
+	Compensates[1]: Atmospheric pressure [hPa], default 1013 hPa
+	Compensates[2]: Salinity [ppt], default 0 ppt
 	
 	
 	Wiring: 
@@ -183,6 +182,7 @@ BEGIN
 	010: measurement used range 2
 	011: measurement used range 3
 	100: measurement used range 4
+	
 	*)
 	
 END_FUNCTION_BLOCK
@@ -195,8 +195,8 @@ VERSION : 0.1
    END_VAR
 
    VAR_OUTPUT 
-      Temperature : Real;
-      Conductivity : Real;   // [µS/cm]
+      Temperature : Real;   // [degree C]
+      Conductivity : Real;   // [uS/cm]
       Salinity : Real;   // [ppt]
       TDS_Kcl : Real;   // [ppm]
       measurement_ok : Bool;
@@ -215,7 +215,7 @@ VERSION : 0.1
 BEGIN
 	// Ponsel mesure - Conductivity_C4E
 	
-	#start := true;
+	#start := true; // Continuous measurements
 	
 	#ponsel_mesure.minimum_measurement_interval := T#1s;
 	#ponsel_mesure(mb_addr := #mb_addr,
@@ -224,10 +224,10 @@ BEGIN
 	               start_measurement := #start,
 	               mb_query := #mb_query);
 	
-	#Temperature := #ponsel_mesure.data1.value[0];
-	#Conductivity := #ponsel_mesure.data1.value[1];
-	#Salinity := #ponsel_mesure.data1.value[2];
-	#TDS_Kcl := #ponsel_mesure.data1.value[3];
+	#Temperature := #ponsel_mesure.data1.value[0];  // [degree C]
+	#Conductivity := #ponsel_mesure.data1.value[1]; // [uS/cm]
+	#Salinity := #ponsel_mesure.data1.value[2];     // [ppt]
+	#TDS_Kcl := #ponsel_mesure.data1.value[3];      // [ppm]
 	
 END_FUNCTION_BLOCK
 
@@ -236,7 +236,7 @@ FUNCTION_BLOCK "Ponsel_mesure_Dissolved_oxygen"
 VERSION : 0.1
    VAR_INPUT 
       mb_addr : UInt := 255;   // 255=broadcast
-      continuously_measurements : Bool := true;   // (Else use start to init messurements)
+      continuously_measurements : Bool := TRUE;   // (Else use start to init messurements)
       measurement_interval : Time := T#1M;
       compensate_atmospheric_pressure : Real := 1013.0;   // hPa
       compensate_salinity : Real := 0.0;   // ppm
@@ -261,25 +261,26 @@ VERSION : 0.1
 
 
 BEGIN
-	// Ponsel mesure Dissolved oxygen (OPTOD)
+	// Aqualabo - Ponsel mesure
+	// Dissolved oxygen (OPTOD)
 	// 
 	// Warning: Each pull for sensor measurement, will reduce the available 
 	// life span. Please set the measurement interval to appropriate value.
 	
 	IF #continuously_measurements THEN
-	    #start := true;
+	    #start := true; // #measurement_interval will define intervals.
 	END_IF;
 	
-	#ponsel_mesure.minimum_measurement_interval := MAX(IN1 := T#2s, IN2 := #measurement_interval);
+	#ponsel_mesure.minimum_measurement_interval := #measurement_interval;
 	#ponsel_mesure.compensate[1] := #compensate_atmospheric_pressure;
 	#ponsel_mesure.compensate[2] := #compensate_salinity;
-	#ponsel_mesure(mb_addr := #mb_addr,
+	#ponsel_mesure(mb_addr := #mb_addr, 
 	               compensate_enable := true,
 	               measurement_ok => #measurement_ok,
 	               start_measurement := #start,
 	               mb_query := #mb_query);
 	
-	#Temperature := #ponsel_mesure.data1.value[0]; // °C
+	#Temperature := #ponsel_mesure.data1.value[0]; // degree C
 	#Oxygen_Sat := #ponsel_mesure.data1.value[1];  // [%]
 	#Oxygen_mgl := #ponsel_mesure.data1.value[2];  // [mg/l]
 	#Oxygen_ppm := #ponsel_mesure.data1.value[3];  // [ppm]
@@ -296,6 +297,7 @@ VERSION : 0.1
       oxygen_sensor1 : "Ponsel_mesure_Dissolved_oxygen";
       oxygen_sensor2 : "Ponsel_mesure_Dissolved_oxygen";
       oxygen_sensor3 : "Ponsel_mesure_Dissolved_oxygen";
+      measurement_interval : Time;
    END_VAR
 
 
@@ -306,21 +308,27 @@ BEGIN
 	                     timeout := T#500ms,
 	                     mb_query := #mb_query);
 	
+	// Salinity measurement for compensation for oxygen sensors.
 	#conductivity_C4E(mb_addr := 1,
 	                  mb_query := #mb_query);
 	
+	// Warning: Each pull for oxygen sensor measurement, will reduce
+	// the available life span. Please set the measurement interval
+	// to appropriate value.
+	#measurement_interval := T#1M;
+	
 	#oxygen_sensor1(mb_addr := 2,
-	                measurement_interval := T#1M,
+	                measurement_interval := #measurement_interval,
 	                compensate_salinity := #conductivity_C4E.Salinity,
 	                mb_query := #mb_query);
 	
 	#oxygen_sensor2(mb_addr := 3,
-	                measurement_interval := T#1M,
+	                measurement_interval := #measurement_interval,
 	                compensate_salinity := #conductivity_C4E.Salinity,
 	                mb_query := #mb_query);
 	
 	#oxygen_sensor3(mb_addr := 4,
-	                measurement_interval := T#1M,
+	                measurement_interval := #measurement_interval,
 	                compensate_salinity := #conductivity_C4E.Salinity,
 	                mb_query := #mb_query);
 	

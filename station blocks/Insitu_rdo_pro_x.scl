@@ -1,16 +1,20 @@
-﻿FUNCTION_BLOCK "InSitu_RDO_PRO_X"
+FUNCTION_BLOCK "InSitu_RDO_PRO_X"
 { S7_Optimized_Access := 'TRUE' }
 VERSION : 0.1
    VAR_INPUT 
       mb_addr : UInt;
+      measurement_interval : Time := T#20s;
+      compansate_salinity : Real;   // [PSU]
+      compansate_barometric_pressure : Real;   // [mBar]
    END_VAR
 
    VAR_OUTPUT 
-      dissolved_oxygen : Real;   // mg/L
-      temperature : Real;   // C
-      saturation : Real;   // %
+      oxygen_dissolved : Real;   // mg/L
+      oxygen_saturation : Real;   // %
       oxygen_partial_pressure : Real;   // mbar
+      temperature : Real;   // C
       alarm : Bool;
+      serial_number : String[6];
    END_VAR
 
    VAR_IN_OUT 
@@ -24,44 +28,91 @@ VERSION : 0.1
          Parameter_ID : UInt;
          Units_ID : UInt;
          data_quality : UInt;
-         "Off line_sentinel_value" : UInt;
+         Off_line_sentinel_value : UInt;
          Available_Units : UInt;
       END_STRUCT;
       read2 : Struct
          serial_number : UDInt;
-         manufacture_date : Array[1..3] of UInt;
+         manufacture_date : Struct
+            sec : UDInt;
+            frac : UInt;
+         END_STRUCT;
+         firmware_version : UInt;
       END_STRUCT;
       device_name : String[32];
+      device_status : Struct
+         x08_Power_management_disabled : Bool;
+         x09_Device_off_line : Bool;
+         x10_Device_hardware_reset_occurred : Bool;
+         x11_Device_malfunction : Bool;
+         x12_No_external_power : Bool;
+         x13_battery_capacity_less_then_5_percent : Bool;
+         x14_data_log_memory_capacity_less_then_5_percent : Bool;
+         x15 : Bool;
+         x00_Sensor_high_alarm : Bool;
+         x01_Sensor_high_warning : Bool;
+         x02_Sensor_low_warning : Bool;
+         x03_Sensor_low_alarm : Bool;
+         x04_Sensor_calibration_warning : Bool;
+         x05_Sensor_malfunction : Bool;
+         x06 : Bool;
+         x07 : Bool;
+      END_STRUCT;
+      e : Word;
    END_VAR
 
    VAR_TEMP 
-      tmp_alarm : Bool;
+      tmp_quality : Bool;
       c : Int;
+      "time" : Time;
    END_VAR
 
 
 BEGIN
 	// InSitu - RDO PRO X
 	// 
-	// https://in-situ.com/wp-content/uploads/2015/08/
-	// RDO_PRO-X_-Titan_Modbus_SDI-12-_Guide.pdf
+	// https://in-situ.com/wp-content/uploads/2015/08/RDO_PRO-X_-Titan_Modbus_SDI-12-_Guide.pdf
 	
 	"mb_station_block_header"(sb := #sb, mb_query := #mb_query);
 	#mb_query.mb_addr := #mb_addr;
 	
-	#mb_query.mode := #mb_query.c.read.holding_reg;
-	#mb_query(data_addr := 38, data_ptr := #read1);
-	#mb_query(data_addr := 9002, data_ptr := #read2);
-	#mb_query(data_addr := 9019, data_ptr := #device_name);
-	
-	#dissolved_oxygen := #read1[1].value;
-	#temperature := #read1[2].value;
-	#saturation := #read1[3].value;
-	#oxygen_partial_pressure := #read1[4].value;
-	FOR #c := 1 TO 4 DO
-	    #tmp_alarm := #tmp_alarm OR #read1[#c].data_quality <> 0;
-	END_FOR;
-	#alarm := #tmp_alarm;
+	REGION Write
+	    #mb_query.mode := #mb_query.c.write.holding_reg;
+	    IF #compansate_salinity <> 0 THEN // [PSU]
+	        #mb_query(data_addr := 0118, data_ptr := #compansate_salinity);
+	    END_IF;
+	    IF #compansate_barometric_pressure <> 0 THEN // [mBar]
+	        #mb_query(data_addr := 0122, data_ptr := #compansate_barometric_pressure);
+	    END_IF;
+	    #c := 117; // Units Id: 117 = mg/L (default)
+	    #mb_query(data_addr := 41, data_ptr := #c);
+	    #c := 1; // Units Id: 1 = degrees C (default)
+	    #mb_query(data_addr := 49, data_ptr := #c);
+	    // Sensor Data Cache Timeout. Page 18
+	    #time := MAX(IN1 := T#10s, IN2 := #measurement_interval);
+	    #mb_query(data_addr := 9463, data_ptr := #time);
+	END_REGION
+	  
+	REGION Read
+	    #mb_query.mode := #mb_query.c.read.holding_reg;
+	    #mb_query(data_addr := 38, data_ptr := #read1); // page 45
+	    #mb_query(data_addr := 9002, data_ptr := #read2);
+	    #mb_query(data_addr := 9019, data_ptr := #device_name);
+	    #mb_query(data_addr := 9100, data_ptr := #device_status);
+	    
+	    #oxygen_dissolved := #read1[1].value;
+	    #temperature := #read1[2].value;
+	    #oxygen_saturation := #read1[3].value;
+	    #oxygen_partial_pressure := #read1[4].value;
+	    #e := ATH(IN := #read2.serial_number, N := 4, OUT => #serial_number);
+	    // Alarm handling
+	    FOR #c := 1 TO 4 DO
+	        #tmp_quality := #tmp_quality OR #read1[#c].data_quality <> 0;
+	    END_FOR;
+	    #alarm := #tmp_quality
+	    OR #device_status.x05_Sensor_malfunction
+	    OR #device_status.x11_Device_malfunction;
+	END_REGION
 	
 	"mb_station_block_footer"(sb := #sb, mb_query := #mb_query);
 	

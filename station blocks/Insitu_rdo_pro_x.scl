@@ -2,8 +2,8 @@ FUNCTION_BLOCK "InSitu_RDO_PRO_X"
 { S7_Optimized_Access := 'TRUE' }
 VERSION : 0.1
    VAR_INPUT 
-      mb_addr : UInt;
-      measurement_interval : Time := T#20s;
+      mb_addr : UInt;   // Device addr.
+      measurement_interval : Time := T#20s;   // 10s - 65s
       compansate_salinity : Real;   // [PSU]
       compansate_barometric_pressure : Real;   // [mBar]
    END_VAR
@@ -14,7 +14,8 @@ VERSION : 0.1
       oxygen_partial_pressure : Real;   // mbar
       temperature : Real;   // C
       alarm : Bool;
-      serial_number : String[6];
+      expired_calibration : Bool;
+      serial_number : String[8];
    END_VAR
 
    VAR_IN_OUT 
@@ -46,8 +47,8 @@ VERSION : 0.1
          x10_Device_hardware_reset_occurred : Bool;
          x11_Device_malfunction : Bool;
          x12_No_external_power : Bool;
-         x13_battery_capacity_less_then_5_percent : Bool;
-         x14_data_log_memory_capacity_less_then_5_percent : Bool;
+         x13_Battery_low : Bool;   // Capacity less then 5 percent
+         x14_Data_log_memory_low : Bool;   // Capacity less then 5 percent
          x15 : Bool;
          x00_Sensor_high_alarm : Bool;
          x01_Sensor_high_warning : Bool;
@@ -62,16 +63,25 @@ VERSION : 0.1
    END_VAR
 
    VAR_TEMP 
-      tmp_quality : Bool;
       c : Int;
       "time" : Time;
+      tmp_bad_quality : Bool;
+      tmp_expired_calibration : Bool;
+      T1 {OriginalPartName := 'DTL'; LibVersion := '1.0'} : DTL;
+      T2 {OriginalPartName := 'DTL'; LibVersion := '1.0'} : DTL;
+      unix_time : DInt;
    END_VAR
 
 
 BEGIN
-	// InSitu - RDO PRO X
+	// InSitu - RDO PRO X - Dissolved oxygen sensor
 	// 
 	// https://in-situ.com/wp-content/uploads/2015/08/RDO_PRO-X_-Titan_Modbus_SDI-12-_Guide.pdf
+	//
+	// #measurement_interval:  (3.6 Sampling rate, page 8 datasheet)
+	// Optical oxygen sensors do not carry out any continuous measurements.
+	// To extend the operating life of the optical membrane, the measurement 
+	// interval can be set to a value superior to 10 seconds.
 	
 	"mb_station_block_header"(sb := #sb, mb_query := #mb_query);
 	#mb_query.mb_addr := #mb_addr;
@@ -79,10 +89,10 @@ BEGIN
 	REGION Write
 	    #mb_query.mode := #mb_query.c.write.holding_reg;
 	    IF #compansate_salinity <> 0 THEN // [PSU]
-	        #mb_query(data_addr := 0118, data_ptr := #compansate_salinity);
+	        #mb_query(data_addr := 118, data_ptr := #compansate_salinity);
 	    END_IF;
 	    IF #compansate_barometric_pressure <> 0 THEN // [mBar]
-	        #mb_query(data_addr := 0122, data_ptr := #compansate_barometric_pressure);
+	        #mb_query(data_addr := 122, data_ptr := #compansate_barometric_pressure);
 	    END_IF;
 	    #c := 117; // Units Id: 117 = mg/L (default)
 	    #mb_query(data_addr := 41, data_ptr := #c);
@@ -105,30 +115,47 @@ BEGIN
 	    #oxygen_saturation := #read1[3].value;
 	    #oxygen_partial_pressure := #read1[4].value;
 	    #e := ATH(IN := #read2.serial_number, N := 4, OUT => #serial_number);
-	    // Alarm handling
-	    FOR #c := 1 TO 4 DO
-	        #tmp_quality := #tmp_quality OR #read1[#c].data_quality <> 0;
-	    END_FOR;
-	    #alarm := #tmp_quality
-	    OR #device_status.x05_Sensor_malfunction
-	    OR #device_status.x11_Device_malfunction;
 	END_REGION
 	
 	"mb_station_block_footer"(sb := #sb, mb_query := #mb_query);
 	
-	(*
-	Sensor health table:   
-	0  Normal Data Quality
-	1  Parameter measured without errors using an expired user 
-	   calibration. (User Cal Expired)
-	2  Parameter measured without errors using an expired factory 
-	   calibration. (Factory Cal Expired)
-	3  Parameter measured with error, sentinel value supplied. 
-	4  Sensor is warming up, sentinel value supplied.
-	5  Parameter measured but does not meet normal quality 
-	   criteria. The sensor has sustained moderate damage, or  
-	   the recommended lifespan has been reached.
+	// Alarm handling
+	FOR #c := 1 TO 4 DO
+	    CASE #read1[#c].data_quality OF
+	        0,  // Normal Data Quality
+	        4:  // Sensor is warming up, sentinel value supplied.
+	            ;  // -> No action.
+	            
+	        1, // Parameter measured without errors using an expired user calibration.                 
+	        2: // Parameter measured without errors using an expired factory calibration. 
+	            #tmp_expired_calibration := true; // (1: User Cal Expired 2: Factory Cal Expired)
+	            
+	        3,  // Parameter measured with error, sentinel value supplied. 
+	        5:  // The sensor has sustained moderate damage, or the recommended lifespan has been reached.
+	            #tmp_bad_quality := true;
+	    END_CASE;
+	END_FOR;
+	
+	#alarm := #tmp_bad_quality
+	OR #device_status.x05_Sensor_malfunction
+	OR #device_status.x11_Device_malfunction
+	OR #sb.out.error_comm;
+	
+	#expired_calibration := #tmp_expired_calibration;
+	
+	(* IF #alarm THEN
+	    #oxygen_dissolved := 0;
+	    #temperature := 0;
+	    #oxygen_saturation := 0;
+	    #oxygen_partial_pressure := 0;
+	END_IF; *)
+	
+	(* 
+	Signal:                     Color:      Pin:
+	Ground/Return               Black       6
+	External Power (12-36 VDC)  Red         5
+	RS485 (-)                   Green       3
+	RS485 (+)                   Blue        2    
 	*)
 	
 END_FUNCTION_BLOCK
-

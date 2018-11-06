@@ -95,17 +95,18 @@ BEGIN
 	        ELSE
 	            #state += 1;
 	        END_IF;
-	    2:  // Start all meassurements.
+	    2:  // Read wait-time
+	        #mb_query(data_addr := 16#A4, data_ptr := #timer.PT);
+	        #state += BOOL_TO_INT(#mb_query.Done);
+	    3:  // Start all meassurements.
 	        #word := 16#f;
 	        #mb_query(mode := #mb_query.c.write.holding_reg,
 	                  data_addr := 16#01,
 	                  data_ptr := #word);
-	        #state += BOOL_TO_INT(#mb_query.Done);
-	    3:  // Read wait-time
-	        #mb_query(data_addr := 16#A4, data_ptr := #timer.PT);
-	        #state += BOOL_TO_INT(#mb_query.Done);
+	        #state += BOOL_TO_INT(#mb_query.Done);	    
 	    4:  // Timer (Wait while sensor is obtaining measurements)
 	        #timer_in := true;
+		#timer.PT := MAX(IN1 := #timer.PT, IN2 := T#2s);
 	        #state += BOOL_TO_INT(#timer_q);
 	    5:  // Get data.
 	        #mb_query(data_addr := 16#0053, data_ptr := #data1);

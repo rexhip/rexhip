@@ -1,0 +1,99 @@
+﻿FUNCTION_BLOCK "abb_aquaMaster_3"
+{ S7_Optimized_Access := 'TRUE' }
+VERSION : 0.1
+   VAR_INPUT 
+      mb_addr : USInt;
+   END_VAR
+
+   VAR_IN_OUT 
+      mb_query : "mb_query";
+   END_VAR
+
+   VAR 
+      sb : "mb_station_block_udt";
+      flow : Real;
+      pressure : Real;
+      totaliser : Struct
+         fwd : DInt;
+         rev : DInt;
+         net : DInt;
+      END_STRUCT;
+   END_VAR
+
+
+BEGIN
+	// - ABB - AquaMaster 3 - Electromagnetic flowmeter
+	// - COI/FET2XX/MOD/TBLÃ¢â‚¬â€œEN
+	// - https://library.e.abb.com/public/
+	//   91eead459bb0d349c12577fc0033d2b5/COI_FET2XX_MOD_TBL-EN.pdf
+	
+	"mb_station_block_header"(sb := #sb,
+	                          mb_query := #mb_query);
+	#mb_query.mb_addr := #mb_addr; // Device address.
+	
+	// Two queries, reading input registers. 
+	#mb_query.mode := #mb_query.c.read.input_reg;
+	#mb_query(data_addr := 5017,
+	          data_ptr := #flow);
+	#mb_query(data_addr := 5025,
+	          data_ptr := #pressure);
+	
+	// One query, reading one section of holding registers.
+	#mb_query.mode := #mb_query.c.read.holding_reg;
+	#mb_query(data_addr := 12003,
+	          data_ptr := #totaliser);
+	
+	// - Each query reading one section of holding registers.
+	// - Data length is automatically calculated for holding 
+	//   and input regisers.
+	// - mb_query_bits should be used for discrete in- and outpus.
+	
+	"mb_station_block_footer"(sb := #sb,
+	                          mb_query := #mb_query);
+	
+END_FUNCTION_BLOCK
+
+FUNCTION_BLOCK "start_example_modbus_rtu_1500"
+{ S7_Optimized_Access := 'TRUE' }
+VERSION : 0.1
+   VAR 
+      mb_query : "mb_query";
+      mb_master_1500_ctrl : "mb_master_1500_ctrl";
+      abb_aquaMaster_device1 : "abb_aquaMaster_3";
+      abb_aquaMaster_device2 : "abb_aquaMaster_3";
+      abb_aquaMaster_device3 : "abb_aquaMaster_3";
+      resault_data_1 : Word;
+   END_VAR
+
+
+BEGIN
+	// This is a rtu example for S7-1500, for S7-1200 PLC's use mb_master_1200_ctrl.
+	
+	// hardware_id:      Can be found inside the hardware configuration.
+	// operating_mode:   0: RS232, 1: RS422_point_to_point, 2: RS422_multipoint_master,
+	//                   3: RS422_multipoint_slave, 4: RS485.
+	// baud:             Bits per sec. As stated in the modbus specification,
+	//                   on page 20, 19200 bps should be default. Parity is even by
+	//                   default as stated on page 12 in the specification.
+	// timeout:          Automatically calculated if set to zero. (T#0s)
+	// mb_query:         The query FB.
+	#mb_master_1500_ctrl(hardware_id := "Local~CM_PtP_RS422_485_BA_1",  
+	                     operating_mode := 4, // RS-485
+	                     baud := 19200, // bps
+	                     mb_query := #mb_query);
+	
+	// For a S7-1500 PLC, please remove the mb_master_1200_ctrl block from the library,
+	// and the errors will disappear.
+	
+	// In this rtu example there are 3 devices connected to the modbus-rtu bus. Each
+	// instance of the blocks bellow represent one device on the bus. 
+	#abb_aquaMaster_device1(mb_addr := 1, mb_query := #mb_query);
+	#abb_aquaMaster_device2(mb_addr := 2, mb_query := #mb_query);
+	#abb_aquaMaster_device3(mb_addr := 3, mb_query := #mb_query);
+	
+	// A station block can be used both for both modbus rtu and tcp. This is specially
+	// useful if a tcp-rtu-gateway is used. The same program could be used, just swap
+	// mb_master_1500_ctrl, with mb_client_ctrl.
+	
+END_FUNCTION_BLOCK
+

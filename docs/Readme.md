@@ -41,7 +41,7 @@ The library makes it possible to split a program into reusable function blocks f
 
 
 #### Station block (SB) example 
-This six lines of code bellow and the variable definition (not shown) is all that is needed to read the data from the a MAG 6000 device. Please see the whole block at: [station blocks/Siemens_mag_6000.scl](/station%20blocks/Siemens_mag_6000.scl)
+This six lines of code bellow and the variable definition (not shown) is all that is needed to read the data from the a MAG 6000 device.
 
 ```pascal
 // Siemens - SITRANS F M MAG 6000
@@ -64,8 +64,7 @@ This six lines of code bellow and the variable definition (not shown) is all tha
 
 
 #### Another station block example 
-This SB can be combined with the one above, and any others in the library. It's also fine to have more instaces of one SB in the same program. New queries can be added without changing anything in existing program. Please see the whole block at: 
-[station blocks/Telemecanique_schneider_altivar_21_inverter.scl](/station%20blocks/Telemecanique_schneider_altivar_21_inverter.scl)
+This SB can be combined with the one above, and any others in the library. It's also fine to have more instaces of one SB in the same program. New queries can be added without changing anything in existing program. 
 
 ```pascal
 // Telemecanique (Schneider) - Altivar 21 inverter - VFD (AC-drive)

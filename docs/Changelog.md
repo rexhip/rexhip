@@ -1,12 +1,13 @@
 ### Changelog:
 
 #### 2.5.0
-- Moved to Siemens library format. ()
+- Moved from scl-files to Siemens library format. 
 - Renamed some internal varsiables, like «sid»
-- Improved comments
-- Make de-/serialize error affect common error falg on the sb-var. 
+- Improved comments.
+- Make de-/serialize error affect the common error falg on the sb-var. 
 - New Station blocks
 - Station blocks, clean up.
+- OPC-UA checkboxes.
 
 #### 2.4.0
 - Added the function block mb_delay_between_queries

@@ -1,7 +1,7 @@
 ### Changelog:
 
 #### 2.5.0
-- Moved from scl-files to Siemens library format. 
+- Moved from scl-files to Siemens library format. (v14)
 - Renamed some internal varsiables, like «sid»
 - Improved comments.
 - Make de-/serialize error affect the common error falg on the sb-var. 

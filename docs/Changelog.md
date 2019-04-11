@@ -1,4 +1,21 @@
-### Changelog:
+﻿### Changelog:
+
+#### 3.0.0
+- New halt api, for slowing down execution for modbus tcp.
+- Replaced insert and insert2 with a state variable.
+- Rewrite of all three ctrl blocks for new state var.
+- Rewrite of mb_delay and mb_delay_between_queries.
+- Changes in mb_query_bits.
+- Updated some sb-blocks
+- SB skip_code feature.
+- Improved timeout calculation for S7-1200 rtu.
+- New fc mb_timeout_rtu_calc.
+- Improved comments.
+- Removed feature "de-/serialize error" introduced in 2.5.0, it's isn't need.
+- Rewrite and simplify mb_client_ctrl, no-connection will not trigg a disconnect.
+- Qid zero will not set req false, on cleint and master.
+- Change timeout variables on rtu ctrl.
+
 
 #### 2.5.0
 - Moved from scl-files to Siemens library format. (v14)

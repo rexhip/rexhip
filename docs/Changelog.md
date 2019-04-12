@@ -13,7 +13,7 @@
 - Improved comments.
 - Removed feature "de-/serialize error" introduced in 2.5.0, it's isn't need.
 - Rewrite and simplify mb_client_ctrl, no-connection will not trigg a disconnect.
-- Qid zero will not set req false, on cleint and master.
+- Qid zero will not set req false, on client and master.
 - Change timeout variables on rtu ctrl.
 
 

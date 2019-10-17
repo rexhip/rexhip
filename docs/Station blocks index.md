@@ -15,6 +15,7 @@
 - Delta_cfp2000.scl
 - Emerson_micro_motion.scl
 - Endress_proline_promass_83.scl
+- Epever_solar_charge_controller
 - Epluse_EE071.scl
 - Floridan_uniflo_1200.scl
 - G_instruments_gph141_mb.scl

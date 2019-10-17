@@ -1,5 +1,15 @@
 ﻿### Changelog:
 
+#### 3.1.0
+- Fixed bug regarding read-only feature. When flag was set, the execution will 
+  halt inside one sb, when a write-query is inserted.
+- Added some more start examples.
+- SB's are seperated in to two folders, tested and untested.
+- Start tracking changes in sb's. Changelog_sb.md.
+- Renamed #sb.out.error_comm to #sb.out.communication_error
+- New sequence (state machine) interface, for low priority queries.
+- sid halt api. Makes it possible to stop sid from increment.
+
 #### 3.0.0
 - New halt api, for slowing down execution for modbus tcp.
 - Replaced insert and insert2 with a state variable.
@@ -15,7 +25,6 @@
 - Rewrite and simplify mb_client_ctrl, no-connection will not trigg a disconnect.
 - Qid zero will not set req false, on client and master.
 - Change timeout variables on rtu ctrl.
-
 
 #### 2.5.0
 - Moved from scl-files to Siemens library format. (v14)

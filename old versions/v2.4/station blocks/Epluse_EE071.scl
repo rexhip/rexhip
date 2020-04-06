@@ -1,0 +1,64 @@
+﻿FUNCTION_BLOCK "Epluse_EE071"
+{ S7_Optimized_Access := 'TRUE' }
+VERSION : 0.1
+   VAR_INPUT 
+      mb_addr : USInt := 247;
+   END_VAR
+
+   VAR_IN_OUT 
+      mb_query : "mb_query";
+   END_VAR
+
+   VAR 
+      sb : "mb_station_block_udt";
+      data : Struct
+         temperature_C : Real;   // [Â°C]
+         temperature_F : Real;   // [Â°F]
+         humidity_rel : Real;   // [%]
+         humidity_abs : Real;   // [g/mÂ³]
+      END_STRUCT;
+      serial : String[8];
+   END_VAR
+
+
+BEGIN
+	// Epluse - EE071
+	// Humidity and Temperature Probe
+	//
+	// http://downloads.epluse.com/fileadmin/data/product/ee071/datasheet_EE071.pdf
+	
+	"mb_station_block_header"(sb := #sb, mb_query := #mb_query);
+	#mb_query.mb_addr := #mb_addr;
+	
+	#mb_query.mode := #mb_query.c.read.holding_reg;
+	#mb_query(data_addr := 30026, data_ptr := #data);
+	#mb_query(data_addr := 30001, data_ptr := #serial); // 30001-30008
+	
+	"mb_station_block_footer"(sb := #sb, mb_query := #mb_query);
+	
+	IF #sb.out.error_comm THEN
+	    #data.temperature_C := 0;
+	    #data.temperature_F := 0;
+	    #data.humidity_rel := 0;
+	    #data.humidity_abs := 0;
+	END_IF;
+	
+	(* Electrical connections
+	
+	Supply voltage 1) 2) 4 - 28 V DC
+	
+	brown...+UB
+	white.....B-RS485 (= Data-)
+	blue......A-RS485 (= Data+)
+	black....GND
+	grey......shielding
+	
+	1...+UB
+	2...B-RS485 (= Data-)
+	3...A-RS485 (= Data+)
+	4...GND
+	
+	*)
+	
+END_FUNCTION_BLOCK
+

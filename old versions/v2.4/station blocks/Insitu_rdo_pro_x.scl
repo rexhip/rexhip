@@ -1,0 +1,161 @@
+FUNCTION_BLOCK "InSitu_RDO_PRO_X"
+{ S7_Optimized_Access := 'TRUE' }
+VERSION : 0.1
+   VAR_INPUT 
+      mb_addr : UInt;   // Device addr.
+      measurement_interval : Time := T#20s;   // 10s - 65s
+      compansate_salinity : Real;   // [PSU]
+      compansate_barometric_pressure : Real;   // [mBar]
+   END_VAR
+
+   VAR_OUTPUT 
+      oxygen_dissolved : Real;   // mg/L
+      oxygen_saturation : Real;   // %
+      oxygen_partial_pressure : Real;   // mbar
+      temperature : Real;   // C
+      alarm : Bool;
+      expired_calibration : Bool;
+      serial_number : String[8];
+   END_VAR
+
+   VAR_IN_OUT 
+      mb_query : "mb_query";
+   END_VAR
+
+   VAR 
+      sb : "mb_station_block_udt";
+      read1 : Array[1..4] of Struct
+         value : Real;
+         Parameter_ID : UInt;
+         Units_ID : UInt;
+         data_quality : UInt;
+         Off_line_sentinel_value : UInt;
+         Available_Units : UInt;
+      END_STRUCT;
+      read2 : Struct
+         serial_number : UDInt;
+         manufacture_date : Struct
+            sec : UDInt;
+            frac : UInt;
+         END_STRUCT;
+         firmware_version : UInt;
+      END_STRUCT;
+      device_name : String[32];
+      device_status : Struct
+         x08_Power_management_disabled : Bool;
+         x09_Device_off_line : Bool;
+         x10_Device_hardware_reset_occurred : Bool;
+         x11_Device_malfunction : Bool;
+         x12_No_external_power : Bool;
+         x13_Battery_low : Bool;   // Capacity less then 5 percent
+         x14_Data_log_memory_low : Bool;   // Capacity less then 5 percent
+         x15 : Bool;
+         x00_Sensor_high_alarm : Bool;
+         x01_Sensor_high_warning : Bool;
+         x02_Sensor_low_warning : Bool;
+         x03_Sensor_low_alarm : Bool;
+         x04_Sensor_calibration_warning : Bool;
+         x05_Sensor_malfunction : Bool;
+         x06 : Bool;
+         x07 : Bool;
+      END_STRUCT;
+      e : Word;
+   END_VAR
+
+   VAR_TEMP 
+      c : Int;
+      "time" : Time;
+      tmp_bad_quality : Bool;
+      tmp_expired_calibration : Bool;
+      T1 {OriginalPartName := 'DTL'; LibVersion := '1.0'} : DTL;
+      T2 {OriginalPartName := 'DTL'; LibVersion := '1.0'} : DTL;
+      unix_time : DInt;
+   END_VAR
+
+
+BEGIN
+	// InSitu - RDO PRO X - Dissolved oxygen sensor
+	// 
+	// https://in-situ.com/wp-content/uploads/2015/08/RDO_PRO-X_-Titan_Modbus_SDI-12-_Guide.pdf
+	//
+	// #measurement_interval:  (3.6 Sampling rate, page 8 datasheet)
+	// Optical oxygen sensors do not carry out any continuous measurements.
+	// To extend the operating life of the optical membrane, the measurement 
+	// interval can be set to a value superior to 10 seconds.
+	
+	"mb_station_block_header"(sb := #sb, mb_query := #mb_query);
+	#mb_query.mb_addr := #mb_addr;
+	
+	REGION Write
+	    #mb_query.mode := #mb_query.c.write.holding_reg;
+	    IF #compansate_salinity <> 0 THEN // [PSU]
+	        #mb_query(data_addr := 118, data_ptr := #compansate_salinity);
+	    END_IF;
+	    IF #compansate_barometric_pressure <> 0 THEN // [mBar]
+	        #mb_query(data_addr := 122, data_ptr := #compansate_barometric_pressure);
+	    END_IF;
+	    #c := 117; // Units Id: 117 = mg/L (default)
+	    #mb_query(data_addr := 41, data_ptr := #c);
+	    #c := 1; // Units Id: 1 = degrees C (default)
+	    #mb_query(data_addr := 49, data_ptr := #c);
+	    // Sensor Data Cache Timeout. Page 18
+	    #time := MAX(IN1 := T#10s, IN2 := #measurement_interval);
+	    #mb_query(data_addr := 9463, data_ptr := #time);
+	END_REGION
+	  
+	REGION Read
+	    #mb_query.mode := #mb_query.c.read.holding_reg;
+	    #mb_query(data_addr := 38, data_ptr := #read1); // page 45
+	    #mb_query(data_addr := 9002, data_ptr := #read2);
+	    #mb_query(data_addr := 9019, data_ptr := #device_name);
+	    #mb_query(data_addr := 9100, data_ptr := #device_status);
+	    
+	    #oxygen_dissolved := #read1[1].value;
+	    #temperature := #read1[2].value;
+	    #oxygen_saturation := #read1[3].value;
+	    #oxygen_partial_pressure := #read1[4].value;
+	    #e := ATH(IN := #read2.serial_number, N := 4, OUT => #serial_number);
+	END_REGION
+	
+	"mb_station_block_footer"(sb := #sb, mb_query := #mb_query);
+	
+	// Alarm handling
+	FOR #c := 1 TO 4 DO
+	    CASE #read1[#c].data_quality OF
+	        0,  // Normal Data Quality
+	        4:  // Sensor is warming up, sentinel value supplied.
+	            ;  // -> No action.
+	            
+	        1, // Parameter measured without errors using an expired user calibration.                 
+	        2: // Parameter measured without errors using an expired factory calibration. 
+	            #tmp_expired_calibration := true; // (1: User Cal Expired 2: Factory Cal Expired)
+	            
+	        3,  // Parameter measured with error, sentinel value supplied. 
+	        5:  // The sensor has sustained moderate damage, or the recommended lifespan has been reached.
+	            #tmp_bad_quality := true;
+	    END_CASE;
+	END_FOR;
+	
+	#alarm := #tmp_bad_quality
+	OR #device_status.x05_Sensor_malfunction
+	OR #device_status.x11_Device_malfunction
+	OR #sb.out.error_comm;
+	
+	#expired_calibration := #tmp_expired_calibration;
+	
+	(* IF #alarm THEN
+	    #oxygen_dissolved := 0;
+	    #temperature := 0;
+	    #oxygen_saturation := 0;
+	    #oxygen_partial_pressure := 0;
+	END_IF; *)
+	
+	(* 
+	Signal:                     Color:      Pin:
+	Ground/Return               Black       6
+	External Power (12-36 VDC)  Red         5
+	RS485 (-)                   Green       3
+	RS485 (+)                   Blue        2    
+	*)
+	
+END_FUNCTION_BLOCK

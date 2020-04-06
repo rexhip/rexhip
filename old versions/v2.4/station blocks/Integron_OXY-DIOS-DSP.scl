@@ -1,0 +1,70 @@
+﻿FUNCTION_BLOCK "Integron_OXY-DIOS-DSP"
+{ S7_Optimized_Access := 'TRUE' }
+VERSION : 0.1
+   VAR_INPUT 
+      mb_addr : USInt;
+   END_VAR
+
+   VAR_IN_OUT 
+      mb_query : "mb_query";
+   END_VAR
+
+   VAR 
+      sb : "mb_station_block_udt";
+      read1 : Struct
+         Sensor_status : Struct
+            x08 : Bool;
+            x09 : Bool;
+            x10 : Bool;
+            x11 : Bool;
+            x12 : Bool;
+            x13 : Bool;
+            x14 : Bool;
+            x15 : Bool;
+            x00_Correct_indication : Bool;
+            x01_Range_exceeded_error : Bool;
+            x02_Measuring_window_status : Bool;   // (Must be replaced)
+            x03_Cleaning : Bool;
+            x04_Maintaining_values_after_cleaning : Bool;   // ("holding time") F= Real current value, T=Saved value
+            x05_Output_short_circuit_OXYGEN_CONTROL : Bool;
+            x06_Output_short_circuit_AIRBLAST_CLEANING : Bool;
+            x07 : Bool;
+         END_STRUCT;
+         cO2_concentration : Real;   // [mg/L]
+         sO2_saturation : Real;   // [%]
+         Head_temperature : Real;   // [degree C]
+         pO2_O2_partial_pressure : Real;   // [bar]
+         Tau_fluorescence_decay_time : Real;   // [us]
+         Atmospheric_pressure : Real;   // [bar] (hydrostatic)
+         Relative_humidity_inside_the_sensor : Real;   // [%]
+         Humidity_sensor_temperature : Real;   // [degree C]
+         Salinity : Real;   // [ppt]
+         Mainboard_temperature : Real;   // [degree C]
+         Sensor_serial_number : Array[1..2] of UDInt;
+         "Date_and_time" : UDInt;   // [s]
+         Window_serial_number : UInt;
+         Expected_date_of_exchange_measuring_window : UDInt;   // [s]
+         Date_of_last_calibration : UDInt;   // [s]
+         RTC_battery_level : UInt;   // [%]
+         Supply_power_24V : Real;
+      END_STRUCT;
+   END_VAR
+
+
+BEGIN
+	// Integron Poland EU - OXY-DIOS-DSP
+	// Optical dissolved oxygen sensor
+	// 
+	// https://www.tme.eu/en/Document/9d0bf7a4d6041739cc6d58df1cc838cb/OXY-DIOS-DSP-Manual-EN-v.1.33.pdf
+	// http://www.sensor.integron.pl
+	
+	"mb_station_block_header"(sb := #sb, mb_query := #mb_query);
+	#mb_query.mb_addr := #mb_addr;
+	
+	#mb_query.mode := #mb_query.c.mode.read;
+	#mb_query(data_addr := 41000, data_ptr := #read1);
+	
+	"mb_station_block_footer"(sb := #sb, mb_query := #mb_query);
+	
+END_FUNCTION_BLOCK
+

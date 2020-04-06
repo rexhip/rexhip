@@ -1,0 +1,42 @@
+﻿FUNCTION_BLOCK "Endress_proline_promass_83"
+{ S7_Optimized_Access := 'TRUE' }
+VERSION : 0.1
+   VAR_INPUT 
+      mb_addr : UInt;
+   END_VAR
+
+   VAR_OUTPUT 
+      device_ok : Bool;
+   END_VAR
+
+   VAR_IN_OUT 
+      mb_query : "mb_query";
+   END_VAR
+
+   VAR 
+      sb : "mb_station_block_udt";
+      data : Struct
+         mass_flow : Real;
+         temperature : Real;
+         totalizer : Real;
+         actual_system_condition : Int;   // 1->ok
+      END_STRUCT;
+   END_VAR
+
+
+BEGIN
+	// Endress - Proline Promass 83
+	// Web: https://portal.endress.com/wa001/dla/5000000/5862/000/05/BA00107DEN_1311.pdf
+	
+	"mb_station_block_header"(sb := #sb, mb_query := #mb_query);
+	#mb_query.mb_addr := #mb_addr;
+	
+	#mb_query(mode := #mb_query.c.read.holding_reg,
+	          data_addr := 5051, data_ptr := #data);
+	
+	"mb_station_block_footer"(sb := #sb, mb_query := #mb_query);
+	
+	#device_ok := #data.actual_system_condition = 1;
+	
+END_FUNCTION_BLOCK
+

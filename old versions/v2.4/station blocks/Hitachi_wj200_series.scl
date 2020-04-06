@@ -1,0 +1,260 @@
+﻿FUNCTION_BLOCK "hitachi_wj200_series"
+{ S7_Optimized_Access := 'TRUE' }
+VERSION : 0.1
+   VAR_INPUT 
+      mb_addr : USInt;
+      ref : Real;
+      acceleration_time : Real := 30.0;   // sec
+      deceleration_time : Real := 30.0;   // sec
+   END_VAR
+
+   VAR_OUTPUT 
+      output_frequency : Real;
+      output_current : Real;
+   END_VAR
+
+   VAR_IN_OUT 
+      mb_query : "mb_query";
+   END_VAR
+
+   VAR 
+      sb : "mb_station_block_udt";
+      save_param : Bool;
+      read1 : Struct
+         output_frequency : UDInt;   // 0.01 [Hz]
+         output_current : UInt;   // 0.1 [A]
+         rotation_direction : Int;   // 0: Stopping, 1: Forward, 2:Reverse
+      END_STRUCT;
+      read2 : Struct
+         torque : Int;   // [%]
+         output_voltage : UInt;   // 0.1 [V]
+         output_power : UInt;   // 0.1 [kW]
+         watt_hour : UDInt;   // 0.1 [wh]
+         elapsed_run_time : UDInt;   // [h]
+         elapsed_power_on_time : UDInt;   // [h]
+         "heat sink_temperature" : UDInt;   // 0.1 [℃]
+      END_STRUCT;
+      read3_Life_check : Struct
+         x08 : Bool;
+         x09 : Bool;
+         x10 : Bool;
+         x11 : Bool;
+         x12 : Bool;
+         x13 : Bool;
+         x14 : Bool;
+         x15 : Bool;
+         x00_Capacitor_on_main_circuit_board : Bool;
+         x01_cooling_fan : Bool;
+         x02 : Bool;
+         x03 : Bool;
+         x04 : Bool;
+         x05 : Bool;
+         x06 : Bool;
+         x07 : Bool;
+      END_STRUCT;
+      read4_Ambient_temperature : Int;
+      read5_trip : Struct
+         cnt : UInt;
+         info : Array[1..3] of Struct
+            factor : UInt;
+            status : UInt;
+            frequency : DInt;
+            current : UInt;
+            voltage : UInt;
+            running_time : UDInt;   // [h] Cumulative running time at tripping
+            powerOn_time : UDInt;   // [h] Cumulative power-on time at tripping
+         END_STRUCT;
+      END_STRUCT;
+      read6_status : Struct
+         A : UInt;
+         B : UInt;   // 0: Stopping, 1: Running, 2: Tripping
+         C : UInt;
+      END_STRUCT;
+      read7 : Struct
+         x0_inverter_ready : Bool;
+         x1_forward : Bool;
+         x2_reverse : Bool;
+         x3_major_failure : Bool;
+         x4_data_writing_in_progress : Bool;
+         x5 : Bool;
+         x6 : Bool;
+         x7 : Bool;
+      END_STRUCT;
+      write1 : Struct
+         acceleration_time_1 { S7_SetPoint := 'True'} : UDInt := 3000;   // x0.01 sec
+         deceleration_time_1 { S7_SetPoint := 'True'} : UDInt := 3000;   // x0.01 sec
+      END_STRUCT;
+      write2_source : Struct
+         frequency_source { S7_SetPoint := 'True'} : UInt := 3;   // 3:Modbus
+         run_command_source { S7_SetPoint := 'True'} : UInt := 3;   // 3:Modbus
+      END_STRUCT;
+      write3_comm_error : Struct
+         communication_watchdog_timer { S7_SetPoint := 'True'} : UInt := 1000;   // 0.01 [sec.]
+         communication_error_action { S7_SetPoint := 'True'} : UInt := 4;
+      END_STRUCT;
+      write5 : Struct
+         x0_Run : Bool;
+         x1_Reverse : Bool;
+         x2_Trip : Bool;
+         x3_Reset : Bool;
+         x4 : Bool;
+         x5 : Bool;
+         x6 : Bool;
+         x7 : Bool;
+      END_STRUCT;
+      write6_DC_breaking : Struct
+         enable : UInt;   // 0 (disabling), 1 (enabling), 2 (output freq < [A052])
+         frequency : UInt;   // 0.01 [Hz]
+         wait_time : UInt;   // 0.1 [sec.]
+         force_during_deceleration : UInt;   // [%]
+         time_for_deceleration : UInt;   // 0.1 [sec.]
+      END_STRUCT;
+   END_VAR
+
+   VAR_TEMP 
+      tmp : Word;
+      write4_frequency : DInt;   // 0.01 [Hz]
+   END_VAR
+
+
+BEGIN
+	// Hitachi WJ200-series
+	// Manual Number: NT325X
+	// https://www.hitachi-america.us/supportingdocs/forbus/inverters/Support/WJ200_Instruction_NT325X.pdf
+	
+	"mb_station_block_header"(sb:=#sb, mb_query:=#mb_query);
+	#mb_query.mb_addr := #mb_addr;
+	
+	// --- Read queries
+	#mb_query.mode := #mb_query.c.read.holding_reg;
+	#mb_query(data_addr := 16#1001, data_ptr := #read1);
+	#mb_query(data_addr := 16#1010, data_ptr := #read2);
+	#mb_query(data_addr := 16#101d, data_ptr := #read3_Life_check);
+	#mb_query(data_addr := 16#134e, data_ptr := #read4_Ambient_temperature);
+	#mb_query(data_addr := 16#0011, data_ptr := #read5_trip);
+	#mb_query(data_addr := 16#0003, data_ptr := #read6_status);
+	
+	#output_frequency := UDINT_TO_REAL( #read1.output_frequency) / 100;
+	#output_current := UINT_TO_REAL( #read1.output_current) / 10;
+	
+	#mb_query(mode := #mb_query.c.read.discrete_output,
+	          data_addr := 16#0045,
+	          data_ptr := #read7);
+	
+	// --- Write queries ---
+	#write4_frequency := REAL_TO_DINT(#ref * 100);
+	#write1.acceleration_time_1 := REAL_TO_UDINT(#acceleration_time * 100);
+	#write1.deceleration_time_1 := REAL_TO_UDINT(#deceleration_time * 100);
+	
+	#mb_query.mode := #mb_query.c.write.holding_reg;
+	#mb_query(data_addr := 16#1103, data_ptr := #write1);
+	#mb_query(data_addr := 16#1201, data_ptr := #write2_source);
+	#mb_query(data_addr := 16#162e, data_ptr := #write3_comm_error);
+	#mb_query(data_addr := 16#0001, data_ptr := #write4_frequency);
+	#mb_query(data_addr := 16#1245, data_ptr := #write6_DC_breaking);
+	
+	// Save data to EEPROM. 
+	IF #save_param THEN
+	    #mb_query(mode := #mb_query.c.write.single_holding_reg,
+	              data_addr := 16#0900,
+	              data_ptr := #tmp);
+	    #save_param := NOT #mb_query.Done;
+	END_IF;
+	
+	#write5.x0_Run := #ref <> 0;
+	#mb_query(mode := #mb_query.c.write.discrete_output,
+	          data_addr := 16#0001,
+	          data_len := 4,
+	          data_ptr := #write5);
+	
+	"mb_station_block_footer"(sb := #sb, mb_query := #mb_query);
+	
+	(*
+	=== read6_status ===
+	.A
+	0: Initial status
+	2: Stopping
+	3: Running
+	4: Free-run stop
+	5: Jogging
+	6: DC braking
+	7: Retrying
+	8: Tripping
+	9: Undervoltage (UV), 
+	
+	.C
+	1: Stopping
+	2: Decelerating
+	3: Constant-speed operation
+	4: Accelerating
+	5: Forward rotation
+	6: Reverse rotation
+	7: Switching from fwd. to rev. rotation,
+	8: Switching from rev. to fwd. rotation,
+	9: Starting fwd.
+	10: Starting rev
+	
+	=== write3_comm_error.communication_error_action === 
+	0 (tripping), 
+	1 (tripping after decelerating and stopping the motor), 
+	2 (ignoring errors),
+	3 (stopping the motor after free-running),
+	4 (decelerating and stopping the motor) 
+	
+	=== Save data to EEPROM === 
+	The service life of the storage element of the inverter is 
+	limited to about 100,000 write operations.  Frequent use of 
+	the ENTER command may shorten its service life.
+	
+	=== read5_trip.info ===
+	.factor: 
+	00 No trip factor 0 
+	01 Over-current event while at constant speed 1 
+	02 Over-current event during deceleration 2 
+	03 Over-current event during acceleration 3 
+	04 Over-current event during other conditions 4 
+	05 Overload protection 5 
+	06 Braking resistor overload protection 6 
+	07 Overvoltage protection 7 
+	08 EEPROM error 8 
+	09 Undervoltage protection 9
+	10 Current detection error 10
+	11 CPU error 11
+	12 External trip 12
+	13 USP error 13
+	14 Ground-fault protection 14
+	15 Input overvoltage protection 15
+	21 Inverter thermal trip 21
+	22 CPU error 22
+	25 Main circuit error 25
+	30 Driver error 30
+	35 Thermistor error 35
+	36 Braking error 36
+	37 Safe Stop 37
+	38 Low-speed overload protection 38
+	40 Operator connection 40
+	41 Modbus communication error 41
+	43 Easy sequence error (invalid instruction) 43
+	44 Easy sequence error (invalid nesting count) 44
+	45 Easy sequence execution error 1 45
+	50 Easy sequence user trip 0 to 9, 50 to 59
+	60 Option error 0 to 9, 60 to 69
+	80 Encoder disconnection 80
+	81 Excessive speed 81
+	83 Position control range trip 83
+	
+	.status
+	0: Resetting 
+	1: Stopping 
+	2: Decelerating 
+	3: Constant-speed operation 
+	4: Accelerating 
+	5: Operating at zero frequency 
+	6: Starting 
+	7: DC braking 
+	8: Overload restricted 
+	
+	*)
+	
+END_FUNCTION_BLOCK
+

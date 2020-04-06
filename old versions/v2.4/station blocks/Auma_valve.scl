@@ -1,0 +1,75 @@
+FUNCTION_BLOCK "Auma_valve"
+{ S7_Optimized_Access := 'TRUE' }
+VERSION : 0.1
+   VAR_INPUT 
+      mb_addr : UInt;
+   END_VAR
+
+   VAR_IN_OUT 
+      mb_query : "mb_query";
+   END_VAR
+
+   VAR 
+      sb : "mb_station_block_udt";
+      read : Struct
+         status : Struct
+            x08_torque_sw_closed : Bool;
+            x09_torque_sw_open : Bool;
+            x10_limit_sw_closed : Bool;
+            x11_limit_sw_open : Bool;
+            x12_sel_sw_local : Bool;
+            x13_sel_sw_remote : Bool;
+            x14_phase_fault : Bool;
+            x15_therminal_fault : Bool;
+            x00_falt : Bool;
+            x01_warning : Bool;
+            x02_running_close : Bool;
+            x03_running_open : Bool;
+            x04_not_ready_remote : Bool;
+            x05_setpoint_reached : Bool;
+            x06_end_p_clossed : Bool;
+            x07_end_p_open : Bool;
+         END_STRUCT;
+         actual_position : UInt;
+         z : Array[1..2] of Word;
+         ain_1 : UInt;
+         torque : UInt;
+      END_STRUCT;
+      write : Struct
+         cmd : Struct
+            z : Byte;
+            x0_open : Bool;
+            x1_close : Bool;
+            x2_use_setpoint : Bool;
+            x3_reset : Bool;
+            x4 : Bool;
+            x5 : Bool;
+            x6 : Bool;
+            x7 : Bool;
+         END_STRUCT;
+         setpoint : UInt;
+      END_STRUCT;
+   END_VAR
+
+
+BEGIN
+	// Auma actuator controls
+	// AC 01.2/ACExC 01.2 Modbus RTU
+	//
+	// http://www1.auma.com/uploads/media/sp_import2/handbuecher/
+	// steuerungen/hb_ac2_modbus_geraeteintegration_en.pdf
+	
+	"mb_station_block_header"(sb := #sb, mb_query := #mb_query);
+	#mb_query.mb_addr := #mb_addr;
+	
+	#mb_query(mode := #mb_query.c.read.input_reg,
+	          data_addr := 16#03E8,
+	          data_ptr := #read); // p.10
+	
+	#mb_query(mode := #mb_query.c.write.holding_reg,
+	          data_addr := 16#03E8,
+	          data_ptr := #write); // p.29
+	
+	"mb_station_block_footer"(sb := #sb, mb_query := #mb_query);
+	
+END_FUNCTION_BLOCK

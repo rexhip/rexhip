@@ -1,0 +1,78 @@
+﻿FUNCTION_BLOCK "Emerson_Micro_Motion"
+{ S7_Optimized_Access := 'TRUE' }
+VERSION : 0.1
+   VAR_INPUT 
+      mb_addr : UInt;
+   END_VAR
+
+   VAR_IN_OUT 
+      mb_query : "mb_query";
+   END_VAR
+
+   VAR 
+      sb : "mb_station_block_udt";
+      data : Struct
+         stat : Struct
+            x08_Primary_mA_output_saturated : Bool;
+            x09_Secondary_mA_output_saturated : Bool;
+            x10_Primary_mA_output_fixed : Bool;
+            x11_Secondary_mA_output_fixed : Bool;
+            x12_Density_overrange : Bool;
+            x13_Flowmeter_zeroing_failure : Bool;
+            x14_Zero_value_too_low : Bool;
+            x15_Zero_value_too_high : Bool;
+            x00_EPROM_checksum_failure : Bool;
+            x01_RAM_diagnostic_failure : Bool;
+            x02_Sensor_failure : Bool;
+            x03_Temperature_sensor_failure : Bool;
+            x04_Input_overrange : Bool;
+            x05_Frequency_pulse_output_saturated : Bool;
+            x06_Transmitter_not_configured : Bool;
+            x07_Realtime_interrupt_failure : Bool;
+            x24 : Bool;
+            x25 : Bool;
+            x26 : Bool;
+            x27 : Bool;
+            x28 : Bool;
+            x29 : Bool;
+            x30 : Bool;
+            x31 : Bool;
+            x16_Transmitter_electronics_failure : Bool;
+            x17_Flowmeter_zeroing_in_progress : Bool;
+            x18_Slug_flow : Bool;
+            x19_Power_reset_occurred : Bool;
+            x20_Transmitter_configuration_changed : Bool;
+            x21_Transmitter_initializing_warming_up : Bool;
+            x22 : Bool;
+            x23 : Bool;
+         END_STRUCT;
+         "Mass flow rate" : Real;
+         Density : Real;
+         Temperature : Real;
+         "Volume flow rate" : Real;
+         Pressure : Real;   // (internally derived)
+         "Mass total" : Real;
+         "Volume total" : Real;
+         "Mass inventory" : Real;
+         "Volume inventory" : Real;
+      END_STRUCT;
+   END_VAR
+
+
+BEGIN
+	// Emerson - Micro Motion Transmitters
+	// RFT9739, MVD DC, Modeo 1500, Model 1700, Model 2500, Model 2700, Series 3000
+	// 
+	// Web: http://www2.emersonprocess.com/siteadmincenter/
+	//      PM%20Micro%20Motion%20Documents/Modbus-Map-Manual-20001741.pdf
+	
+	"mb_station_block_header"(sb := #sb, mb_query := #mb_query);
+	#mb_query.mb_addr := #mb_addr;
+	
+	#mb_query.mode := #mb_query.c.read.holding_reg;
+	#mb_query(data_addr := 245, data_ptr := #data);
+	
+	"mb_station_block_footer"(sb := #sb, mb_query := #mb_query);
+	
+END_FUNCTION_BLOCK
+

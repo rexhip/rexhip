@@ -1,0 +1,37 @@
+﻿FUNCTION_BLOCK "Moxa_ioLogik_R1200"
+{ S7_Optimized_Access := 'TRUE' }
+VERSION : 0.1
+   VAR_INPUT 
+      mb_addr : UInt;
+   END_VAR
+
+   VAR_IN_OUT 
+      mb_query : "mb_query";
+   END_VAR
+
+   VAR 
+      sb : "mb_station_block_udt";
+      in : Array[0..15] of Bool;
+      out : Array[0..15] of Bool;
+   END_VAR
+
+
+BEGIN
+	// Moxa - ioLogik R1200
+	// 
+	// Web: https://www.moxa.com/doc/man/ioLogik_R1200_Series_UM_e3.1.pdf
+	
+	"mb_station_block_header"(sb := #sb, mb_query := #mb_query);
+	#mb_query.mb_addr := #mb_addr;
+	
+	#mb_query(mode := #mb_query.c.read.discrete_input,
+	          data_addr := 0,
+	          data_ptr := #in);
+	
+	#mb_query(mode := #mb_query.c.write.discrete_output,
+	          data_addr := 16#140,
+	          data_ptr := #out);
+	
+	"mb_station_block_footer"(sb := #sb, mb_query := #mb_query);
+END_FUNCTION_BLOCK
+

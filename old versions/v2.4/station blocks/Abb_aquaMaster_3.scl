@@ -1,0 +1,46 @@
+FUNCTION_BLOCK "abb_aquaMaster_3"
+{ S7_Optimized_Access := 'TRUE' }
+VERSION : 0.1
+   VAR_INPUT 
+      mb_addr : USInt;
+   END_VAR
+
+   VAR_IN_OUT 
+      mb_query : "mb_query";
+   END_VAR
+
+   VAR 
+      sb : "mb_station_block_udt";
+      flow : Real;
+      pressure : Real;
+      totaliser : Struct
+         fwd : DInt;
+         rev : DInt;
+         net : DInt;
+      END_STRUCT;
+   END_VAR
+
+
+BEGIN
+	// - ABB - AquaMaster 3 - Electromagnetic flowmeter
+	// - COI/FET2XX/MOD/TBLâ€“EN
+	// - https://library.e.abb.com/public/
+	//   91eead459bb0d349c12577fc0033d2b5/COI_FET2XX_MOD_TBL-EN.pdf
+	
+	"mb_station_block_header"(sb := #sb, mb_query := #mb_query); 
+	#mb_query.mb_addr := #mb_addr; // Device address.
+	
+	// Two queries, reading input registers. 
+	#mb_query.mode := #mb_query.c.read.input_reg; 
+	#mb_query(data_addr := 5017, data_ptr := #flow); 
+	#mb_query(data_addr := 5025, data_ptr := #pressure); 
+	
+	// One query, reading one section of holding registers. 
+	#mb_query.mode := #mb_query.c.read.holding_reg; 
+	#mb_query(data_addr := 12003, data_ptr := #totaliser ); 
+	
+	// Data length is automatically calculated. 
+	
+	"mb_station_block_footer"(sb := #sb, mb_query := #mb_query); 
+	
+END_FUNCTION_BLOCK

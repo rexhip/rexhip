@@ -1,6 +1,32 @@
 ﻿### Changelog:
 
-#### 3.1.0
+
+#### v3.2.0 (Apr 2020)
+- Muliple tcp-connections for one mb_client.
+- mb_client_ctrl, refoctoring code to fit the new muliple-tcp-connection api.
+- Query-range api, including mb_read_buffer, mb_buffer_get, mb_swap_word and
+  mb_little_endian.
+- mb_master_1200_ctrl, default timeout gain is increased from 2 to 3.
+- Improvment, mb_station_block_foother, bottom ORIGIN or instead of INSERT_QUERY.
+- Improvment, mb_client_ctrl. #connected_least_once set true after mb_client.
+- Fixed minor bug in mb_sequence_init introduced in v3.1.0, mode need to be set 
+  after the if-statement.
+- IP-addr, array of usint insted of bytes. This makes it easier to read ip when 
+  monitoring plc online.
+- Better comments of the code in mb_sequence.
+- [.z.sb.set_err] A variable for set all error flags on all sb's true.
+- [.z.sb.exec_all] Make all queries be execute right away, without switching
+  execution between different sb's.
+- Forwarding any error from sb to error on ctrl. (#mb_query.z.sb.err)
+- For mb_client_ctrl timeout limited to max 10s
+- Interface udt's.
+- Fast error detection on disconnect (mb_client_ctrl bottom mb_query.z.sb.set_err).
+- Condition for changing query-state: state <> EXEC_QUERY. mb_query, 
+  mb_station_block_header and mb_tcp_connection_foother. This is need for muliple
+  connection feature.
+- sb.conf.unit, transfered to mb_addr in mb_station_block_header.
+
+#### v3.1.0 (17 Oct 2019)
 - Fixed bug regarding read-only feature. When flag was set, the execution will 
   halt inside one sb, when a write-query is inserted.
 - Added some more start examples.
@@ -10,7 +36,7 @@
 - New sequence (state machine) interface, for low priority queries.
 - sid halt api. Makes it possible to stop sid from increment.
 
-#### 3.0.0
+#### v3.0.0 (11 Apr 2019)
 - New halt api, for slowing down execution for modbus tcp.
 - Replaced insert and insert2 with a state variable.
 - Rewrite of all three ctrl blocks for new state var.
@@ -26,7 +52,7 @@
 - Qid zero will not set req false, on client and master.
 - Change timeout variables on rtu ctrl.
 
-#### 2.5.0
+#### v2.5.0 (17 Feb 2019)
 - Moved from scl-files to Siemens library format. (v14)
 - Renamed some internal varsiables, like «sid»
 - Improved comments.
@@ -35,25 +61,25 @@
 - Station blocks, clean up.
 - OPC-UA checkboxes.
 
-#### 2.4.0
+#### v2.4.0 (25 Aug 2018)
 - Added the function block mb_delay_between_queries
 - modbus rtu: Parity error (80E1) and Framing error (80E2) included in the expression for comm.error.
 - Added mb_delay_between_queries, replaces mb_delay.
 - mb_query_bits and mb_delay moved to extended features.
 - Added mb_execute and mb_dataptr_eq_buffer to extended features.
 
-#### 2.3.4
+#### v2.3.4 (22 Mar 2018)
 - Bug fix in mb_delay.
 - swap_real is removed from library.
 - Updates to documentation.
 - New SB's
 
-#### 2.3.3
+#### v2.3.3 (20 Feb 2018)
 - mb_delay is now part of the library. The function is included in tcp example.
 - For modbus tcp, setting qid to zero will not disconnect.
 - New station blocks
 - Documentation improvments.
 
-#### 2.3.2
+#### v2.3.2 (5 Jan 2018)
 - Refactoring mb_query_bits, and fixed a bug.
 - Added mb_delay function inside extend pack.

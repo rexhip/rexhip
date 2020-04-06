@@ -1,0 +1,388 @@
+TYPE "mettlerToledoInd560Udt"
+VERSION : 0.1
+   STRUCT
+      readMsgSlot { ExternalWritable := 'False'} : Array[1..4] of Struct
+         cmdRespons { ExternalWritable := 'False'} : Struct
+            FP_1 { ExternalWritable := 'False'} : Bool;
+            FP_2 { ExternalWritable := 'False'} : Bool;
+            FP_3 { ExternalWritable := 'False'} : Bool;
+            FP_4 { ExternalWritable := 'False'} : Bool;
+            FP_5 { ExternalWritable := 'False'} : Bool;
+            data_integrity { ExternalWritable := 'False'} : Bool;
+            cmdAck1 { ExternalWritable := 'False'} : Bool;
+            cmdAck2 { ExternalWritable := 'False'} : Bool;
+         END_STRUCT;
+         reserved { ExternalWritable := 'False'} : Byte;   // volt
+         data { ExternalWritable := 'False'} : Real;
+         scale_status { ExternalWritable := 'False'} : Struct
+            x08_Enter_Key { ExternalWritable := 'False'} : Bool;
+            x09_Input_1 { ExternalWritable := 'False'} : Bool;
+            x10_Input_2 { ExternalWritable := 'False'} : Bool;
+            x11_Input_3 { ExternalWritable := 'False'} : Bool;
+            x12_Motion { ExternalWritable := 'False'} : Bool;
+            x13_Net_Mode { ExternalWritable := 'False'} : Bool;
+            x14_Data_Integrity_2 { ExternalWritable := 'False'} : Bool;
+            x15_Data_OK { ExternalWritable := 'False'} : Bool;
+            x00_Target_1 { ExternalWritable := 'False'} : Bool;
+            x01_Comparator_1 { ExternalWritable := 'False'} : Bool;
+            x02_Targe_2 { ExternalWritable := 'False'} : Bool;
+            x03_Comparator_2 { ExternalWritable := 'False'} : Bool;
+            x04_Target_3 { ExternalWritable := 'False'} : Bool;
+            x05_Alway_true { ExternalWritable := 'False'} : Bool;
+            x06_TE_bit_1 { ExternalWritable := 'False'} : Bool;
+            x07_TE_bit_2 { ExternalWritable := 'False'} : Bool;
+         END_STRUCT;
+      END_STRUCT;
+      writeMsgSlot { ExternalWritable := 'False'} : Array[1..4] of Struct
+         cmd { ExternalWritable := 'False'} : UInt;
+         data { ExternalWritable := 'False'} : Real;
+      END_STRUCT;
+      run { ExternalWritable := 'False'} : Struct   // Data calculated from readMsgSlot
+         PF { ExternalWritable := 'False'} : Array[1..4] of USInt;   // Floating point input indication
+         cmdAck { ExternalWritable := 'False'} : Array[1..4] of USInt;
+      END_STRUCT;
+      occupiedMsgSlots { ExternalWritable := 'False'} : Array[1..4] of Bool;
+      queryDone { ExternalWritable := 'False'} : Struct
+         read { ExternalAccessible := 'False'; ExternalVisible := 'False'; ExternalWritable := 'False'} : Bool;
+         write { ExternalAccessible := 'False'; ExternalVisible := 'False'; ExternalWritable := 'False'} : Bool;
+      END_STRUCT;
+   END_STRUCT;
+
+END_TYPE
+
+
+
+FUNCTION "releaseMsgSlot" : Void
+{ S7_Optimized_Access := 'TRUE' }
+VERSION : 0.1
+   VAR_IN_OUT 
+      slot : USInt;
+      mem : Array[*] of Bool;
+   END_VAR
+
+   VAR_TEMP 
+      c : Int;
+   END_VAR
+
+
+BEGIN
+	
+	IF #slot <> 0 THEN
+	    #mem[#slot] := false;
+	END_IF;
+END_FUNCTION
+
+FUNCTION "reqMsgSlot" : USInt
+{ S7_Optimized_Access := 'TRUE' }
+VERSION : 0.1
+   VAR_IN_OUT 
+      mem : Array[*] of Bool;
+   END_VAR
+
+   VAR_TEMP 
+      c : Int;
+   END_VAR
+
+
+BEGIN
+	// Find first entry inside mem that is false.
+	// set the entry to true and return the index. 
+	
+	#reqMsgSlot := 0;
+	FOR #c := LOWER_BOUND(ARR := #mem, DIM := 1) TO
+	    UPPER_BOUND(ARR := #mem, DIM := 1)
+	DO
+	    IF NOT #mem[#c] THEN
+	        #mem[#c] := true;
+	        #reqMsgSlot := INT_TO_USINT(#c);
+	        RETURN;
+	    END_IF;
+	END_FOR;
+	
+END_FUNCTION
+
+FUNCTION_BLOCK "mettler_toledo_IND560_loadTargetValue"
+{ S7_Optimized_Access := 'TRUE' }
+VERSION : 0.1
+   VAR_INPUT 
+      iValue : Real;
+   END_VAR
+
+   VAR_OUTPUT 
+      qDone : Bool;
+   END_VAR
+
+   VAR_IN_OUT 
+      M : "mettlerToledoInd560Udt";
+      sb : "mb_station_block_udt";
+   END_VAR
+
+   VAR 
+      state { ExternalAccessible := 'False'; ExternalVisible := 'False'; ExternalWritable := 'False'} : Int;
+      old_value : Real;
+      slot { ExternalAccessible := 'False'; ExternalVisible := 'False'; ExternalWritable := 'False'} : USInt;
+   END_VAR
+
+   VAR CONSTANT 
+      NONE_AVAILABLE : USInt := 0;
+   END_VAR
+
+
+BEGIN
+	// Load target value, for scale 1. Page 143, table B-6
+	
+	CASE #state OF
+	        
+	    0:  // Waiting for start.
+	        #qDone := false;
+	        #state +=
+	        BOOL_TO_INT(#old_value <> #iValue);
+	        
+	    1:  // Wait for available msg. slot
+	        #slot := "reqMsgSlot"(#M.occupiedMsgSlots);
+	        #state += BOOL_TO_INT(#slot <> #NONE_AVAILABLE);
+	        
+	    2:  // #1 PLC loads floating point value first
+	        #M.writeMsgSlot[#slot].cmd := 0;
+	        #M.writeMsgSlot[#slot].data := #iValue;
+	        #state += 1;
+	    3:
+	        #state += BOOL_TO_INT(#M.queryDone.write);
+	        
+	    4:  // #2 PLC sends command to set target 1 cutoff value 
+	        #M.writeMsgSlot[#slot].cmd := 110;
+	        #state += 1;
+	    5:
+	        #state += BOOL_TO_INT(#M.queryDone.write);
+	        
+	    6:  // #3 IND560 terminal sees new command, loads the value into the target
+	        //    and ends a return message to indicate the new target value.
+	        #state +=
+	        BOOL_TO_INT( #M.queryDone.read
+	                    AND  #M.run.cmdAck[#slot] = 1
+	                    AND #M.run.PF[#slot] = 13
+	                    AND #M.readMsgSlot[#slot].data = #M.writeMsgSlot[#slot].data);
+	        
+	    7:  // #4  PLC instructs IND560 terminal to start “using” new target value
+	        #M.writeMsgSlot[#slot].cmd := 114;
+	        #state += 1;
+	    8:
+	        #state += BOOL_TO_INT(#M.queryDone.write);
+	        
+	    9:  // #5 IND560 terminal sees new command
+	        #M.writeMsgSlot[#slot].cmd := 0;
+	        
+	        #state +=
+	        BOOL_TO_INT(#M.queryDone.read
+	                    AND #M.run.cmdAck[#slot] = 2
+	                    AND #M.run.PF[#slot] = 30
+	                    AND #M.readMsgSlot[#slot].data = 0);
+	        
+	    ELSE: // Back to start.
+	        #M.occupiedMsgSlots[#slot] := false; // Release msg. slot.
+	        #state := 0;
+	        #qDone := true;
+	        // The start signal should need to be set back false before next
+	        // exec. else the sequence will start over.
+	END_CASE;
+	#old_value := #iValue;
+	
+	// 
+	IF #sb.out.error_comm THEN
+	    #state := 0;
+	    IF #slot <> #NONE_AVAILABLE THEN
+	        #M.writeMsgSlot[#slot].cmd := 0;
+	        "releaseMsgSlot"(slot := #slot, mem := #M.occupiedMsgSlots);
+	    END_IF;
+	END_IF;
+	
+END_FUNCTION_BLOCK
+
+FUNCTION_BLOCK "mettler_toledo_IND560"
+{ S7_Optimized_Access := 'TRUE' }
+VERSION : 0.1
+   VAR_IN_OUT 
+      mb_query : "mb_query";
+   END_VAR
+
+   VAR DB_SPECIFIC
+      mb_addr : UInt := 255;
+      sb : "mb_station_block_udt";
+   END_VAR
+   VAR 
+      M : "mettlerToledoInd560Udt";   // Shared data
+      loadTargetValue : "mettler_toledo_IND560_loadTargetValue";
+      s : USInt;
+   END_VAR
+
+   VAR_TEMP 
+      c : Int;
+   END_VAR
+
+
+BEGIN
+	// Mettler Toledo IND560 - Weighing Terminal
+	
+	// WARNING: This SB is just a draft and the block probably include errors !!
+	
+	// Necessary settings: ()
+	// PLC -> Eth/IP - Modbus TCP -> IP-address
+	// PLC -> Eth/IP - Modbus TCP -> Subnet-mask
+	// PLC -> Data Format -> Byte order : standard
+	// PLC -> Data Format -> Format     : Floating Point 
+	
+	// - Modbus tcp:
+	//   https://bradysystems.com/wp-content/uploads/2012/10/IND560-PLC-Interface-Manual.pdf
+	// - Product overview:
+	//   http://www.atsackfillers.mobi/assets/ind560_ug_en_71209396_r04.pdf
+	
+	REGION Modbus
+	    "mb_station_block_header"(sb := #sb, mb_query := #mb_query);
+	    #mb_query.mb_addr := #mb_addr;
+	    
+	    #mb_query(mode := #mb_query.c.mode.read,
+	              data_addr := 400001,
+	              data_ptr := #M.readMsgSlot,
+	              Done => #M.queryDone.read);
+	    
+	    #mb_query(mode := #mb_query.c.mode.write,
+	              data_addr := 401026,
+	              data_ptr := #M.writeMsgSlot,
+	              Done => #M.queryDone.write);
+	    
+	    "mb_station_block_footer"(sb := #sb, mb_query := #mb_query);
+	END_REGION
+	
+	REGION Read data-fix     
+	    // Extract bits in word in to a numbers.
+	    FOR #c := 1 TO 4 DO
+	        #M.run.PF[#c].%X0 := #M.readMsgSlot[#c].cmdRespons.FP_1;
+	        #M.run.PF[#c].%X1 := #M.readMsgSlot[#c].cmdRespons.FP_2;
+	        #M.run.PF[#c].%X2 := #M.readMsgSlot[#c].cmdRespons.FP_3;
+	        #M.run.PF[#c].%X3 := #M.readMsgSlot[#c].cmdRespons.FP_4;
+	        #M.run.PF[#c].%X4 := #M.readMsgSlot[#c].cmdRespons.FP_5;
+	        
+	        #M.run.cmdAck[#c].%X0 := #M.readMsgSlot[#c].cmdRespons.cmdAck1;
+	        #M.run.cmdAck[#c].%X1 := #M.readMsgSlot[#c].cmdRespons.cmdAck2;
+	    END_FOR;
+	END_REGION
+	
+	
+	#loadTargetValue(M := #M, sb := #sb);
+	
+	
+	
+	
+	#M.queryDone.write := false;
+	#M.queryDone.read := false;
+	
+END_FUNCTION_BLOCK
+
+FUNCTION_BLOCK "example_mettler"
+{ S7_Optimized_Access := 'TRUE' }
+VERSION : 0.1
+   VAR 
+      mb_query : "mb_query";
+      mb_clinent_ctrl : "mb_client_ctrl";
+      error : Bool;
+      mb_delay_between_queries : "mb_delay_between_queries";
+   END_VAR
+
+   VAR_TEMP 
+      ip : Array[1..4] of Byte;
+   END_VAR
+
+
+BEGIN
+	#ip[1] := 192;
+	#ip[1] := 168;
+	#ip[1] := 1;
+	#ip[1] := 3;
+	#mb_clinent_ctrl(interface := "Local~PROFINET_interface_1",
+	                 conn_id := 123,
+	                 ip_addr := #ip,
+	                 tcp_port := 502,
+	                 timeout := T#2S,
+	                 Error => #error,
+	                 mb_query := #mb_query);
+	
+	#mb_delay_between_queries(delay := T#200ms, mb_query := #mb_query);
+	
+	"mettler_toledo_IND560_DB".loadTargetValue.iValue := 22;
+	
+	"mettler_toledo_IND560_DB"(mb_query := #mb_query);
+	
+	
+	
+END_FUNCTION_BLOCK
+
+FUNCTION "_not_in_use" : Void
+{ S7_Optimized_Access := 'TRUE' }
+VERSION : 0.1
+   VAR_TEMP 
+      dommy_not_in_use : Struct
+         x08_Start_abort_target_1 : Bool;
+         x09_Message_display_mode_1 : Bool;
+         x10_Message_display_mode_1 : Bool;
+         x11_Message_display_mode_1 : Bool;
+         x12_Output_1 : Bool;
+         x13_Output_2 : Bool;
+         x14_Output_3 : Bool;
+         x15_Load_target : Bool;
+         x00_Select_1 : Bool;
+         x01_Select_2 : Bool;
+         x02_Select_3 : Bool;
+         x03_Load_tare_1 : Bool;
+         x04_Clear_tare_1 : Bool;
+         x05_Tare_1 : Bool;
+         x06_Print_1 : Bool;
+         x07_Zero_1 : Bool;
+      END_STRUCT;
+   END_VAR
+
+
+BEGIN
+END_FUNCTION
+
+FUNCTION "mettler_toledo_IND560_DOC" : Void
+{ S7_Optimized_Access := 'TRUE' }
+VERSION : 0.1
+
+BEGIN
+	(* 
+	    === Floating Point Input Indication ===
+	    0   Gross Weight       
+	    1   Net Weight       
+	    2   Tare Weight
+	    3   Fine Gross Weight
+	    4   Fine Net Weight
+	    5   Fine Tare Weight 
+	    6   Not used 
+	    7   Custom field #1  
+	    8   Custom field #2
+	    9   Custom field #3
+	    10  Custom field #4 
+	    11  Low-pass filter frequency 
+	    12  Notch filter frequency 
+	    13  Target value
+	    14  +Tolerance value
+	    15  Fine feed value 
+	    16  -Tolerance value 
+	    17  + and - Tolerance values 
+	    18  Primary units, low increment size 
+	    19  Weigh-in target value 
+	    20  Weigh-in fine feed value 
+	    21  Weigh-in spill value  
+	    22  Weigh-in +tolerance value 
+	    23  Weigh-in -tolerance value 
+	    24  Weigh-out target value
+	    25  Weigh-out fine feed value 
+	    26  Weigh-out spill value 
+	    27  Weigh-out +tolerance value 
+	    28  Weigh-out -tolerance value
+	    29  Last indicator error code 
+	    30  No data response command successful 
+	    31  Invalid Command
+	*)
+END_FUNCTION
+

@@ -1,5 +1,9 @@
 ﻿### Changelog:
 
+#### v3.3.0 (May 2020)
+- Change ctrl to use mode 0, 1 and 2, so error code 8188 does't appear, this may
+  be a issue on plc's with older firmware.
+- rtu automatic timeout caluction is changed and simplifed.
 
 #### v3.2.0 (Apr 2020)
 - Muliple tcp-connections for one mb_client.

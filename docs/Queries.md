@@ -96,8 +96,8 @@ IF ___conditon_of_exec_query___ THEN
 END_IF;
 // When then number of queries changes with different plc-scan, 
 // like above. Then the library gets a little "hiccup". If the 
-// if-statement changes rapidly, then the example can break the
-// whole modbus application.	  	  	  
+// if-statement changes rapidly, then the example can break part
+// of modbus application.	  	  	  
 ```
 ### Discreate queries 
 

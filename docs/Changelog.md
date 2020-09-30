@@ -1,5 +1,18 @@
 ﻿### Changelog:
 
+#### v3.4.0 (Sep 2020)
+- Bug fix of new feature introduced in v3.3.0, where one client can connect to 
+  multiple servers. The bug affect the blocks mb_query_range, mb_query_bits and 
+  mb_execute. It doesn't affect use of rtu or regular tcp. Code snippet added in 
+  mentioned blocks: mb_query.z.run.state =<> EXEC_QUERY.
+- Change to mb_watchdog for avoiding compiling warning.
+- Reorganization start examples folders.
+- Change the name master to ...
+- Replaced termology master and slave with more inclusiv language, they are now 
+  named leader and follower. This is in line with what the big tec companies 
+  allready have done. The controller blocks are also renamed, new names are 
+  mb_rtu1200_ctrl, mb_rtu1500_ctrl and mb_tcp_ctrl
+
 #### v3.3.0 (May 2020)
 - Change ctrl to use mode 0, 1 and 2, so error code 8188 does't appear, this may
   be a issue on plc's with older firmware.
@@ -8,8 +21,8 @@
 #### v3.2.0 (Apr 2020)
 - Muliple tcp-connections for one mb_client.
 - mb_client_ctrl, refoctoring code to fit the new muliple-tcp-connection api.
-- Query-range api, including mb_read_buffer, mb_buffer_get, mb_swap_word and
-  mb_little_endian.
+- Query-range api, including mb_query_range, mb_read_buffer, mb_buffer_get, 
+  mb_swap_word and mb_little_endian.
 - mb_master_1200_ctrl, default timeout gain is increased from 2 to 3.
 - Improvment, mb_station_block_foother, bottom ORIGIN or instead of INSERT_QUERY.
 - Improvment, mb_client_ctrl. #connected_least_once set true after mb_client.

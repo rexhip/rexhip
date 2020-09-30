@@ -1,9 +1,12 @@
 ﻿### Changelog for station blocks:
 
+#### 3.4.0
+ - Flygt Concertor DP and XPC		Added
+
 #### 3.3.0
- - Promient_Dulcometer			Added.
- - flow_udt.	 			Added.
- - Altivar_21_simple			Added.
+ - Promient_Dulcometer			Added
+ - flow_udt.	 			Added
+ - Altivar_21_simple			Added
 
 #### 3.2.0
  - Schneider_enerlin_x_ife_lv43001	Added
@@ -15,7 +18,7 @@
 
 #### 3.1.0
  - Danfoss_VLT: 			Refactoring block.
- - Siemens PAC3200:			Removed the query that read the serial-number.
+ - Siemens PAC3200:			Removed the query that read the serial-number
  - Schneider_Altivar_21:		Refoctoring block.
  - Epever_solar_charge_controller	New 
  - Schneider_power_meter		New, replacing Schneider_PM556x_series.

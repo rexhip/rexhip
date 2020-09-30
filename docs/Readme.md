@@ -3,7 +3,7 @@
 The library makes it possible to split a program into reusable function blocks for each modbus device. This blocks can later be reused and combined in new programs. Together with a clean and simple api this speed up devopment significantly. Other features include:
 
  - Reduce idle time, by skipping queries that has led to recurring timeouts, retries will be done occasionally.
- - More then 70 ready to use device profiles (Station blocks), many similarities to profibus gsd-files.
+ - More then 70 ready to use device profiles (Station blocks), similarities to profibus gsd-files.
  - Logging features for development and debugging.
  - Extend on the modbus blocks that comes along in TIA-portal, it isn't an attempt to reinvent the wheel, but to extend functionality.
  - Help share the bus efficient between the devices.
@@ -19,13 +19,13 @@ The library makes it possible to split a program into reusable function blocks f
                 baud := 19200, // bps                
                 mb_query := #mb_query ); 
 
-#mb_query(mb_addr := #mb_addr,                  
+#mb_query(mb_addr := 1,                  
           mode := #mb_query.c.read.input_reg, 
           data_addr := 13,                      
           data_ptr := #resault_data_1);                   
 
-#mb_query(mb_addr := #mb_addr,                 
-          mode := #mb_query.c.write.holding_reg, 
+#mb_query(mb_addr := 2,                 
+          mode := #mb_query.c.read.holding_reg, 
           data_addr := 55,                            
           data_ptr := #resault_data_2);
 		  
@@ -44,7 +44,7 @@ The library makes it possible to split a program into reusable function blocks f
 This six lines of code bellow and the variable definition (not shown) is all that is needed to read the data from the a MAG 6000 device.
 
 ```pascal
-// Siemens - SITRANS F M MAG 6000
+// Siemens - SITRANS MAG 6000
 
 "mb_station_block_header"(sb := #sb, mb_query := #mb_query);
 #mb_query.mb_addr := #mb_addr;
@@ -85,7 +85,7 @@ This SB can be combined with the one above, and any others in the library. It's 
 #mb_query(data_addr := 16#fa00, data_ptr := #write1);
 
 "mb_station_block_footer"(sb := #sb, mb_query := #mb_query);
-```	
+```
 
 - Author: Ola Bjørnli - [Contact](http://sn7.no/contact/rexhip)
 - The library is part of [Siemens Open libarary](http://openplclibrary.com) 

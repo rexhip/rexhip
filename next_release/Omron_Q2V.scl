@@ -33,6 +33,7 @@ VERSION : 0.1
 
 BEGIN
 	(* Omron - Q2V - AC Micro Drive
+	   (Yaskawa)
 	      DOC: https://assets.omron.eu/downloads/manual/en/v4/q2v_technical_manual_en.pdf            
 	      
 	      Author: qwazee from Siemens forum, 

@@ -1,5 +1,8 @@
 ﻿### Changelog:
 
+#### v3.4.1 (Jan 2021)
+- Recompile all blocks with TIA-v16
+
 #### v3.4.0 (Sep 2020)
 - Bug fix of new feature introduced in v3.3.0, where one client can connect to 
   multiple servers. The bug affect the blocks mb_query_range, mb_query_bits and 

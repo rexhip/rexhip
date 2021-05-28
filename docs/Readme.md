@@ -1,12 +1,10 @@
-
-```
-May 2021
-In version 3.4.1 some blocks has several versions of the same type, for this reason some programs will not compile. A new version of the library will be released when TIA-portal v17 is out, in the meanwhile use v3.4.2 in the lib folder. Thanks to cardinal-tom for reporting this issue.
-```
+>In version 3.4.1 some blocks has several versions of the same type, for this reason some programs will not compile. A new version of the library will be released when TIA-portal v17 is out, in the meanwhile use v3.4.2 in the lib folder. Thanks to @cardinal-tom for reporting this issue.
 
 ### Extended modbus library for Siemens PLC's.
 
-The library makes it possible to split a program into reusable function blocks for each modbus device. This blocks can later be reused and combined in new programs. Together with a clean and simple api this speed up devopment significantly. Other features include:
+The library makes it possible to split a program into reusable function blocks for each 
+modbus device. This blocks can later be reused and combined in new programs. Together 
+with a clean and simple api this speed up devopment significantly. Other features include:
 
  - Reduce idle time, by skipping queries that has led to recurring timeouts, retries will be done occasionally.
  - More then 70 ready to use device profiles (Station blocks), similarities to profibus gsd-files.
@@ -47,7 +45,8 @@ The library makes it possible to split a program into reusable function blocks f
 
 
 #### Station block (SB) example 
-This six lines of code bellow and the variable definition (not shown) is all that is needed to read the data from the a MAG 6000 device.
+This six lines of code bellow and the variable definition (not shown) is all that is needed 
+to read the data from the a MAG 6000 device.
 
 ```pascal
 // Siemens - SITRANS MAG 6000
@@ -70,7 +69,9 @@ This six lines of code bellow and the variable definition (not shown) is all tha
 
 
 #### Another station block example 
-This SB can be combined with the one above, and any others in the library. It's also fine to have more instaces of one SB in the same program. New queries can be added without changing anything in existing program. 
+This SB can be combined with the one above, and any others in the library. It's also fine to 
+have more instaces of one SB in the same program. New queries can be added without changing 
+anything in existing program. 
 
 ```pascal
 // Telemecanique (Schneider) - Altivar 21 inverter - VFD (AC-drive)

@@ -1,3 +1,9 @@
+
+```
+May 2021
+In version 3.4.1 some blocks has several versions of the same type, for this reason some programs will not compile. A new version of the library will be released when TIA-portal v17 is out, in the meanwhile use v3.4.2 in the lib folder. Thanks to cardinal-tom for reporting this issue.
+```
+
 ### Extended modbus library for Siemens PLC's.
 
 The library makes it possible to split a program into reusable function blocks for each modbus device. This blocks can later be reused and combined in new programs. Together with a clean and simple api this speed up devopment significantly. Other features include:

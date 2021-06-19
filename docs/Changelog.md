@@ -1,5 +1,8 @@
 ﻿### Changelog:
 
+#### v3.4.2 (June 2021)
+- Recompile all blocks again with TIA-v16. v3.4.1 was not properly done.
+
 #### v3.4.1 (Jan 2021)
 - Recompile all blocks with TIA-v16
 

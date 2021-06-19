@@ -1,7 +1,10 @@
 ﻿### Changelog:
 
 #### v3.4.2 (June 2021)
-- Recompile all blocks again with TIA-v16. v3.4.1 was not properly done.
+- Recompile all blocks again with TIA-v16. In version v3.4.1 some blocks had 
+  several versions of the same type, for this reason some programs will not 
+  compile. v3.4.2 is fully compatible with TIA-portal v17. No changes had been 
+  done to the code.
 
 #### v3.4.1 (Jan 2021)
 - Recompile all blocks with TIA-v16

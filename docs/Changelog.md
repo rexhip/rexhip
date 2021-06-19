@@ -1,15 +1,15 @@
 ﻿### Changelog:
 
-#### v3.4.2 (June 2021)
-- Recompile all blocks again with TIA-v16. In version v3.4.1 some blocks had 
-  several versions of the same type, for this reason some programs will not 
-  compile. v3.4.2 is fully compatible with TIA-portal v17. No changes had been 
-  done to the code.
+#### v3.4.2 (June 2021, tia.16)
+- Recompile all blocks again with TIA-v16. This version is also fully 
+  compatible with TIA-portal v17. No changes had been done to the code.
+- In the pevious version v3.4.1, some blocks had several versions of the same 
+  type, for this reason some programs will not compile.
 
 #### v3.4.1 (Jan 2021)
 - Recompile all blocks with TIA-v16
 
-#### v3.4.0 (Sep 2020)
+#### v3.4.0 (Sep 2020, tia.14)
 - Bug fix of new feature introduced in v3.3.0, where one client can connect to 
   multiple servers. The bug affect the blocks mb_query_range, mb_query_bits and 
   mb_execute. It doesn't affect use of rtu or regular tcp. Code snippet added in 

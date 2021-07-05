@@ -19,7 +19,7 @@ The library makes it possible to split a program into reusable function blocks f
                 baud := 19200, // bps                
                 mb_query := #mb_query ); 
 
-//  Use mb_rtu1200_ctrl for s7-1200 plc
+//  Use mb_rtu1200_ctrl for S7-1200
 
 #mb_query(mb_addr := 1,                  
           mode := #mb_query.c.read.input_reg, 

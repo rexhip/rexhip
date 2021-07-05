@@ -6,6 +6,7 @@
   workaround regarding some users repporting compilling error about access to
   optimized memory in mb_query.
 - Clean up some comments.
+- Removed old versions, download was all to huge 31MB.
 
 #### v3.4.2 (June 2021, tia.16)
 - Recompile all blocks again with TIA-v16. This version is also fully 

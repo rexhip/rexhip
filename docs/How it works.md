@@ -6,7 +6,7 @@
 
  3. Then the query will start with transfer its parameter to a internal memory. If it's a write query it will also serialize and transfer the content of data_ptr, into an internal buffer. When this is done, a flag is set indicating that a new query is ready to be processed.
 
- 4. The «ctrl», (mb_master_1200_ctrl, mb_master_1500_ctrl or mb_client_ctrl) is the FB that contain the modbus blocks that come along with TIA-portal. The FB see that a query is ready and it will process it. This may take many plc-scans, when the result come back from the modbus device, the controller will send a message to the query about the arriving result.
+ 4. The «ctrl», (mb_rtu1200_ctrl, mb_rtu1500_ctrl or mb_tcp_ctrl) is the FB that contain the modbus blocks that come along with TIA-portal. The FB see that a query is ready and it will process it. This may take many plc-scans, when the result come back from the modbus device, the controller will send a message to the query about the arriving result.
 
  5. The query who inserted the query, gets the message about the finished resualt. To be sure that the right query recive the resualt, the internal query parameters is compared to current query parameters. 
 

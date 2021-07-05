@@ -1,6 +1,6 @@
 ### Station blocks (SB)
 
-The library introduce a concept called station blocks (SB). A SB correspond to GSD-file for profibus, it's a device profiles for one specific modbus device, containing all the queries needed to communicate with that specific modbus device. Setup modbus communication with a VFD (Variable-frequency drive) for example, can take a work day or two. The idea is that, this can be done once and the SB’s can be shared and reused in new applications. Different SB's can easily be combined in the same application, and there can be muliple instances of each SB. The library includes many predefined SB’s, that is freely available, new contributions to the repository are welcome. 
+The library introduce a concept called station blocks (SB). A SB correspond to GSD-file for profibus, it's a device profiles for one specific modbus device, containing all the queries needed to communicate with that specific modbus device. Setup modbus communication with a VFD (Variable-frequency drive) for example, can take a work day or two. The idea is that, it can be done once and the SB’s can be shared and reused in new applications. Different SB's can easily be combined in the same application, and there can be muliple instances of each SB. The library includes many predefined SB’s, that is freely available, new contributions to the repository are welcome. 
 
 A SB can plug into both modbus tcp and modbus rtu application, this is quite convenient if a tcp-rtu-gateway is used.
 
@@ -45,11 +45,6 @@ END_IF;
 
 #### Features of mb_station_block_header and mb_station_block_footer
 
-- sb.conf.disable: If eneabled all queries will be skipped and query execution is send to the next SB.
-- sb.conf.read_only: Only read queries will be executed. If a write query is inserted, it will later be reject at the footer, and the query execution is sent to the next SB. The internal SB counter will be increaded by one.
-- sb.conf.max_comm_error: Max number of repeating communication error before the communcation error flag is set. If the flag is set then all the queries inside the SB are skipped, and retries is only done occasionally.
-- sb.conf.exec_x_queries: Number of queries inside the station blocks that should be executed at each loop.
-
 - sb.out.error: Set true for all errors including including .error_comm
 - sb.out.error_comm: Set true after repeating queries resualting in communcation problems. (timeouts or bad crc)
 - sb.out.finnish: Set true for one scan, when the query execution is handed over to the next SB.
@@ -62,6 +57,10 @@ END_IF;
 - sb.log.error_status: status code if there is a query with an error.
 - sb.log.error_data_addr: data_addr of the query that has led to error.
 
+- sb.conf.disable: If set ture, all queries will be skipped and query execution is send to the next SB.
+- sb.conf.read_only: Only read queries will be executed. If a write query is inserted, it will later be reject at the footer, and the query execution is sent to the next SB. The internal SB counter will be increaded by one.
+- sb.conf.max_comm_error: Max number of repeating communication error before the communcation error flag is set. If the flag is set then all the queries inside the SB are skipped, and retries is only done occasionally.
+- sb.conf.exec_x_queries: Number of queries inside the station blocks that should be executed at each loop.
 - sb.z... Variables for internal use.
 
 The header and the foother will also prevent the offset problem by setting if-statements around queries, the "hiccup" effect.

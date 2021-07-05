@@ -1,5 +1,11 @@
 ﻿### Changelog for station blocks:
 
+#### 3.5.0
+ - Leroy Somer Nidec ID300		User contribution
+ - Omron Q2V				User contribution 
+ - Pulseroller, conveyLinxAi2		User contribution
+ - Pulseroller, conveyLinxIo		User contribution
+
 #### 3.4.0
  - Flygt Concertor DP and XPC		Added
 

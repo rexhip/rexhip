@@ -29,17 +29,21 @@
 - Keller_pressure_transmitters
 - Krohne_mfc_300
 - Krohne_optisonic
+- Leroy Somer Nidec ID300
 - Masibus_85xx
 - Mettler_toledo_ind560
 - Mjk_expert
 - Moxa_iologik_r1200
 - Mts_sensors_m_series
-- Novus_tht
+- Novus tht
+- Omron Q2V
 - Onicon_f5100
 - Phoenix_contact_ups
 - Ponsel_mesure
 - Produal_klh_m
 - Produal_tehr_m
+- Pulseroller, conveyLinxAi2
+- Pulseroller, conveyLinxIo
 - Rosemount_5300_Series.md
 - Rotork_valve_mk_3_option_card
 - Scandinavian_electric_cem_m_rs485

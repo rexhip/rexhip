@@ -1,5 +1,12 @@
 ﻿### Changelog:
 
+
+#### v3.5.0 (Sep 2020, tia.14) 
+- Moved Serialize and Deserialize into the fc mb_interal_ser. This is a 
+  workaround regarding some users repporting compilling error about access to
+  optimized memory in mb_query.
+- Clean up some comments.
+
 #### v3.4.2 (June 2021, tia.16)
 - Recompile all blocks again with TIA-v16. This version is also fully 
   compatible with TIA-portal v17. No changes had been done to the code.
@@ -16,6 +23,7 @@
   mentioned blocks: mb_query.z.run.state =<> EXEC_QUERY.
 - Change to mb_watchdog for avoiding compiling warning.
 - Reorganization start examples folders.
+- Change the name master to ...
 - Replaced termology master and slave with more inclusiv language, they are now 
   named leader and follower. This is in line with what the big tec companies 
   allready have done. The controller blocks are also renamed, new names are 

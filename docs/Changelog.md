@@ -1,7 +1,7 @@
 ﻿### Changelog:
 
 
-#### v3.5.0 (Sep 2020, tia.14) 
+#### v3.5.0 (Sep 2021, tia.14) 
 - Moved Serialize and Deserialize into the fc mb_interal_ser. This is a 
   workaround regarding some users repporting compilling error about access to
   optimized memory in mb_query.

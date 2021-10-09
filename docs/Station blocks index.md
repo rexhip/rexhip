@@ -15,6 +15,7 @@
 - Delta_cfp2000
 - Emerson_micro_motion
 - Endress_proline_promass_83
+- Ensy LMC311
 - Epever_solar_charge_controller
 - Epluse_EE071
 - Floridan_uniflo_1200
@@ -32,6 +33,7 @@
 - Leroy Somer Nidec ID300
 - Masibus_85xx
 - Mettler_toledo_ind560
+- Mitsubishi Inverter FR-D700
 - Mjk_expert
 - Moxa_iologik_r1200
 - Mts_sensors_m_series

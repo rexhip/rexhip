@@ -1,14 +1,20 @@
 ﻿### Changelog:
 
+#### v3.6.0 (okt 2021, tia.14) 
+- Fixed a bug regarding modbus tcp, the bug was introduced with a new feature in 
+  v3.3.0. mb_tcp_ctrl, line 77, #mb_query.z.q.data_addr was assigned to MB_DATA_ADDR 
+  The bug affect modbus tcp data_addr offset. Eg when mb_query.c.read.holding_reg
+  was used, address 40001 equal to offset of zero, afer this fix address zero is 
+  offset zero. 
 
-#### v3.5.0 (Sep 2021, tia.14) 
+#### v3.5.0 (Jul 2021, tia.14) 
 - Moved Serialize and Deserialize into the fc mb_interal_ser. This is a 
   workaround regarding some users repporting compilling error about access to
   optimized memory in mb_query.
 - Clean up some comments.
 - Removed old versions, download was all to huge 31MB.
 
-#### v3.4.2 (June 2021, tia.16)
+#### v3.4.2 (Jun 2021, tia.16)
 - Recompile all blocks again with TIA-v16. This version is also fully 
   compatible with TIA-portal v17. No changes had been done to the code.
 - In the pevious version v3.4.1, some blocks had several versions of the same 

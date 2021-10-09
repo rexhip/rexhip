@@ -1,5 +1,9 @@
 ﻿### Changelog for station blocks:
 
+#### 3.6.0
+ - Ensy LMC311		 		Added
+ - Mitsubishi Inverter FR-D700		Added
+
 #### 3.5.0
  - Leroy Somer Nidec ID300		User contribution
  - Omron Q2V				User contribution 

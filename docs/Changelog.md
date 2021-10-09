@@ -4,7 +4,7 @@
 - Fixed a bug regarding modbus tcp, the bug was introduced with a new feature in 
   v3.3.0. mb_tcp_ctrl, line 77, #mb_query.z.q.data_addr was assigned to MB_DATA_ADDR 
   The bug affect modbus tcp data_addr offset. Eg when mb_query.c.read.holding_reg
-  was used, address 40001 equal to offset of zero, afer this fix address zero is 
+  was used, address 40001 equal to offset of zero, after this fix address zero is 
   offset zero. 
 
 #### v3.5.0 (Jul 2021, tia.14) 

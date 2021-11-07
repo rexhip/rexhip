@@ -23,12 +23,12 @@ The library makes it possible to split a program into reusable function blocks f
 
 #mb_query(mb_addr := 1,                  
           mode := #mb_query.c.read.input_reg, 
-          data_addr := 13,                      
+          data_addr := 123,                      
           data_ptr := #resault_data_1);                   
 
-#mb_query(mb_addr := 2,                 
+#mb_query(mb_addr := 1,                 
           mode := #mb_query.c.read.holding_reg, 
-          data_addr := 55,                            
+          data_addr := 456,                            
           data_ptr := #resault_data_2);
 		  
 // - The result will be stored in the connected variable 
@@ -87,6 +87,38 @@ This SB can be combined with the one above, and any others in the library. It's 
 #mb_query(data_addr := 16#fa00, data_ptr := #write1);
 
 "mb_station_block_footer"(sb := #sb, mb_query := #mb_query);
+```
+
+#### Modbus tcp example 
+
+```pascal
+#ip[1] := 192;
+#ip[2] := 168;
+#ip[3] := 1;
+#ip[4] := 2;
+#mb_tcp_ctrl(interface := "Local~PROFINET_interface_1",
+             conn_id := 123,
+             ip_addr := #ip,
+             tcp_port := 502,
+             timeout := T#2s,
+             mb_query := #mb_query);
+
+#mb_query(mb_addr := 255,
+          mode := #mb_query.c.read.holding_reg,
+          data_addr := 123,
+          data_ptr := #resault_data_1);
+
+#mb_query(mb_addr := 255,
+          mode := #mb_query.c.read.holding_reg,
+          data_addr := 456,
+          data_ptr := #resault_data_2);
+	  
+// - Unlimited number of queries can be added.
+// - The same station blocks created for rtu 
+//   can also be used for tcp. This convenient when 
+//   a tcp-rtu-gateway is used.
+#telemecanique_altivar(mb_addr := 255, mb_query := #mb_query);
+
 ```
 
 - Author: Ola Bjørnli - [Contact](http://sn7.no/contact/rexhip)

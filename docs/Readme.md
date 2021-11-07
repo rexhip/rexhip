@@ -114,9 +114,8 @@ This SB can be combined with the one above, and any others in the library. It's 
           data_ptr := #resault_data_2);
 	  
 // - Unlimited number of queries can be added.
-// - The same station blocks created for rtu 
-//   can also be used for tcp. This convenient when 
-//   a tcp-rtu-gateway is used.
+// - The same station blocks created for rtu can also be used 
+//   for tcp. This is convenient when a tcp-rtu-gateway is used.
 #telemecanique_altivar(mb_addr := 255, mb_query := #mb_query);
 
 ```

@@ -13,13 +13,13 @@ The library makes it possible to split a program into reusable function blocks f
 
 ```pascal
 // A simple modbus RTU example. 
-// (Support for modbus TCP is also available)
+// (Support for modbus TCP also available)
 
-#mb_rtu1500_ctrl(hardware_id := "Local~CB_1241_(RS485)", 
+#mb_rtu1200_ctrl(hardware_id := "Local~CB_1241_(RS485)", 
                 baud := 19200, // bps                
                 mb_query := #mb_query ); 
 
-//  Use mb_rtu1200_ctrl for S7-1200
+// Use mb_rtu1500_ctrl for S7-1500 PLC's
 
 #mb_query(mb_addr := 1,                  
           mode := #mb_query.c.read.input_reg, 

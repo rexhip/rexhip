@@ -1,0 +1,1 @@
+- Documentaion on how to change parity, stop bits and other rtu settings.

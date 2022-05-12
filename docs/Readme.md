@@ -1,5 +1,11 @@
 ### Extended modbus library for Siemens PLC's.
 
+Slava Ukraine! <br/>
+<img src="../ukraine/flag_of_ukraine.svg.png" width="100"><br/>
+For Rusian users of the library, don't belive the propaganda of your goverment! Please contact me if you like access to foreign media.
+
+<br/>
+  
 The library makes it possible to split a program into reusable function blocks for each modbus device. This blocks can later be reused and combined in new programs. Together with a clean and simple api this speed up devopment significantly. Other features include:
 
  - Reduce idle time, by skipping queries that has led to recurring timeouts, retries will be done occasionally.

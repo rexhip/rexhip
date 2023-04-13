@@ -1,0 +1,78 @@
+﻿FUNCTION_BLOCK "BactoSense"
+{ S7_Optimized_Access := 'TRUE' }
+VERSION : 0.1
+   VAR_INPUT 
+      mb_addr : UInt;
+   END_VAR
+
+   VAR_OUTPUT 
+      device_ok : Bool;
+   END_VAR
+
+   VAR_IN_OUT 
+      mb_query : "mb_query";
+   END_VAR
+
+   VAR 
+      sb : "mb_station_block_udt";
+      read1 : Struct
+         digital_outputs : Word;   // bit 0 to 3
+         Instrument_status : Word;
+         alarm_status : Word;   // alarms raised during last measurement
+         warning_status : DWord;
+         error_code : Word;
+         heartbeat : Word;
+         measurement_stage : UInt;
+         measurement_progress : UInt;
+         temp_io_board : Real;
+         humidity_io_board : UInt;
+         sampling_data_time : Struct
+            year : UInt;
+            month : UInt;
+            day : UInt;
+            hour : UInt;
+            minute : UInt;
+            second : UInt;
+         END_STRUCT;
+         cartridge_per_centage : UInt;   // %
+         cartridge_serial_no : UDInt;
+         fill_serial_no : UDInt;
+         cartridge_type : UInt;   // 1 = TCC-D, 1002 = ICC-A
+         cartridge_expiration_date : Struct
+            year : UInt;
+            month : UInt;
+            day : UInt;
+         END_STRUCT;
+         instrument_serial_number : UDInt;
+         software_version : String[16];
+      END_STRUCT;
+      read2 : Struct
+         tcc : UDInt;
+         icc : UDInt;   // Always 0 if cartridge does not provide ICC
+         dcc : UDInt;
+         hnac : UDInt;
+         lnac : UDInt;
+         hnap : Real;
+      END_STRUCT;
+   END_VAR
+
+
+BEGIN
+	// BactoSense
+	// 
+	
+	"mb_station_block_header"(sb := #sb, mb_query := #mb_query);
+	#mb_query.mb_addr := #mb_addr;
+	
+	#mb_query(mode := #mb_query.c.mode.read,
+	          data_addr := 400001,
+	          data_ptr := #read1);
+	
+	#mb_query(mode := #mb_query.c.mode.read,
+	          data_addr := 400101,
+	          data_ptr := #read2);
+	
+	"mb_station_block_footer"(sb := #sb, mb_query := #mb_query);
+	
+END_FUNCTION_BLOCK
+

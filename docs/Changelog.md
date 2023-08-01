@@ -4,7 +4,7 @@
 - Fixed a bug in mb_read_buffer at line 7, 
   deser_err := "mb_internal_ser"(action := 3 // prior 1.
   Users affected by this bug would allready have notised, since data will not be 
-  recived when mb_read_buffer was used. The bug was introduced in v3.5.0
+  recived when mb_read_buffer was used. The bug was introduced in v3.5.0. 
   Thank you very much to the user who reported this bug.
 - Better description on how to change serial settings.
 

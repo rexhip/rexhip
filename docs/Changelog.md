@@ -1,7 +1,15 @@
 ﻿### Changelog:
 
+#### v3.7.0 (Jul 2023, tia.14) 
+- Fixed a bug in mb_read_buffer at line 7, 
+  deser_err := "mb_internal_ser"(action := 3 // prior 1
+  Users affected by this bug would allready have notised, since data will not be 
+  recived when mb_read_buffer was used. The bug was introduced in v3.5.0
+  Thank you very much to the user who reported this bug.
+- Better description on how to change serial settings.
+
 #### v3.6.0 (okt 2021, tia.14) 
-- Fixed a bug regarding modbus tcp, the bug was introduced with a new feature in 
+- Fixed a bug regarding modbus tcp, the bug was introduced with  a new feature in 
   v3.3.0. mb_tcp_ctrl, line 77, #mb_query.z.q.data_addr was assigned to MB_DATA_ADDR 
   The bug affect modbus tcp data_addr offset. Eg when mb_query.c.read.holding_reg
   was used, address 40001 equal to offset of zero, after this fix address zero is 
@@ -27,10 +35,10 @@
 - Bug fix of new feature introduced in v3.3.0, where one client can connect to 
   multiple servers. The bug affect the blocks mb_query_range, mb_query_bits and 
   mb_execute. It doesn't affect use of rtu or regular tcp. Code snippet added in 
-  mentioned blocks: mb_query.z.run.state =<> EXEC_QUERY.
+  mentioned blocks: mb_query.z.run.state <> EXEC_QUERY.
 - Change to mb_watchdog for avoiding compiling warning.
 - Reorganization start examples folders.
-- Change the name master to ...
+- Change the name master to leader
 - Replaced termology master and slave with more inclusiv language, they are now 
   named leader and follower. This is in line with what the big tec companies 
   allready have done. The controller blocks are also renamed, new names are 

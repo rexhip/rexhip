@@ -10,6 +10,7 @@
 - Automatic_systems_AS1320
 - Belimo_vav_compact_mod
 - Binmaster_mnu_ultrasonic_sensor
+- bNovate_BactoSense
 - Dae_instrument_pm210
 - Danfoss_aqua_drive
 - Delta_cfp2000
@@ -82,4 +83,5 @@
 - Weg_cfw100
 - Wika_gdt20_gdht20
 - Yaskawa_e7_drive
+- Yaskawa_V1000_series
 - Yokogawa_multivariable_transmitter

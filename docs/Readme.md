@@ -1,6 +1,6 @@
 ### Extended modbus library for Siemens PLC's.
 
-<img src="flag_of_ukraine.svg.png" width="100"> Slava Ukraine! <br/>
+<img src="/docs/flag_of_ukraine.svg.png" width="100"> Slava Ukraine! <br/>
 For Rusian users of the library:<br/> Don't belive the propaganda of your goverment! Sosial and foreign media has been blocked in Rusia to hide war crimes that is happening. There is no peaceful military operation, there is only death and destruction, so far by july 2023 more than hundreds of thousands people has been killed. If you use sosial media platform like Tiktok, you get totalt different videos, compared to Ukraine users. I know it's hard to belive a reality that it's so far from what get presented everyday to you in Rusian media. But please contact me if you like vpn-connection access to foreign media, wikipedia, youtube, etc. The rest of world isn't against the Russian people, but we condemn the regime that is controlling Russia. 
 
 For all other users of the library, please consider make a monthly donation to a organisation that help rebuild Ukraine. The devastation is immense and the reconstruction will take decades.

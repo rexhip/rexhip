@@ -1,5 +1,8 @@
 ﻿### Changelog:
 
+#### v3.7.4 (nov 2023, tia.14) 
+- Removed "Optimized block access" from mb_internal_ser. Some users has reported compilation errors.
+
 #### v3.7.0 (Jul 2023, tia.14) 
 - Fixed a bug in mb_read_buffer at line 7, 
   deser_err := "mb_internal_ser"(action := 3 // prior 1.

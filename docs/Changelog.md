@@ -1,7 +1,11 @@
 ﻿### Changelog:
 
+#### v3.7.5 (dec 2023, tia.14) 
+- Removed "Optimized block access" from mb_internal_ser. Some users has reported
+  compilation errors, due to a bug in tia-portal.
+
 #### v3.7.4 (nov 2023, tia.14) 
-- Removed "Optimized block access" from mb_internal_ser. Some users has reported compilation errors.
+- Corrupt zip file in release
 
 #### v3.7.0 (Jul 2023, tia.14) 
 - Fixed a bug in mb_read_buffer at line 7, 

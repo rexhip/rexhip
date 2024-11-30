@@ -1,4 +1,4 @@
-<img src="/docs/flag/ukraine.svg.png" height="25"> <img src="/docs/flag/palestine.svg.png" height="25"> <img src="/docs/flag/sudan.svg.png" height="25"> Please consider make a donation to a organisation that support Ukraine, Gaza or Sudan. The devastation is immense and the reconstruction will take decades.
+<img src="/docs/flags/ukraine.svg.png" height="25"> <img src="/docs/flags/palestine.svg.png" height="25"> <img src="/docs/flags/sudan.svg.png" height="25"> Please consider make a donation to a organisation that support Ukraine, Gaza or Sudan. The devastation is immense and the reconstruction will take decades.
 
 ### Extended modbus library for Siemens PLC's.
   
